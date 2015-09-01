@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
 """
-Python implementation of common model fitting to protein folding
-data. Simply automates some fitting and value calculation with
-common objects. Will be extended to include phi-value analysis 
-and other common calculations.
+Python implementation of common model fitting operations to
+analyse protein folding data. Simply automates some fitting 
+and value calculation. Will be extended to include phi-value 
+analysis and other common calculations.
 
 Allows for quick model evaluation and plotting.
+
+Also tried to make this somewhat abstract and modular to
+enable more interesting calculations, such as Ising models
+and such.
 
 Requirements (recommended python 2.7+):
 	- numpy
@@ -349,7 +353,7 @@ def plot_figure(equilibrium, chevron, pth):
 	fiteq = equilibrium.fitted
 
 	plt.figure()
-	ax = plt.subplot2grid((4,2),(0,0))
+	plt.subplot2grid((4,2),(0,0))
 	plt.plot([dfifty,dfifty],[-.1,1.1],'b-',[dfive,dfive],[-.1,1.1],'b:', [dninetyfive,dninetyfive],[-.1,1.1],'b:')
 	plt.plot(np.linspace(0., 10., 100), fiteq, 'k-', linewidth=2)
 	plt.plot(equilibrium.x, equilibrium.y,'wo')
