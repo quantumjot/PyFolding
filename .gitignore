@@ -1,0 +1,9 @@
+src/build/*
+*.pyc
+*.pyd
+*.so
+*.dll
+*.dylib
+*.o
+*.csv
+*.pdf
