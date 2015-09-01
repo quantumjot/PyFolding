@@ -349,11 +349,10 @@ def plot_figure(equilibrium, chevron, pth):
 	fiteq = equilibrium.fitted
 
 	plt.figure()
-	plt.subplot2grid((4,2),(0,0))
+	ax = plt.subplot2grid((4,2),(0,0))
 	plt.plot([dfifty,dfifty],[-.1,1.1],'b-',[dfive,dfive],[-.1,1.1],'b:', [dninetyfive,dninetyfive],[-.1,1.1],'b:')
 	plt.plot(np.linspace(0., 10., 100), fiteq, 'k-', linewidth=2)
 	plt.plot(equilibrium.x, equilibrium.y,'wo')
-	plt.ylabel(r'$F_{norm} (A.U.)$')
 	plt.ylim([-.1,1.1])
 	plt.title(chevron.ID)
 	plt.subplot2grid((4,2),(1,0), rowspan=2)
