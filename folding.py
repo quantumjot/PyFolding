@@ -1,3 +1,23 @@
+#!/usr/bin/env python
+
+"""
+Python implementation of common model fitting to protein folding
+data. Simply automates some fitting and value calculation with
+common objects. Will be extended to include phi-value analysis 
+and other common calculations.
+
+Allows for quick model evaluation and plotting.
+
+Requirements (recommended python 2.7+):
+	- numpy
+	- scipy
+	- matplotlib
+
+Lowe, A.R. 2015
+
+"""
+
+
 
 import os
 import csv
@@ -50,6 +70,7 @@ class FoldingData(object):
 		"""
 		if self.__fit_func:
 			if isinstance(self, Chevron):
+				# TODO: sort this out!
 				objective_func = lambda p, x, y: np.ravel( y - np.log(self.__fit_func(x,p)) )
 				y = np.log(self.y)
 			else:
@@ -63,9 +84,9 @@ class FoldingData(object):
 			raise Exception("Fit function must be defined")
 
 	@property 
-	def fitted(self):
+	def fitted(self, x=None):
 		if isinstance(self.fit_params, np.ndarray):
-			x = np.linspace(0.,10.,100)
+			if not x: x = np.linspace(0.,10.,100)
 			return self.__fit_func(x, self.fit_params)
 
 	@property 
@@ -78,13 +99,15 @@ class FoldingData(object):
 
 	@property 
 	def error(self):
-		""" Just calculates the standard error based on the residuals
-		of the fit.
+		""" Calculates the standard error based on the residuals of the fit.
 
 		$S.E. = \frac{\sigma}{\sqrt{N}}$
 
 		TODO: use the covariance matrix from the fit to estimate 
-		fit parameter errors.
+		fit parameter errors properly
+
+		Notes:
+			http://stackoverflow.com/questions/14581358/getting-standard-errors-on-fitted-parameters-using-the-optimize-leastsq-method-i
 
 		"""
 		if isinstance(self.fit_params, np.ndarray):
@@ -134,29 +157,44 @@ class Chevron(FoldingData):
 		else:
 			raise Exception("Midpoint must be a float and 0<x<10")
 
-	def unfolding_limb(self, phase='k1'):
+	def unfolding_limb(self, phase=None):
 		""" Return only the unfolding limb data
 		"""
-		if phase not in self.phases: return None
+		if not phase: 
+			phase = self.phases[0]
+		elif phase not in self.phases: 
+			return None
 		denaturant, rates = [], []
 		for d,r in zip(self.denaturant[phase], self.rates[phase]):
-			if d >= self.midpoint:
+			if d > self.midpoint:
 				den.append(d)
 				rates.append(r)
 
 		return denaturant, rates
 
-	def refolding_limb(self, phase='k1'):
+	def refolding_limb(self, phase=None):
 		""" Return only the refolding limb data
 		"""
-		if phase not in self.phases: return None
+		if not phase: 
+			phase = self.phases[0]
+		elif phase not in self.phases: 
+			return None
 		denaturant, rates = [], []
 		for d,r in zip(self.denaturant[phase], self.rates[phase]):
-			if d < self.midpoint:
+			if d <= self.midpoint:
 				den.append(d)
 				rates.append(r)
 
 		return denaturant, rates
+
+	def chevron(self, phase=None):
+		""" Return the entire phase of a chevron
+		"""
+		if not phase: 
+			phase = self.phases[0]
+		elif phase not in self.phases: 
+			return None
+		return self.denaturant[phase], self.rates[phase]
 
 
 
@@ -353,7 +391,7 @@ if __name__ == "__main__":
 
 	all_proteins = ['WT','V10A','A14G','I26A','A43G','A47G','F58I','I79V','A80G','A81G','V89A','A91G','A113G','A122G','A147G','I155V','I157V','A179G','A188G','V192A','L209A','V211A']
 	pth = "/Users/ubcg83a/Dropbox/Code/Folding/"
-	fn = "WTcrop.csv"
+	fn = "WT.csv"
 
 	start_2 = np.array([50., -1.3480, 5e-4, 1.])
 	start_3 = np.array([4.5e-4, 1.1, 1.3e9, -6.9, -9.5e-1, 1.4e-8, -1.6])
@@ -362,7 +400,7 @@ if __name__ == "__main__":
 
 	# load the data
 	chevron = read_kinetic_data(os.path.join(pth,"Chevrons"), fn)
-	equilibrium = read_equilibrium_data(os.path.join(pth,"Equilibrium"), "WT.csv")
+	equilibrium = read_equilibrium_data(os.path.join(pth,"Equilibrium"), fn)
 
 	# fit the data
 	chevron.fit_func = fit.three_state_chevron
