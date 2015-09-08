@@ -105,8 +105,70 @@ class FitModel(object):
 
 
 
+"""
+==========================================================
+EQUILIBRIUM FOLDING models
+==========================================================
+"""
+
+class TwoStateEquilibrium(FitModel):
+	""" Two state equilbrium denaturation curve.
+
+	Notes:
+		Clarke and Fersht. Engineered disulfide bonds as probes of
+		the folding pathway of barnase: Increasing the stability 
+		of proteins against the rate of denaturation. 
+		Biochemistry (1993) vol. 32 (16) pp. 4322-4329
+	"""
+	def __init__(self):
+		FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5.])
 
 
+	def fit_func(self, x, alpha_f, beta_f, alpha_u, beta_u, m, d50):
+		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * \
+		( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT)
+		return F
+
+
+
+class HomozipperIsingEquilibrium(FitModel):
+	""" Homopolymer Zipper Ising model
+
+	Notes:
+		Aksel and Barrick. Analysis of repeat-protein folding using 
+		nearest-neighbor statistical mechanical models. 
+		Methods in enzymology (2009) vol. 455 pp. 95-125
+	"""
+	def __init__(self):
+		FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([7, -.4, -.53, -4.6, -0.6])
+		self.constants = (('n',7),)
+
+	def fit_func(self, x, n, DG_intrinsic, m_intrinsic, DG_interface, m_interface):
+		
+		# clamp to prevent instability
+		if DG_intrinsic>0. or DG_interface>0.:
+			return x * 1e10
+
+		k = np.exp(-(DG_intrinsic - m_intrinsic*x) / constants.RT)
+		t = np.exp(-(DG_interface - m_interface*x) / constants.RT)
+		pre_factor = (k/(n*(k*t-1))) 
+		numerator = n*(k*t)**(n+2) - (n+2)*(k*t)**(n+1) + (n+2)*k*t-n
+		denominator = (k*t-1)**2 + k*((k*t)**(n+1) - (n+1)*k*t+n )
+		theta = pre_factor * numerator / denominator 
+		return theta
+
+
+"""
+==========================================================
+KINETIC FOLDING models
+==========================================================
+"""
 
 class TwoStateChevron(FitModel):
 	""" Two state chevron plot. 
@@ -121,7 +183,7 @@ class TwoStateChevron(FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([50., 1.3480, 5e-4, 1.])
-		self.constants = (('mf',1.76408),('mu',1.13725))
+		#self.constants = (('mf',1.76408),('mu',1.13725))
 
 
 	def fit_func(self, x, kf, mf, ku, mu):
@@ -154,7 +216,7 @@ class ThreeStateChevron(FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([4.5e-4, -9.5e-1, 1.3e9, -6.9,  1.4e-8, -1.6])
-		self.constants = (('mif',-0.97996),('mi',-6.00355),('mu',-1.66154))
+		#self.constants = (('mif',-0.97996),('mi',-6.00355),('mu',-1.66154))
 		
 	def fit_func(self, x, kfi, mif, kif, mi, Kiu, mu):
 		k_fi = kfi*np.exp(-mif*x)
@@ -196,8 +258,8 @@ class ThreeStateFastPhaseChevron(FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([75.47454, 0.99163, 0.34078, 0.67511, 100., -1.5, 4.5e-4, 1.])
-		self.constants = (('kui',75.47454), ('mui',0.99163), ('kiu',0.34078), ('miu',0.67511), \
-			('mif',-2.71313),('mfi',1.07534))
+		self.constants = (('kui',75.47454), ('mui',0.99163), ('kiu',0.34078), ('miu',0.67511))
+		# ('mif',-2.71313),('mfi',1.07534))
 		
 	def fit_func(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_iu = kiu*np.exp(miu*x)
@@ -240,7 +302,7 @@ class ThreeStateSequentialChevron(FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([2e4, 0.3480, 20.163, 1.327, 0.3033, 0.2431])
-		self.constants = (('mui',4.34965),('mif',0.68348),('mfi',0.97966))
+		# self.constants = (('mui',4.34965),('mif',0.68348),('mfi',0.97966))
 		
 	def fit_func(self, x, kui, mui, kif, mif, kfi, mfi):
 		kiu = 1.e4
@@ -315,29 +377,6 @@ class ParallelTwoStateChevron(FitModel):
 
 
 
-class TwoStateEquilibrium(FitModel):
-	""" Two state equilbrium denaturation curve.
-
-	Notes:
-		Clarke and Fersht. Engineered disulfide bonds as probes of
-		the folding pathway of barnase: Increasing the stability 
-		of proteins against the rate of denaturation. 
-		Biochemistry (1993) vol. 32 (16) pp. 4322-4329
-	"""
-	def __init__(self):
-		FitModel.__init__(self)
-		fit_args = self.fit_func_args
-		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5.])
-
-
-	def fit_func(self, x, alpha_f, beta_f, alpha_u, beta_u, m, d50):
-		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * \
-		( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT)
-		return F
-
-
-
 
 
 class ParallelTwoStateUnfoldingChevron(FitModel):
@@ -403,42 +442,6 @@ def two_state_moving_transition_chevron(x, p0, p=None):
 	k_obs = k_u + k_f
 	return k_obs
 	
-
-
-
-
-def three_state_chevron_test(x, p0, p=None):
-	""" Three state chevron with single intermediate.
-
-	k_{obs} = k_{fi}^{H_2O} * exp(-m_{if}*x) +
-				k_{if}^{H_2O} * exp((m_i - m_{if})*x) /
-				(1 + 1 / K_{iu})
-
-	where:
-
-	K_{iu} = K_{iu}^{H_2O} * exp((m_u-m_i)*x)
-
-	Notes:
-		Parker et al. An integrated kinetic analysis of 
-		intermediates and transition states in protein folding 
-		reactions. 
-		Journal of molecular biology (1995) vol. 253 (5) pp. 771-86
-	"""
-	if not p:
-		p = {'kif':p0[0], 'mif':p0[1], 'kfi':p0[2], 'mfi':p0[3],}
-
-
-	p['kui'] = 100.58949362
-	p['mui'] = -1.1097177
-	p['kiu'] = 0.37152382
-	p['miu'] = 0.66305123
-	k_iu = p['kiu']*np.exp(p['miu']*x)
-	k_ui = p['kui']*np.exp(p['mui']*x)
-	k_if = p['kif']*np.exp(p['mif']*x)
-	k_fi = p['kfi']*np.exp(p['mfi']*x)
-	K_iu = k_iu / (k_iu + k_ui)
-	k_obs = k_fi + k_if / (1.+1./K_iu)
-	return k_obs
 
 
 

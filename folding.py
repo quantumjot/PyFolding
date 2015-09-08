@@ -414,15 +414,13 @@ def plot_figure(equilibrium, chevron, pth):
 	plt.semilogy()
 	plt.plot([dfifty,dfifty],[0.01,100.],'b-',[dfive,dfive],[0.01,100.],'b:', [dninetyfive,dninetyfive],[0.01,100.],'b:')
 	plt.plot(np.linspace(0., 10., 100), fity, 'k-', linewidth=2)
-	
-	if 'k2' in chevron.phases:
-		plt.plot(chevron.denaturant['k2'], chevron.rates['k2'], 'w^')
-
 	if chevron.components:
 		x = np.linspace(0., 10., 100)
 		for c in chevron.components:
 			plt.plot(x, chevron.components[c], 'r--', linewidth=2)
 
+	if 'k2' in chevron.phases:
+		plt.plot(chevron.denaturant['k2'], chevron.rates['k2'], 'w^')
 	plt.plot(chevron.x, chevron.y, 'wo')		
 	plt.ylabel(r'$k_{obs} (s^{-1})$')
 	plt.xlim((0,10))
@@ -462,6 +460,18 @@ def fit_and_plot(pth, fn):
 	equilibrium = read_equilibrium_data(os.path.join(pth,"Equilibrium"), fn)
 
 	# fit the data
+	#equilibrium.fit_func = models.TwoStateEquilibrium
+	equilibrium.fit_func = models.HomozipperIsingEquilibrium
+	equilibrium.fit()
+
+	fiteq = equilibrium.fitted
+
+	plt.figure()
+	plt.plot(equilibrium.x, equilibrium.y, 'wo')
+	plt.plot(np.linspace(0., 10., 100), fiteq, 'k-', linewidth=2)
+	plt.show()
+
+
 	equilibrium.fit_func = models.TwoStateEquilibrium
 	equilibrium.fit()
 	chevron.midpoint = equilibrium.midpoint
@@ -489,7 +499,7 @@ if __name__ == "__main__":
 	#all_proteins = ['WT','V10A','A14G','I26A','A43G','A47G','F58I','I79V','A80G','A81G','V89A','A91G','A113G','A122G','A147G','I155V','I157V','A179G','A188G','V192A','L209A','V211A']
 	all_proteins = ['WT', 'A14G', 'F58I', 'A80G', 'A122G', 'A147G', 'A188G', 'L209A']
 	pth = "/Users/ubcg83a/Dropbox/Code/PyFolding/"
-	for p in all_proteins[1:]:
+	for p in all_proteins[:1]:
 		fit_and_plot(pth, p+".csv")
 
 
