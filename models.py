@@ -318,7 +318,7 @@ class ThreeStateFastPhaseChevron(FitModel):
 		k_ui = kui*np.exp(-mui*x)
 		k_if = kif*np.exp(mif*x)
 		k_fi = kfi*np.exp(mfi*x)
-		K_iu = k_iu / (k_ui+1e-99)
+		K_iu = k_iu / (k_ui+k_iu)
 		k_obs = k_fi + k_if / (1.+1./K_iu)
 		return k_obs
 
