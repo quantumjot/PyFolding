@@ -390,9 +390,10 @@ def read_equilibrium_data(directory, filename):
 
 
 
-def plot_figure(equilibrium, chevron, pth, show=False):
+def plot_figure(equilibrium, chevron, pth, show=False, save=True):
 	""" Plot a figure with the data and fits combined.
 	"""
+
 	dfifty = equilibrium.midpoint
 	dfive = equilibrium.point(0.05)
 	dninetyfive = equilibrium.point(0.95)
@@ -447,8 +448,10 @@ def plot_figure(equilibrium, chevron, pth, show=False):
 	ax = plt.gcf()
 	ax.text(0.65, 0.95, t, horizontalalignment='left', verticalalignment='top', fontsize=10.)
 	plt.tight_layout()
-	plt.savefig(os.path.join(pth,"Fitting"+equilibrium.ID+"_{0:s}.pdf".format(chevron.fit_func)))
-	if show: plt.show()
+	if save: 
+		plt.savefig(os.path.join(pth,"Fitting"+equilibrium.ID+"_{0:s}.pdf".format(chevron.fit_func)))
+	if show: 
+		plt.show()
 	plt.close()
 
 

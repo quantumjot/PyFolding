@@ -33,6 +33,15 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 
+def FIT_ERROR(x):
+	if isinstance(x, np.ndarray):
+		return np.ones(x.shape)*1e10
+	else:
+		return None
+
+
+
+
 class GlobalFit(object):
 	""" Wrapper function to perform global fitting
 	"""
@@ -206,7 +215,7 @@ class HomozipperIsingEquilibrium(FitModel):
 		
 		# clamp to prevent instability
 		if DG_intrinsic>0. or DG_interface>0.:
-			return x * 1e10
+			return FIT_ERROR(x)
 
 		k = np.exp(-(DG_intrinsic - m_intrinsic*x) / constants.RT)
 		t = np.exp(-(DG_interface - m_interface*x) / constants.RT)
@@ -402,10 +411,10 @@ class ParallelTwoStateChevron(FitModel):
 	def fit_func(self, x, kf_A, mf_A, ku_A, mu_A, kf_B, mf_B):
 
 		if mf_A < 0. or mf_B < 0. or mu_A < 0.:
-			return x * 1e10
+			return FIT_ERROR(x)
 
 		if kf_A <0. or ku_A <0. or kf_B < 0.:
-			return x * 1e10
+			return FIT_ERROR(x)
 
 		deltaG_A = kf_A / ku_A
 		ku_B = kf_B / deltaG_A
@@ -449,7 +458,7 @@ class ParallelTwoStateUnfoldingChevron(FitModel):
 	def fit_func(self, x, ku_A, mu_A, ku_B, mu_B):
 
 		if mu_A < 0. or mu_B < 0.:
-			return x * 1e10
+			return FIT_ERROR(x)
 
 		k_obs_A = ku_A*np.exp(mu_A*x)
 		k_obs_B = ku_B*np.exp(mu_B*x)
