@@ -1,3 +1,27 @@
+#!/usr/bin/env python
+
+"""
+Python implementation of common model fitting operations to
+analyse protein folding data. Simply automates some fitting 
+and value calculation. Will be extended to include phi-value 
+analysis and other common calculations.
+
+Allows for quick model evaluation and plotting.
+
+Also tried to make this somewhat abstract and modular to
+enable more interesting calculations, such as Ising models
+and such.
+
+Requirements (recommended python 2.7+):
+	- numpy
+	- scipy
+	- matplotlib
+
+Lowe, A.R. 2015
+
+"""
+
+
 import inspect
 import numpy as np 
 import scipy as sp
@@ -6,6 +30,37 @@ import constants
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
+
+
+
+class GlobalFit(object):
+	""" Wrapper function to perform global fitting
+	"""
+	def __init__(self):
+		self.x = []
+		self.y = []
+		self.__fit_funcs = []
+
+	@property 
+	def fit_funcs(self): return self.__fit_funcs
+	@fit_funcs.setter
+	def fit_funcs(self, fit_funcs):
+		for fit_func in fit_funcs:
+			if not hasattr(fit_func, "__call__"): continue
+			# append it and instantiate it
+			self.__fit_funcs.append( fit_func() )
+
+	def __call__(self, *args):
+		""" Dummy call for all fit functions """
+		x = args[0]
+		fit_args = args[1:]
+		ret = np.array(())
+		for fit_func in self.fit_funcs:
+			x_this = np.array( self.x[self.fit_funcs.index(fit_func)] )
+			ret = np.append( ret, fit_func(x_this, *fit_args) )
+		return ret
+
+
 
 
 class FitModel(object):
@@ -99,9 +154,7 @@ class FitModel(object):
 	def fit_func_args(self):
 		return inspect.getargspec(self.fit_func).args[2:]
 
-	def test(self):
-		print self.fit_func_args
-		print self.params
+
 
 
 
@@ -257,16 +310,15 @@ class ThreeStateFastPhaseChevron(FitModel):
 		FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([75.47454, 0.99163, 0.34078, 0.67511, 100., -1.5, 4.5e-4, 1.])
-		self.constants = (('kui',75.47454), ('mui',0.99163), ('kiu',0.34078), ('miu',0.67511))
-		# ('mif',-2.71313),('mfi',1.07534))
+		self.default_params = np.array([172., 1.42, .445, .641, 9.41e3, -2.71313, 1.83e-4, 1.06])
+		self.constants = (('kui',172.), ('mui',1.42), ('kiu',.445), ('miu',.641), ('mif',-2.71313),('mfi',1.06534))
 		
 	def fit_func(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_iu = kiu*np.exp(miu*x)
 		k_ui = kui*np.exp(-mui*x)
 		k_if = kif*np.exp(mif*x)
 		k_fi = kfi*np.exp(mfi*x)
-		K_iu = k_iu / (k_ui)
+		K_iu = k_iu / (k_ui+1e-99)
 		k_obs = k_fi + k_if / (1.+1./K_iu)
 		return k_obs
 
@@ -438,7 +490,7 @@ def two_state_moving_transition_chevron(x, p0, p=None):
 			 'kf': p0[2], 'mf': p0[3], 'm_prime': p0[4]}
 
 	k_u = p['ku'] + np.exp(p['mu']*x) + np.exp(p['m_prime']*x**2)
-	k_f = p['kf'] + np.exp(p['mf']*x) + np.exp(p['m_prime']*x**2)
+	k_f = p['kf'] + np.exp(-p['mf']*x) + np.exp(-p['m_prime']*x**2)
 	k_obs = k_u + k_f
 	return k_obs
 	
@@ -447,4 +499,6 @@ def two_state_moving_transition_chevron(x, p0, p=None):
 
 if __name__ == "__main__":
 	pass
+
+
 

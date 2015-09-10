@@ -90,18 +90,11 @@ class FoldingData(object):
 			else:
 				x,y = self.x, self.y
 
-
+			# perform the actual fitting
 			out = optimize.curve_fit(self.__fit_func, x, y, p0=p0, maxfev=20000)
-
-			# put the output back into the model
-			self.__fit_func.fit_params = out[0]
-			self.__fit_func.fit_covar = out[1]
 
 			self.fit_params = np.array( self.__fit_func.get_fit_params(x, *list(out[0])) )
 			self.fit_covar = out[1]
-
-			self.__fit_residuals = np.log(self.y) - self.__fit_func(self.x, *list(self.fit_params))
-
 
 			if hasattr(self.__fit_func, "components"):
 				self.components = self.__fit_func.components(np.linspace(0.,10.,100), *list(self.fit_params))
@@ -129,7 +122,13 @@ class FoldingData(object):
 	@property 
 	def residuals(self):
 		if isinstance(self.fit_params, np.ndarray):
-			return self.__fit_residuals
+			if isinstance(self, Chevron):
+				residuals = np.log(self.y) - self.__fit_func(self.x, *list(self.fit_params))
+			else:
+				residuals = self.y - self.__fit_func(self.x, *list(self.fit_params))
+			return residuals
+		else:
+			return np.zeros(self.x.shape)
 
 	@property 
 	def error(self):
@@ -391,7 +390,7 @@ def read_equilibrium_data(directory, filename):
 
 
 
-def plot_figure(equilibrium, chevron, pth):
+def plot_figure(equilibrium, chevron, pth, show=False):
 	""" Plot a figure with the data and fits combined.
 	"""
 	dfifty = equilibrium.midpoint
@@ -449,58 +448,13 @@ def plot_figure(equilibrium, chevron, pth):
 	ax.text(0.65, 0.95, t, horizontalalignment='left', verticalalignment='top', fontsize=10.)
 	plt.tight_layout()
 	plt.savefig(os.path.join(pth,"Fitting"+equilibrium.ID+"_{0:s}.pdf".format(chevron.fit_func)))
-	#plt.show()
+	if show: plt.show()
 	plt.close()
 
 
 
-def fit_and_plot(pth, fn):
-	# load the data
-	chevron = read_kinetic_data(os.path.join(pth,"Chevrons"), fn)
-	equilibrium = read_equilibrium_data(os.path.join(pth,"Equilibrium"), fn)
-
-	# fit the data
-	#equilibrium.fit_func = models.TwoStateEquilibrium
-	equilibrium.fit_func = models.HomozipperIsingEquilibrium
-	equilibrium.fit()
-
-	fiteq = equilibrium.fitted
-
-	plt.figure()
-	plt.plot(equilibrium.x, equilibrium.y, 'wo')
-	plt.plot(np.linspace(0., 10., 100), fiteq, 'k-', linewidth=2)
-	plt.show()
-
-
-	equilibrium.fit_func = models.TwoStateEquilibrium
-	equilibrium.fit()
-	chevron.midpoint = equilibrium.midpoint
-
-	# loop through different fits
-	fit = (models.TwoStateChevron, models.ThreeStateChevron, models.ThreeStateSequentialChevron, \
-		models.ParallelTwoStateChevron, models.ThreeStateFastPhaseChevron)
-	fit = (models.ThreeStateFastPhaseChevron, )
-	#fit = ()
-
-	for f in fit:
-		chevron.fit_func = f
-		#try:
-		chevron.fit(data=None)
-			# plot it and save a figure
-		plot_figure(equilibrium, chevron, pth)
-		#except:
-		#	continue
-
-
-
-
 if __name__ == "__main__":
-
-	#all_proteins = ['WT','V10A','A14G','I26A','A43G','A47G','F58I','I79V','A80G','A81G','V89A','A91G','A113G','A122G','A147G','I155V','I157V','A179G','A188G','V192A','L209A','V211A']
-	all_proteins = ['WT', 'A14G', 'F58I', 'A80G', 'A122G', 'A147G', 'A188G', 'L209A']
-	pth = "/Users/ubcg83a/Dropbox/Code/PyFolding/"
-	for p in all_proteins[:1]:
-		fit_and_plot(pth, p+".csv")
+	pass
 
 
 	
