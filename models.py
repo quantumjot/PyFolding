@@ -34,6 +34,7 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 def FIT_ERROR(x):
+	""" Return a generic fit error """
 	if isinstance(x, np.ndarray):
 		return np.ones(x.shape)*1e10
 	else:

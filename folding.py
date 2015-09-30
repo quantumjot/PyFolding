@@ -142,6 +142,28 @@ class FoldingData(object):
 			return np.std(res) / np.sqrt(1.*len(res))
 
 	@property
+	def r_squared(self):
+		""" Calculates the r-squared value of the fit.
+		"""
+		if isinstance(self.fit_params, np.ndarray):
+			res = self.residuals
+			
+
+			if isinstance(self, Chevron): 
+				y_bar = np.mean(np.log(self.y))
+				y = np.log(self.y)
+			else:
+				y = self.y
+				y_bar = np.mean(y)
+			f_i = self.__fit_func(self.x, *list(self.fit_params))
+
+			SS_tot = np.sum((y - y_bar)**2)
+			SS_res = np.sum((y - f_i)**2)
+
+			return 1.- SS_res / SS_tot
+
+
+	@property
 	def errors(self):
 		""" Calculates the SEM of the fitted parameters, using
 		the (hopefully well formed) covariance matrix from 
@@ -444,6 +466,7 @@ def plot_figure(equilibrium, chevron, pth, show=False, save=True):
 	for e in chevron.errors:
 		fit_arg, fit_val, fit_err = e
 		t+= u"{0:s}: {1:.2e} \u00B1 {2:.2e} \n".format(fit_arg, fit_val, fit_err)
+	t+= u"$R^2$: {0:2.2f} \n".format(chevron.r_squared)
 
 	ax = plt.gcf()
 	ax.text(0.65, 0.95, t, horizontalalignment='left', verticalalignment='top', fontsize=10.)
