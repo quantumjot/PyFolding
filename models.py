@@ -209,13 +209,13 @@ class HomozipperIsingEquilibrium(FitModel):
 		FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([7, -.4, -.53, -4.6, -0.6])
+		self.default_params = np.array([7, 0.1, -.53, -4.6, -0.6])
 		self.constants = (('n',7),)
 
 	def fit_func(self, x, n, DG_intrinsic, m_intrinsic, DG_interface, m_interface):
 		
 		# clamp to prevent instability
-		if DG_intrinsic>0. or DG_interface>0.:
+		if DG_intrinsic<0. or DG_interface>0.:
 			return FIT_ERROR(x)
 
 		k = np.exp(-(DG_intrinsic - m_intrinsic*x) / constants.RT)
