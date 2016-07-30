@@ -84,7 +84,7 @@ class FoldingData(object):
 		if hasattr(fit_func, "__call__"):
 			self.__fit_func = fit_func()
 		else:
-			raise Exception("Fit function must be callable")
+			raise AttributeError("Fit function must be callable")
 
 	def fit(self, p0=None, data=None):
 		""" Fit the data to the defined model. Use p0 to 
@@ -116,7 +116,7 @@ class FoldingData(object):
 				self.components = self.__fit_func.components(np.linspace(0.,10.,100), *list(self.fit_params))
 			
 		else:
-			raise Exception("Fit function must be defined")
+			raise AttributeError("Fit function must be defined")
 
 		print "--------------------"
 		print " Fitting results "
@@ -341,7 +341,7 @@ class EquilibriumDenaturationCurve(FoldingData):
 		"""
 		if self.m_value and self.midpoint:
 			if fraction_folded<0. or fraction_folded>1.:
-				raise Exception("Fraction folded must be in the range 0.<x<1.")
+				raise ValueError("Fraction folded must be in the range 0.<x<1.")
 			return (np.log((1.-fraction_folded)/fraction_folded) / self.m_value) + self.midpoint
 		else:
 			return None
