@@ -43,46 +43,6 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 
-def Test_EWAN():
-	""" Test with Ewan's data 
-
-	TODO:
-		Predictions of other curves with fit results
-		Subpopulations
-		Error analysis? RMSD of curves?
-
-	"""
-
-	datadir = '/Users/ubcg83a/Dropbox/AlanLoweCollaboration (1)/IsingFits&Numbers/Albert/'
-
-	#files = ['H2', 'H3', 'H4', 'H5', 'H6', 'H8', 'H10']
-	#helices = [5,7,9,11,13,17,21]
-
-	# files = ['H2', 'H3', 'H4', 'H5']
-	# helices = [5,7,9,11]
-	# topo = []
-	# for h in helices:
-	#  	topo.append( [RepeatDomain for n in xrange(h)] )
-
-
-	files = ['CTPR2', 'CTPR3a', 'CTPR4a', 'CTPR6a', 'CTPR2-25loop', 'CTPR6a-25loop']
-
-	h = HelixDomain
-	l = LoopDomain
-	c = CapDomain
-
-	topo = [[c,h,h,h],
-			[c,h,h,h,h,h],
-			[c,h,h,h,h,h,h,h],
-			[c,h,h,h,h,h,h,h,h,h,h,h],
-			[c,h,l,h],
-			[c,h,h,h,h,h,l,h,h,h,h,h]]
-
-
-	print topo
-
-	curves = [ pyfoldio.read_equilibrium_data(datadir, f+'.csv') for f in files]
-	fit_heteropolymer_ising(curves, topo)
 
 
 
