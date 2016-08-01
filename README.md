@@ -1,4 +1,4 @@
-## PyFolding
+# PyFolding
 
 
 PyFolding is a simple Python based framework for fitting kinetic and thermodynamic models to 
@@ -7,9 +7,9 @@ of more interesting models.
 
 
 
-# Requirements
+## Requirements
 
-# Installation
+## Installation
 
 You can install Pyfolding by cloning the repo and running the setup script:
 ```sh
@@ -17,7 +17,7 @@ $ git clone https://github.com/quantumjot/PyFolding.git
 $ python setup.py -install
 ```
 
-# Testing the installation
+## Testing the installation
 
 Once installed, a simple script will execute the test function. This tests
 whether the package has installed correctly.
