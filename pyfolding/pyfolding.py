@@ -206,6 +206,12 @@ class Protein(object):
 		self.chevron = None
 		self.equilibrium = None
 
+	@property 
+	def deltaG(self): return self.equilibrium.deltaG
+
+	@property 
+	def kf_H20(self): return self.chevron.fitted[0]
+
 
 
 
