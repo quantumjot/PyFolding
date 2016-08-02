@@ -52,6 +52,9 @@ def test(protein_ID='Test protein'):
 	chevron = Chevron(ID=protein_ID)
 	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
 
+	acceptible_error = 1e-3
+	truth = {'eq':[0., 0., 1., 0., 1.5, 5.], 'kin': [100., 1., 0.005, 1.]}
+
 
 	# denaturant concentrations
 	den = np.linspace(0.,10.,100)
@@ -59,8 +62,8 @@ def test(protein_ID='Test protein'):
 	# generate a two-state equilibrium curve, with Gaussian noise
 	# alpha_f, beta_f, alpha_u, beta_u, m, d50
 	eq_model = models.TwoStateEquilibrium()
-	eq_raw = eq_model.fit_func(den, 0., 0., 1., 0., 1.5, 5.)
-	eq_sim = eq_raw + np.random.randn(100,)*0.01
+	eq_raw = eq_model.fit_func(den, *truth['eq'])
+	eq_sim = eq_raw + np.random.randn(100,)*0.0001
 
 	equilibrium.denaturant_label = "[denaturant] (M)"
 	equilibrium.curves = ['e1']
@@ -72,8 +75,8 @@ def test(protein_ID='Test protein'):
 	# generate a two-state chevron curve, with Gaussian noise
 	# kf, mf, ku, mu
 	kin_model = models.TwoStateChevron()
-	kin_raw = kin_model.fit_func(den, 100., 1., 0.005, 1.)
-	kin_sim = np.exp( np.log(kin_raw) + np.random.randn(100,)*0.1 )
+	kin_raw = kin_model.fit_func(den, *truth['kin'])
+	kin_sim = np.exp( np.log(kin_raw) + np.random.randn(100,)*0.001 )
 
 
 	chevron.denaturant_label = "[denaturant] (M)"
@@ -94,14 +97,21 @@ def test(protein_ID='Test protein'):
 	# get the parameters and check that they are the same as the 
 	# ground truth set
 
+	for p_truth, p_fit in zip(truth['eq'], equilibrium.fit_params):
+		if (p_truth - p_fit)**2 > acceptible_error:
+			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
 
+	for p_truth, p_fit in zip(truth['kin'], chevron.fit_params):
+		if (p_truth - p_fit)**2 > acceptible_error:
+			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds bounds (1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
+
+
+	print 'Test completed!'
 
 	# plot the output
 	plot_figure(equilibrium, chevron, show=True)
 
-	print 'Test completed!'
 
-	raise NotImplementedError
 
 
 

@@ -34,6 +34,51 @@ import pyfolding
 pyfolding.test()
 ```
 
+Upon executing the script, the following output should be generated:
+```sh
+--------------------
+ Fitting results
+--------------------
+Model: TwoStateEquilibrium
+alpha_f: 0.00064 ± 0.00036
+beta_f: -0.00065 ± 0.00030
+alpha_u: 1.03272 ± 0.00184
+beta_u: -0.00333 ± 0.00028
+m: 1.48006 ± 0.00300
+d50: 5.01164 ± 0.00177
+--------------------
+--------------------
+ Fitting results
+--------------------
+Model: TwoStateChevron
+kf: 99.08423 ± 0.31144
+mf: 0.99802 ± 0.00127
+ku: 0.00544 ± 0.00005
+mu: 0.98653 ± 0.00123
+--------------------
+
+Test Completed!
+```
+
+### Data format
+
+Raw data for PyFolding should be provided in .csv files.
+
+---
+
+### Current models supported
+
++ Two-state equilibrium unfolding
++ Three-state equilibrium unfolding
++ Homopoylmer Ising model for equilibrium unfolding
++ Heteropolymer Ising model for equilibrium unfolding
++ Two-state chevron
++ Two-state with moving transition state chevron
++ Three-state chevron with fast pre-equilibrium chevron 
++ Three-state chevron with fast phase chevron
++ Three-state sequential barriers chevron
++ Parallel two-state chevrons
+
 ---
 ### Example scripts
 
@@ -68,18 +113,3 @@ chevron.fit()
 # plot the output
 folding.plot_figure(equilibrium, chevron)
 ```
-
----
-
-### Current models supported
-
-+ Two-state equilibrium unfolding
-+ Three-state equilibrium unfolding
-+ Homopoylmer Ising model for equilibrium unfolding
-+ Heteropolymer Ising model for equilibrium unfolding
-+ Two-state chevron
-+ Two-state with moving transition state chevron
-+ Three-state chevron with fast pre-equilibrium chevron 
-+ Three-state chevron with fast phase chevron
-+ Three-state sequential barriers chevron
-+ Parallel two-state chevrons
