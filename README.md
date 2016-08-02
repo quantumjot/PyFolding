@@ -19,6 +19,7 @@ Pyfolding has been tested on Python 2.7, and requires the following additional p
 You can install Pyfolding by cloning the repo and running the setup script:
 ```sh
 $ git clone https://github.com/quantumjot/PyFolding.git
+$ cd PyFolding
 $ python setup.py -install
 ```
 

@@ -125,7 +125,7 @@ def display_fit_params(p_names, p_values, p_errs=None, fit_model=None):
 
 
 def read_kinetic_data(directory, filename):
-	""" Read in kinetic data in the form of an Excel worksheet. It 
+	""" Read in kinetic data in the form of an .csv worksheet. It 
 	should be arranged such that each file is a different protein,
 	and columns represent the following:
 
@@ -159,7 +159,7 @@ def read_kinetic_data(directory, filename):
 
 
 def read_equilibrium_data(directory, filename):
-	""" Read in an equilbrium denaturation curve from an Excel
+	""" Read in an equilbrium denaturation curve from a .csv
 	worksheet. It should be arranged such that each file is a 
 	different protein, and columns represent the following: 
 
