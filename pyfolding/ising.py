@@ -64,20 +64,6 @@ def tau(x, DeltaG, m_value):
 
 
 
-
-
-
-
-
-"""
-======================================
-DO NOT CHANGE ANYTHING BELOW THIS LINE 
-======================================
-"""
-
-
-
-
 class IsingDomain(object):
 	""" Template class for derivative Ising domains to describe a
 	protein topology.
@@ -245,33 +231,34 @@ class GlobalFitWrapper(object):
 		""" Append an equilibrium curve, with associated data. Generate a topology
 		and the associated partition function 
 		"""
-		if isinstance(curve, folding.EquilibriumDenaturationCurve):
-			
-			# now go through the domain topology and set up domains as necessary
-			q_topology = []
-			for domain in topology:
-				
-				#if not issubclass(topology, IsingDomain):
-				#	raise TypeError('GlobalFitIsing.append protein topologies must be specified using IsingModel classes')
-
-				if domain not in self.domain_types:
-					new_domain = domain() # instantiate this and append it to the list of domains
-					self.domains.append( new_domain )
-					self.domain_types.append( domain )
-				else:
-					new_domain = self.domains[self.domain_types.index(domain)]
-
-				q_topology.append(new_domain)
-
-
-			# generate a new partition function for the data
-			q = IsingPartitionFunction( topology = q_topology )
-
-			# append the new data and partition function to the list
-			self.proteins.append({'n':len(q_topology), 'curve':curve, 'partition':q})
-
-		else:
+		if not isinstance(curve, folding.EquilibriumDenaturationCurve):
 			raise TypeError('GlobalFitIsing.append must receive an EquilibriumDenaturationCurve as input')
+
+		# now go through the domain topology and set up domains as necessary
+		q_topology = []
+		for domain in topology:
+			
+			#if not issubclass(topology, IsingDomain):
+			#	raise TypeError('GlobalFitIsing.append protein topologies must be specified using IsingModel classes')
+
+			if domain not in self.domain_types:
+				new_domain = domain() # instantiate this and append it to the list of domains
+				self.domains.append( new_domain )
+				self.domain_types.append( domain )
+			else:
+				new_domain = self.domains[self.domain_types.index(domain)]
+
+			q_topology.append(new_domain)
+
+
+		# generate a new partition function for the data
+		q = IsingPartitionFunction( topology = q_topology )
+
+		# append the new data and partition function to the list
+		self.proteins.append({'n':len(q_topology), 'curve':curve, 'partition':q})
+
+
+			
 
 
 
@@ -280,14 +267,12 @@ class IsingPartitionFunction(object):
 	""" General partition function object for Ising models.
 	"""
 	def __init__(self, topology=None):
-		if isinstance(topology, list):
-
-			for domain in topology:
-				if not isinstance(domain, IsingDomain):
-					raise TypeError('IsingPartitionFunction: Model topologies must be specified using IsingDomain classes')
-
-		else:
+		if not isinstance(topology, list):
 			raise TypeError('IsingPartitionFunction: model topology must be specified')
+
+		for domain in topology:
+			if not isinstance(domain, IsingDomain):
+				raise TypeError('IsingPartitionFunction: Model topologies must be specified using IsingDomain classes')
 
 
 		# if everything is OK, set up the topology for this partition function		
