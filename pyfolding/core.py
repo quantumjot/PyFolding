@@ -293,9 +293,9 @@ class FoldingData(object):
 		else:
 			raise AttributeError("Fit function must be defined")
 
-		print "--------------------"
+		print "-----------------"
 		print " Fitting results "
-		print "--------------------"
+		print "-----------------"
 		print "Model: {0:s}".format(self.__fit_func.name)
 		for e in self.errors:
 			fit_arg, fit_val, fit_err = e
