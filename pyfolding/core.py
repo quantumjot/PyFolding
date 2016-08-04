@@ -103,7 +103,7 @@ def test(protein_ID='Test protein'):
 
 	for p_truth, p_fit in zip(truth['kin'], chevron.fit_params):
 		if (p_truth - p_fit)**2 > acceptible_error:
-			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds bounds (1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
+			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
 
 
 	print 'Test completed!'
@@ -552,7 +552,7 @@ def plot_figure(equilibrium, chevron, pth=None, show=False, save=False):
 	res = chevron.residuals
 	fiteq = equilibrium.fitted
 
-	plt.figure()
+	plt.figure(figsize=(14,8))
 	plt.subplot2grid((4,2),(0,0))
 	plt.plot([dfifty,dfifty],[-.1,1.1],'b-',[dfive,dfive],[-.1,1.1],'b:', [dninetyfive,dninetyfive],[-.1,1.1],'b:')
 	plt.plot(np.linspace(0., 10., 100), fiteq, 'k-', linewidth=2)

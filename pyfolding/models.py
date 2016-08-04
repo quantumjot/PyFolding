@@ -164,6 +164,9 @@ class FitModel(object):
 	def fit_func_args(self):
 		return inspect.getargspec(self.fit_func).args[2:]
 
+	def equation(self):
+		raise NotImplementedError
+
 
 
 

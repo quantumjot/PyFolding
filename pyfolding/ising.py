@@ -125,7 +125,7 @@ class RepeatDomain(IsingDomain):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 		
 		# bounds (DG_i, DG_ij, m_i, m_ij)
-		self.bounds = ((2., 3.),(-5.,-4.),(-.8,-.5),(-.8,-.5))
+		self.bounds = ((1., 5.),(-5.,-1.),(-.8,-.1),(-.8,-.1))
 		self.name = "Repeat"
 
 
@@ -186,8 +186,9 @@ class GlobalFitWrapper(object):
 	def __call__(self, x, *args):
 		"""This is the call used by the fitting function to evalutate the parameters passed in """
 
-		if len(self.proteins) < 2:
-			raise Error('GlobalFitIsing must have at least two proteins to fit.')
+
+		if len(self.proteins) < 1:
+			raise ValueError('GlobalFitIsing must have at least two proteins to fit.')
 
 
 		# here we can set all of the parameters for the fit
@@ -221,7 +222,6 @@ class GlobalFitWrapper(object):
 		bounds = ()
 		for domain in self.domains:
 			for b in domain.bounds:
-				print b
 				bounds = bounds + (b,)
 
 		return bounds
@@ -231,8 +231,9 @@ class GlobalFitWrapper(object):
 		""" Append an equilibrium curve, with associated data. Generate a topology
 		and the associated partition function 
 		"""
-		if not isinstance(curve, folding.EquilibriumDenaturationCurve):
+		if not isinstance(curve, core.EquilibriumDenaturationCurve):
 			raise TypeError('GlobalFitIsing.append must receive an EquilibriumDenaturationCurve as input')
+
 
 		# now go through the domain topology and set up domains as necessary
 		q_topology = []
@@ -281,7 +282,6 @@ class IsingPartitionFunction(object):
 	def init_topology(self, topology=None):
 		self.topology = topology
 		self.n = len(self.topology)
-		print self.n
 
 	def __len__(self):
 		return self.n
@@ -318,7 +318,8 @@ class IsingPartitionFunction(object):
 	def subpopulation(self, x, i):
 		""" Return the fraction folded for a sub population of the states """
 		q_n = self.partition(x)
-		sum_q_i = np.sum( self.subpartition(x, i, rev=True), axis=0 )
+		#sum_q_i = np.sum( self.subpartition(x, i, rev=True), axis=0 )
+		sum_q_i = np.sum( [ self.subpartition(x, i, rev=True) for i in xrange(self.n)], axis=0 )
 		theta = sum_q_i / (self.n * q_n)
 		return 1.-theta
 
@@ -326,16 +327,7 @@ class IsingPartitionFunction(object):
 
 
 
-
-
-
-
-
-
-
-
-
-def fit_heteropolymer_ising(equilibrium_curves=[], topologies=[]):
+def fit_heteropolymer(equilibrium_curves=[], topologies=[]):
 	""" An example script to fit a series of data sets to a heteropolymer ising model.
 
 	
@@ -345,23 +337,29 @@ def fit_heteropolymer_ising(equilibrium_curves=[], topologies=[]):
 	
 	"""
 
+	# do some parsing of the input
+	if not isinstance(equilibrium_curves, list):
+		raise TypeError('equilibrium_curves must be a list of EquilibriumDenaturationCurve type')
+
+	if not isinstance(topologies, list):
+		raise TypeError('topologies must be a list of IsingDomain type')	
+
 	fit_func = GlobalFitWrapper()
 
 	# set up the global fit
 	print 'Appending {0:d} curves to GlobalFitIsing...'.format(len(equilibrium_curves))
 	for protein, topology in zip(equilibrium_curves, topologies):
 		fit_func.append(protein, topology)
-		print ' -Added {0:s} with topology {1:s}'.format(protein.ID, [d().name for d in topology])
+		print ' + added {0:s} with topology {1:s}'.format(protein.ID, [d().name for d in topology])
 
 	# do the fitting
 	print 'Performing global optimisation of Ising model...'
-	result = differential_evolution(fit_func, fit_func.bounds, disp=True, popsize=10, tol=1e-1)
+	result = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=10, tol=1e-8)
 	print 'Done.'
 
-	print result
+	#print result
 
 	plot_Ising(fit_func)
-
 	plot_folded(fit_func.proteins[-1]['partition'])
 
 	return result
@@ -375,7 +373,7 @@ def plot_Ising(fit_func):
 	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rt', 'mv', 'gv', 'cv', 'bv', 'kv']
 
 	# plot the fits
-	plt.figure()
+	plt.figure(figsize=(14,8))
 	#plt.subplot(1,2,1)
 	ax1 = plt.subplot2grid((2,2), (0,0), rowspan=2)
 
@@ -416,7 +414,10 @@ def plot_Ising(fit_func):
 	h,x = plot_folded(fit_func.proteins[-1]['partition'])
 	for i in xrange(h.shape[1]):
 		plt.plot(x, h[:,i])
-	plt.legend([d.name for d in fit_func.proteins[-1]['partition'].topology ])
+	dn = iter(['_{0:d}'.format(i) for i in xrange(len(fit_func.proteins[-1]['partition'].topology))])
+	plt.legend([d.name+dn.next() for d in fit_func.proteins[-1]['partition'].topology ])
+	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
+	plt.ylabel('Fraction folded (subpopulation)')
 	plt.show()
 
 
