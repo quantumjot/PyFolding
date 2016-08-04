@@ -31,7 +31,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from scipy import optimize
 
-import pyfolding
+import core
 import constants
 
 __author__ = "Alan R. Lowe"

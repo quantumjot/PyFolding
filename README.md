@@ -20,7 +20,7 @@ You can install Pyfolding by cloning the repo and running the setup script:
 ```sh
 $ git clone https://github.com/quantumjot/PyFolding.git
 $ cd PyFolding
-$ python setup.py -install
+$ python setup.py install
 ```
 
 ### Testing the installation

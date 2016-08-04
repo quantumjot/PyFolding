@@ -34,7 +34,7 @@ from scipy.optimize import differential_evolution
 # import PyFolding specific libraries
 import constants
 import models
-import pyfolding
+import core
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"

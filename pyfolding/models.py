@@ -177,6 +177,8 @@ EQUILIBRIUM FOLDING models
 class TwoStateEquilibrium(FitModel):
 	""" Two state equilbrium denaturation curve.
 
+	F = (\alpha_f+\beta_f \cdot x) + (\alpha_u+\beta_u \cdot x) \cdot \exp( m \cdot (x-d_{50}))
+
 	Notes:
 		Clarke and Fersht. Engineered disulfide bonds as probes of
 		the folding pathway of barnase: Increasing the stability 
@@ -236,7 +238,7 @@ KINETIC FOLDING models
 class TwoStateChevron(FitModel):
 	""" Two state chevron plot. 
 
-	k_{obs} = k_u^{H_2O} + exp(m_ku*x) + k_u^{H_2O} + exp(m_kf*x)
+	k_{obs} = k_u^{H_2O} * exp(m_ku*x) + k_u^{H_2O} * exp(m_kf*x)
 
 	Notes:
 		[Reference]
