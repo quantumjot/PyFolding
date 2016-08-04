@@ -124,6 +124,20 @@ def display_fit_params(p_names, p_values, p_errs=None, fit_model=None):
 	raise NotImplementedError
 
 
+def check_filename(directory, filename):
+	""" Check the filename for consistency.
+	"""
+
+	if not isinstance(directory, basestring) or not isinstance(filename, basestring):
+		raise TypeError('Pyfolding expects a filename as a string')
+
+	if not os.path.exists(os.path.join(directory, filename)):
+		raise IOError('PyFolding could not find the file: {0:s}'.format(filename))
+
+	if not filename.lower().endswith(('.csv', '.CSV')):
+		raise TypeError('PyFolding expects a .CSV file as input. ({0:s})'.format(filename))
+
+
 def read_kinetic_data(directory, filename):
 	""" Read in kinetic data in the form of an .csv worksheet. It 
 	should be arranged such that each file is a different protein,
@@ -133,6 +147,9 @@ def read_kinetic_data(directory, filename):
 
 	This function then returns a chevron object with the data
 	"""
+
+	# check the filename
+	check_filename(directory, filename)
 
 	protein_ID, ext = os.path.splitext(filename)
 	chevron = Chevron(ID=protein_ID)
@@ -167,6 +184,10 @@ def read_equilibrium_data(directory, filename):
 
 	This function then returns an equilbrium curve object.
 	"""
+
+	# check the filename
+	check_filename(directory, filename)
+	
 	protein_ID, ext = os.path.splitext(filename)
 	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
 
