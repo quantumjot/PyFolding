@@ -131,14 +131,16 @@ def check_filename(directory, filename):
 	if not isinstance(directory, basestring) or not isinstance(filename, basestring):
 		raise TypeError('Pyfolding expects a filename as a string')
 
-	if not os.path.exists(os.path.join(directory, filename)):
-		raise IOError('PyFolding could not find the file: {0:s}'.format(filename))
-
 	if not filename.lower().endswith(('.csv', '.CSV')):
-		raise TypeError('PyFolding expects a .CSV file as input. ({0:s})'.format(filename))
+		raise TypeError('PyFolding expects a .CSV file as input: {0:s}'.format(filename))
+
+	if not os.path.exists(os.path.join(directory, filename)):
+		raise IOError('PyFolding could not find the file: {0:s}'.format(os.path.join(directory, filename)))
 
 
-def read_kinetic_data(directory, filename):
+
+
+def read_kinetic_data(directory=None, filename=None):
 	""" Read in kinetic data in the form of an .csv worksheet. It 
 	should be arranged such that each file is a different protein,
 	and columns represent the following:
@@ -175,7 +177,7 @@ def read_kinetic_data(directory, filename):
 	return chevron
 
 
-def read_equilibrium_data(directory, filename):
+def read_equilibrium_data(directory=None, filename=None):
 	""" Read in an equilbrium denaturation curve from a .csv
 	worksheet. It should be arranged such that each file is a 
 	different protein, and columns represent the following: 
@@ -187,7 +189,7 @@ def read_equilibrium_data(directory, filename):
 
 	# check the filename
 	check_filename(directory, filename)
-	
+
 	protein_ID, ext = os.path.splitext(filename)
 	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
 

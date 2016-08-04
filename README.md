@@ -26,7 +26,7 @@ $ python setup.py install
 ### Testing the installation
 
 Once installed, a simple script will execute the test function. This tests
-whether the package has installed correctly.
+whether the package has installed correctly.  The following script is found in /tests/test_installation.py
 
 ```python
 # import the pyfolding package
@@ -35,7 +35,14 @@ import pyfolding
 pyfolding.test()
 ```
 
+Execute the script as follows:
+```sh
+$ cd tests
+$ python test_installation.py
+```
+
 Upon executing the script, the following output should be generated:
+
 ```sh
 --------------------
  Fitting results
