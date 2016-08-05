@@ -186,6 +186,36 @@ EQUILIBRIUM FOLDING models
 class TwoStateEquilibrium(FitModel):
 	""" Two state equilbrium denaturation curve.
 
+	F = \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
+
+	Notes:
+		Clarke and Fersht. Engineered disulfide bonds as probes of
+		the folding pathway of barnase: Increasing the stability 
+		of proteins against the rate of denaturation. 
+		Biochemistry (1993) vol. 32 (16) pp. 4322-4329
+	"""
+	def __init__(self):
+		FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([1.5, 5.])
+
+
+	def fit_func(self, x, m, d50):
+		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * (\
+		( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT))
+		return F
+
+	@property
+	def equation(self):
+		return r'F = \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}'
+
+
+
+
+class TwoStateEquilibriumSloping(FitModel):
+	""" Two state equilbrium denaturation curve.
+
 	F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
 
 	Notes:

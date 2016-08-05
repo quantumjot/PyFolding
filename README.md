@@ -97,11 +97,11 @@ shown below:
 
 ```python
 import pyfolding
-import models
+from pyfolding import models
 
 # load the kinetic and equilibrium folding data
 chevron = pyfolding.read_kinetic_data("WT_chevron.csv")
-equilibrium = folding.read_equilibrium_data("WT_equilibrium.csv")
+equilibrium = pyfolding.read_equilibrium_data("WT_equilibrium.csv")
 
 # fit the equilibrium data to a two-state model
 equilibrium.fit_func = models.TwoStateEquilibrium

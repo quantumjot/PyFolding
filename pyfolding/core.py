@@ -52,7 +52,7 @@ def test(protein_ID='Test protein'):
 	chevron = Chevron(ID=protein_ID)
 	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
 
-	acceptible_error = 1e-3
+	acceptible_error = 1e-2
 	truth = {'eq':[0., 0., 1., 0., 1.5, 5.], 'kin': [100., 1., 0.005, 1.]}
 
 
@@ -303,11 +303,14 @@ class FoldingData(object):
 		print "-----------------"
 
 
+	@property 
+	def fitted_x(self):
+		return np.linspace(0., 10., 100)
 
 	@property 
 	def fitted(self):
 		if isinstance(self.fit_params, np.ndarray):
-			x = np.linspace(0.,10.,100)
+			x = self.fitted_x
 			return np.copy( self.__fit_func.fit_func(x, *list(self.fit_params)) )
 
 	@property 
