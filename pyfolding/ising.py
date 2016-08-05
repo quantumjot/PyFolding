@@ -125,7 +125,7 @@ class RepeatDomain(IsingDomain):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 		
 		# bounds (DG_i, DG_ij, m_i, m_ij)
-		self.bounds = ((1., 5.),(-5.,-1.),(-.8,-.1),(-.8,-.1))
+		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
 		self.name = "Repeat"
 
 
@@ -135,7 +135,8 @@ class HelixDomain(IsingDomain):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 		
 		# bounds (DG_i, DG_ij, m_i, m_ij)
-		self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
+		#self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
+		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
 		self.name = "Helix"
 
 
@@ -144,7 +145,8 @@ class LoopDomain(IsingDomain):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 
 		# bounds (DG_i, DG_ij, m_i, m_ij)
-		self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
+		#self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
+		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
 		self.name = "Loop"
 
 
@@ -153,7 +155,8 @@ class CapDomain(IsingDomain):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 
 		# bounds (DG_i, DG_ij, m_i, m_ij)
-		self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
+		#self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
+		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
 		self.name = "Cap"
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
 
@@ -318,8 +321,8 @@ class IsingPartitionFunction(object):
 	def subpopulation(self, x, i):
 		""" Return the fraction folded for a sub population of the states """
 		q_n = self.partition(x)
-		#sum_q_i = np.sum( self.subpartition(x, i, rev=True), axis=0 )
-		sum_q_i = np.sum( [ self.subpartition(x, i, rev=True) for i in xrange(self.n)], axis=0 )
+		sum_q_i = np.sum( self.subpartition(x, i, rev=True), axis=0 )
+		#sum_q_i = np.sum( [ self.subpartition(x, i, rev=True) for i in xrange(self.n)], axis=0 )
 		theta = sum_q_i / (self.n * q_n)
 		return 1.-theta
 
@@ -393,7 +396,7 @@ def plot_Ising(fit_func):
 
 
 	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
-	plt.ylabel('Fraction folded')
+	plt.ylabel('Fraction unfolded')
 
 
 	# now plot the first derivative
@@ -417,7 +420,7 @@ def plot_Ising(fit_func):
 	dn = iter(['_{0:d}'.format(i) for i in xrange(len(fit_func.proteins[-1]['partition'].topology))])
 	plt.legend([d.name+dn.next() for d in fit_func.proteins[-1]['partition'].topology ])
 	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
-	plt.ylabel('Fraction folded (subpopulation)')
+	plt.ylabel('Fraction unfolded (subpopulation)')
 	plt.show()
 
 

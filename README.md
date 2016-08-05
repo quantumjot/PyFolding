@@ -13,6 +13,7 @@ Pyfolding has been tested on Python 2.7, and requires the following additional p
 + Numpy
 + Scipy
 + Matplotlib
++ (Optional) Jupyter
 
 ### Installation
 
@@ -121,3 +122,8 @@ chevron.fit()
 # plot the output
 folding.plot_figure(equilibrium, chevron)
 ```
+
+---
+### IPython Notebooks
+
+PyFolding can be used within IPython Notebooks. Several example notebooks are provided in the examples folder.

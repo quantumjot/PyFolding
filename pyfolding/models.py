@@ -164,8 +164,14 @@ class FitModel(object):
 	def fit_func_args(self):
 		return inspect.getargspec(self.fit_func).args[2:]
 
+	@property
 	def equation(self):
 		raise NotImplementedError
+
+	def print_equation(self):
+		from IPython.display import display, Math, Latex
+		display(Math(self.equation))
+		return None
 
 
 
@@ -180,7 +186,7 @@ EQUILIBRIUM FOLDING models
 class TwoStateEquilibrium(FitModel):
 	""" Two state equilbrium denaturation curve.
 
-	F = (\alpha_f+\beta_f \cdot x) + (\alpha_u+\beta_u \cdot x) \cdot \exp( m \cdot (x-d_{50}))
+	F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
 
 	Notes:
 		Clarke and Fersht. Engineered disulfide bonds as probes of
@@ -196,9 +202,13 @@ class TwoStateEquilibrium(FitModel):
 
 
 	def fit_func(self, x, alpha_f, beta_f, alpha_u, beta_u, m, d50):
-		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * \
-		( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT)
+		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * (\
+		( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT))
 		return F
+
+	@property
+	def equation(self):
+		return r'F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}'
 
 
 
@@ -241,7 +251,7 @@ KINETIC FOLDING models
 class TwoStateChevron(FitModel):
 	""" Two state chevron plot. 
 
-	k_{obs} = k_u^{H_2O} * exp(m_ku*x) + k_u^{H_2O} * exp(m_kf*x)
+	k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_f^{H_2O}\exp(m_{kf}x)
 
 	Notes:
 		[Reference]
@@ -260,6 +270,10 @@ class TwoStateChevron(FitModel):
 
 	def error_func(self, y): 
 		return np.log(y)
+
+	@property 
+	def equation(self):
+		return r'k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_f^{H_2O}\exp(m_{kf}x)'
 
 
 class ThreeStateChevron(FitModel):

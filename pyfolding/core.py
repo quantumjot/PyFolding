@@ -300,7 +300,7 @@ class FoldingData(object):
 		for e in self.errors:
 			fit_arg, fit_val, fit_err = e
 			print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f}".format(fit_arg, fit_val, fit_err)
-		print "--------------------"
+		print "-----------------"
 
 
 
