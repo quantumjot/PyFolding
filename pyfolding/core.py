@@ -41,7 +41,7 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 
-def test(protein_ID='Test protein'):
+def test(protein_ID='Simulated protein'):
 	"""
 	Test function to make sure that PyFolding is installed correctly
 	and functioning as it should. Generates a simulated data set
@@ -68,7 +68,7 @@ def test(protein_ID='Test protein'):
 	eq_raw = eq_model.fit_func(den, *truth['eq'])
 	eq_sim = eq_raw + np.random.randn(100,)*0.0001
 
-	equilibrium.denaturant_label = "[denaturant] (M)"
+	equilibrium.denaturant_label = "[Denaturant] (M)"
 	equilibrium.curves = ['e1']
 	equilibrium.denaturant = {'e1': den}
 	equilibrium.signal = {'e1': eq_sim}
