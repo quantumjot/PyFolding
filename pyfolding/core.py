@@ -25,13 +25,14 @@ Lowe, A.R. 2015
 
 import os
 import csv
+import inspect
 
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 from scipy import optimize
 
-import models
+
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
@@ -48,12 +49,14 @@ def test(protein_ID='Test protein'):
 	data comparing these to the ground truth.
 	"""
 
+	import models
+
 	# initialise the data structures
 	chevron = Chevron(ID=protein_ID)
 	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
 
 	acceptible_error = 1e-2
-	truth = {'eq':[0., 0., 1., 0., 1.5, 5.], 'kin': [100., 1., 0.005, 1.]}
+	truth = {'eq':[1.5, 5.], 'kin': [100., 1., 0.005, 1.]}
 
 
 	# denaturant concentrations
@@ -260,6 +263,11 @@ class FoldingData(object):
 			self.__fit_func = fit_func()
 		else:
 			raise AttributeError("Fit function must be callable")
+
+	@property 
+	def fit_func_args(self):
+		if self.__fit_func:
+			return self.__fit_func.fit_func_args
 
 	def fit(self, p0=None, data=None):
 		""" Fit the data to the defined model. Use p0 to 
@@ -503,13 +511,13 @@ class EquilibriumDenaturationCurve(FoldingData):
 	@property 
 	def m_value(self):
 		if isinstance(self.fit_params, np.ndarray):
-			return self.fit_params[4]
+			return self.fit_params[ self.fit_func_args.index('m') ]
 		return None
 
 	@property 
 	def midpoint(self):
 		if isinstance(self.fit_params, np.ndarray):
-			return self.fit_params[5]
+			return self.fit_params[ self.fit_func_args.index('d50') ]
 		else:
 			return None
 
@@ -535,6 +543,149 @@ class EquilibriumDenaturationCurve(FoldingData):
 
 
 
+
+
+
+
+def FIT_ERROR(x):
+	""" Return a generic fit error """
+	if isinstance(x, np.ndarray):
+		return np.ones(x.shape)*constants.FITTING_PENALTY
+	else:
+		return None
+
+
+
+
+class GlobalFit(object):
+	""" Wrapper function to perform global fitting
+	"""
+	def __init__(self):
+		self.x = []
+		self.y = []
+		self.__fit_funcs = []
+
+	@property 
+	def fit_funcs(self): return self.__fit_funcs
+	@fit_funcs.setter
+	def fit_funcs(self, fit_funcs):
+		for fit_func in fit_funcs:
+			if not hasattr(fit_func, "__call__"): continue
+			# append it and instantiate it
+			self.__fit_funcs.append( fit_func() )
+
+	def __call__(self, *args):
+		""" Dummy call for all fit functions """
+		x = args[0]
+		fit_args = args[1:]
+		ret = np.array(())
+		for fit_func in self.fit_funcs:
+			x_this = np.array( self.x[self.fit_funcs.index(fit_func)] )
+			ret = np.append( ret, fit_func(x_this, *fit_args) )
+		return ret
+
+
+
+
+class FitModel(object):
+	""" 
+	FitModel class
+
+	A generic fit model to enable a common core set of functions
+	but specific new member functions to be enabled in derived
+	classes.
+
+	Can define parameters in this manner:
+	('kf',0), ('mf',1), ... in order to enable paramater sharing
+	in global fitting. By default the model just gets the params
+	in the order they are defined in the function defininition
+
+	Args:
+
+	Methods:
+
+	Notes:
+
+	"""
+	def __init__(self):
+		self.__params = None
+		self.__param_names = None
+		self.__default_params = None
+
+		self.fit_params = None
+		self.fit_covar = None
+		self.constants = None
+
+	@property 
+	def params(self): return self.__params
+	@params.setter 
+	def params(self, params=None):
+		if isinstance(params, tuple):
+			self.__params, self.__param_names = [], []
+			for key,value in params:
+				self.__param_names.append(key)
+				self.__params.append(value)
+		else:
+			raise Warning("Fit parameters must be a tuple")
+
+
+	@property 
+	def name(self): return self.__class__.__name__
+
+	def __call__(self, x, *args):
+		""" Parse the fit arguments and pass onto the 
+		fitting function
+		"""
+		fit_args = self.get_fit_params(x, *args)
+		return self.error_func( self.fit_func(x, *fit_args) )
+
+
+	def fit_func(self, x, *args):
+		""" The fit function should be defined here """
+		raise Exception("Fit function must be defined")
+
+	def error_func(self, y):
+		""" The error function should be defined here """
+		return y
+
+	def get_fit_params(self, x, *args):
+		fit_args = [args[v] for v in self.__params]
+
+		# if we have constants replace the arguments
+		# with the constants
+		if self.constants: 
+			for arg, constant in self.constants:
+				if arg in self.__param_names:
+					idx = self.__params[ self.__param_names.index(arg) ]
+					fit_args[idx] = constant
+		return fit_args
+
+	@property 
+	def default_params(self):
+		""" Give back either the set starting parameters,
+		or set all to 1.0 
+		"""
+		if isinstance(self.__default_params, np.ndarray):
+			return self.__default_params
+		else:
+			return np.ones((len(self.params),1))
+	@default_params.setter
+	def default_params(self, params):
+		if isinstance(params, np.ndarray):
+			self.__default_params = params
+
+	@property 
+	def fit_func_args(self):
+		return inspect.getargspec(self.fit_func).args[2:]
+
+	@property
+	def equation(self):
+		raise NotImplementedError
+
+	def print_equation(self):
+		from IPython.display import display, Math, Latex
+		display(Math(self.equation))
+		return None
 
 
 

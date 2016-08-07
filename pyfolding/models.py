@@ -21,157 +21,52 @@ Lowe, A.R. 2015
 
 """
 
-
+import sys
 import inspect
 import numpy as np 
 import scipy as sp
 
+import core
 import constants
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
 
 
+def list_models():
+	""" List the kinetic of equilibrium models defined in this module.
 
-def FIT_ERROR(x):
-	""" Return a generic fit error """
-	if isinstance(x, np.ndarray):
-		return np.ones(x.shape)*1e10
-	else:
-		return None
+	Returns a list of the names of the models, whose parent class is 
+	FitModel.
+	"""
+	clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+	fit_models = [ cls[0] for cls in clsmembers if cls[1].__bases__[0] == core.FitModel ]
+	return fit_models
 
 
 
 
-class GlobalFit(object):
-	""" Wrapper function to perform global fitting
+
+
+
+
+class TemplateModel(core.FitModel):
+	""" A template model for expansion
 	"""
 	def __init__(self):
-		self.x = []
-		self.y = []
-		self.__fit_funcs = []
-
-	@property 
-	def fit_funcs(self): return self.__fit_funcs
-	@fit_funcs.setter
-	def fit_funcs(self, fit_funcs):
-		for fit_func in fit_funcs:
-			if not hasattr(fit_func, "__call__"): continue
-			# append it and instantiate it
-			self.__fit_funcs.append( fit_func() )
-
-	def __call__(self, *args):
-		""" Dummy call for all fit functions """
-		x = args[0]
-		fit_args = args[1:]
-		ret = np.array(())
-		for fit_func in self.fit_funcs:
-			x_this = np.array( self.x[self.fit_funcs.index(fit_func)] )
-			ret = np.append( ret, fit_func(x_this, *fit_args) )
-		return ret
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([])
 
 
-
-
-class FitModel(object):
-	""" 
-	FitModel class
-
-	A generic fit model to enable a common core set of functions
-	but specific new member functions to be enabled in derived
-	classes.
-
-	Can define parameters in this manner:
-	('kf',0), ('mf',1), ... in order to enable paramater sharing
-	in global fitting. By default the model just gets the params
-	in the order they are defined in the function defininition
-
-	Args:
-
-	Methods:
-
-	Notes:
-
-	"""
-	def __init__(self):
-		self.__params = None
-		self.__param_names = None
-		self.__default_params = None
-
-		self.fit_params = None
-		self.fit_covar = None
-		self.constants = None
-
-	@property 
-	def params(self): return self.__params
-	@params.setter 
-	def params(self, params=None):
-		if isinstance(params, tuple):
-			self.__params, self.__param_names = [], []
-			for key,value in params:
-				self.__param_names.append(key)
-				self.__params.append(value)
-		else:
-			raise Warning("Fit parameters must be a tuple")
-
-
-	@property 
-	def name(self): return self.__class__.__name__
-
-	def __call__(self, x, *args):
-		""" Parse the fit arguments and pass onto the 
-		fitting function
-		"""
-		fit_args = self.get_fit_params(x, *args)
-		return self.error_func( self.fit_func(x, *fit_args) )
-
-
-	def fit_func(self, x, *args):
-		""" The fit function should be defined here """
-		raise Exception("Fit function must be defined")
-
-	def error_func(self, y):
-		""" The error function should be defined here """
-		return y
-
-	def get_fit_params(self, x, *args):
-		fit_args = [args[v] for v in self.__params]
-
-		# if we have constants replace the arguments
-		# with the constants
-		if self.constants: 
-			for arg, constant in self.constants:
-				if arg in self.__param_names:
-					idx = self.__params[ self.__param_names.index(arg) ]
-					fit_args[idx] = constant
-		return fit_args
-
-	@property 
-	def default_params(self):
-		""" Give back either the set starting parameters,
-		or set all to 1.0 
-		"""
-		if isinstance(self.__default_params, np.ndarray):
-			return self.__default_params
-		else:
-			return np.ones((len(self.params),1))
-	@default_params.setter
-	def default_params(self, params):
-		if isinstance(params, np.ndarray):
-			self.__default_params = params
-
-	@property 
-	def fit_func_args(self):
-		return inspect.getargspec(self.fit_func).args[2:]
+	def fit_func(self, x):
+		raise NotImplementedError
 
 	@property
 	def equation(self):
-		raise NotImplementedError
+		return r'F=f(x)'
 
-	def print_equation(self):
-		from IPython.display import display, Math, Latex
-		display(Math(self.equation))
-		return None
 
 
 
@@ -183,7 +78,7 @@ EQUILIBRIUM FOLDING models
 ==========================================================
 """
 
-class TwoStateEquilibrium(FitModel):
+class TwoStateEquilibrium(core.FitModel):
 	""" Two state equilbrium denaturation curve.
 
 	F = \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
@@ -195,15 +90,14 @@ class TwoStateEquilibrium(FitModel):
 		Biochemistry (1993) vol. 32 (16) pp. 4322-4329
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1.5, 5.])
 
 
 	def fit_func(self, x, m, d50):
-		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * (\
-		( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT))
+		F = ( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT)
 		return F
 
 	@property
@@ -213,7 +107,7 @@ class TwoStateEquilibrium(FitModel):
 
 
 
-class TwoStateEquilibriumSloping(FitModel):
+class TwoStateEquilibriumSloping(core.FitModel):
 	""" Two state equilbrium denaturation curve.
 
 	F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
@@ -225,7 +119,7 @@ class TwoStateEquilibriumSloping(FitModel):
 		Biochemistry (1993) vol. 32 (16) pp. 4322-4329
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5.])
@@ -242,7 +136,7 @@ class TwoStateEquilibriumSloping(FitModel):
 
 
 
-class HomozipperIsingEquilibrium(FitModel):
+class HomozipperIsingEquilibrium(core.FitModel):
 	""" Homopolymer Zipper Ising model
 
 	Notes:
@@ -251,7 +145,7 @@ class HomozipperIsingEquilibrium(FitModel):
 		Methods in enzymology (2009) vol. 455 pp. 95-125
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([7, 0.1, -.53, -4.6, -0.6])
@@ -261,7 +155,7 @@ class HomozipperIsingEquilibrium(FitModel):
 		
 		# clamp to prevent instability
 		if DG_intrinsic<0. or DG_interface>0.:
-			return FIT_ERROR(x)
+			return core.FIT_ERROR(x)
 
 		k = np.exp(-(DG_intrinsic - m_intrinsic*x) / constants.RT)
 		t = np.exp(-(DG_interface - m_interface*x) / constants.RT)
@@ -278,7 +172,7 @@ KINETIC FOLDING models
 ==========================================================
 """
 
-class TwoStateChevron(FitModel):
+class TwoStateChevron(core.FitModel):
 	""" Two state chevron plot. 
 
 	k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_f^{H_2O}\exp(m_{kf}x)
@@ -287,7 +181,7 @@ class TwoStateChevron(FitModel):
 		[Reference]
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([50., 1.3480, 5e-4, 1.])
@@ -306,7 +200,7 @@ class TwoStateChevron(FitModel):
 		return r'k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_f^{H_2O}\exp(m_{kf}x)'
 
 
-class ThreeStateChevron(FitModel):
+class ThreeStateChevron(core.FitModel):
 	""" Three state chevron with single intermediate.
 
 	k_{obs} = k_{fi}^{H_2O} * exp(-m_{if}*x) +
@@ -324,7 +218,7 @@ class ThreeStateChevron(FitModel):
 		Journal of molecular biology (1995) vol. 253 (5) pp. 771-86
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([4.5e-4, -9.5e-1, 1.3e9, -6.9,  1.4e-8, -1.6])
@@ -348,7 +242,7 @@ class ThreeStateChevron(FitModel):
 
 
 
-class ThreeStateFastPhaseChevron(FitModel):
+class ThreeStateFastPhaseChevron(core.FitModel):
 	""" Three state chevron with single intermediate.
 
 	k_{obs} = k_{fi}^{H_2O} * exp(-m_{if}*x) +
@@ -366,7 +260,7 @@ class ThreeStateFastPhaseChevron(FitModel):
 		Journal of molecular biology (1995) vol. 253 (5) pp. 771-86
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([172., 1.42, .445, .641, 9.41e3, -2.71313, 1.83e-4, 1.06])
@@ -395,7 +289,7 @@ class ThreeStateFastPhaseChevron(FitModel):
 
 
 
-class ThreeStateSequentialChevron(FitModel):
+class ThreeStateSequentialChevron(core.FitModel):
 	""" Three state metastable intermediate chevron plot.
 
 	A_1 = -(k_{ui}+k_{iu}+k_{if}+k_{fi})
@@ -409,7 +303,7 @@ class ThreeStateSequentialChevron(FitModel):
 		J Mol Biol (2001) vol. 306 (2) pp. 375-386
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([2e4, 0.3480, 20.163, 1.327, 0.3033, 0.2431])
@@ -443,7 +337,7 @@ class ThreeStateSequentialChevron(FitModel):
 
 
 
-class ParallelTwoStateChevron(FitModel):
+class ParallelTwoStateChevron(core.FitModel):
 	""" Two state chevron plot. 
 
 	k_{obs} = k_u^{H_2O} + exp(m_ku*x) + k_u^{H_2O} + exp(m_kf*x)
@@ -452,7 +346,7 @@ class ParallelTwoStateChevron(FitModel):
 		[Reference]
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([50., 1.3480, 5e-4, 1., 150., 3.5])
@@ -461,10 +355,10 @@ class ParallelTwoStateChevron(FitModel):
 	def fit_func(self, x, kf_A, mf_A, ku_A, mu_A, kf_B, mf_B):
 
 		if mf_A < 0. or mf_B < 0. or mu_A < 0.:
-			return FIT_ERROR(x)
+			return core.FIT_ERROR(x)
 
 		if kf_A <0. or ku_A <0. or kf_B < 0.:
-			return FIT_ERROR(x)
+			return core.FIT_ERROR(x)
 
 		deltaG_A = kf_A / ku_A
 		ku_B = kf_B / deltaG_A
@@ -490,7 +384,7 @@ class ParallelTwoStateChevron(FitModel):
 
 
 
-class ParallelTwoStateUnfoldingChevron(FitModel):
+class ParallelTwoStateUnfoldingChevron(core.FitModel):
 	""" Two state chevron plot. 
 
 	k_{obs} = k_u^{H_2O} + exp(m_ku*x) + k_u^{H_2O} + exp(m_kf*x)
@@ -499,7 +393,7 @@ class ParallelTwoStateUnfoldingChevron(FitModel):
 		[Reference]
 	"""
 	def __init__(self):
-		FitModel.__init__(self)
+		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([5e-4, 1., 1e-5, 1.5])
@@ -508,7 +402,7 @@ class ParallelTwoStateUnfoldingChevron(FitModel):
 	def fit_func(self, x, ku_A, mu_A, ku_B, mu_B):
 
 		if mu_A < 0. or mu_B < 0.:
-			return FIT_ERROR(x)
+			return core.FIT_ERROR(x)
 
 		k_obs_A = ku_A*np.exp(mu_A*x)
 		k_obs_B = ku_B*np.exp(mu_B*x)
@@ -557,7 +451,8 @@ def two_state_moving_transition_chevron(x, p0, p=None):
 
 
 if __name__ == "__main__":
-	pass
+	get_models()	
+
 
 
 

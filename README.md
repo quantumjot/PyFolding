@@ -36,12 +36,6 @@ import pyfolding
 pyfolding.test()
 ```
 
-Execute the script as follows:
-```sh
-$ cd tests
-$ python test_installation.py
-```
-
 Upon executing the script, the following output should be generated:
 
 ```sh
