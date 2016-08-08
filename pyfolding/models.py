@@ -178,7 +178,9 @@ class TwoStateChevron(core.FitModel):
 	k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_f^{H_2O}\exp(m_{kf}x)
 
 	Notes:
-		[Reference]
+		Jackson SE and Fersht AR.  Folding of chymotrypsin inhibitor 2. 
+		1. Evidence for a two-state transition.
+		Biochemistry (1991) 30(43):10428-10435.
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
@@ -197,7 +199,7 @@ class TwoStateChevron(core.FitModel):
 
 	@property 
 	def equation(self):
-		return r'k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_f^{H_2O}\exp(m_{kf}x)'
+		return r'k_{obs} = k_f^{H_2O}\exp(-m_{kf}x) + k_u^{H_2O}\exp(m_{ku}x)'
 
 
 class ThreeStateChevron(core.FitModel):
@@ -239,6 +241,10 @@ class ThreeStateChevron(core.FitModel):
 		k_if = kif*np.exp((mi - mif)*x)
 		k_obs_I = k_fi + k_if
 		return {'kobs_I':k_obs_I}
+
+	@property
+	def equation(self):
+		return r'k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) /(1 + 1 / (K_{iu}^{H_2O}\exp((m_u-m_i)x)))'
 
 
 
