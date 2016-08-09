@@ -293,6 +293,10 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		k_obs_N = k_fi + k_if
 		return {'kobs_I':k_obs_I, 'kobs_N':k_obs_N}
 
+	@property 
+	def equation(self):
+		return r'k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) / (1 + 1 /K_{iu}^{H_2O}\exp((m_u-m_i)x))'
+
 
 
 class ThreeStateSequentialChevron(core.FitModel):
@@ -341,12 +345,16 @@ class ThreeStateSequentialChevron(core.FitModel):
 		k_TS2 = (k_ui/k_iu)*k_if + k_fi
 		return {'kTS1':k_TS1, 'kTS2':k_TS2}
 
+	@property
+	def equation(self):
+		return r'k_{obs} = 0.5(-A_2 \pm \sqrt{A_2^2 - 4A_1}) \\ \text{where}\\ A_1 = -(k_{ui} + k_{iu} + k_{if} + k_{fi}) \\A_2 = k_{ui}(k_{if} + k_{fi}) + k_{iu}k_{if} \\ \text{and} \\k_{ui} = k_{ui}^{H_2O}\exp(-m_{ui}x) \\k_{iu} = k_{iu}^{H_2O}\exp(-m_{iu}x) \\ etc...' 
+
 
 
 class ParallelTwoStateChevron(core.FitModel):
 	""" Two state chevron plot. 
 
-	k_{obs} = k_u^{H_2O} + exp(m_ku*x) + k_u^{H_2O} + exp(m_kf*x)
+	k_{obs} = k_u^{H_2O}\exp(m_ku*x) + k_u^{H_2O}\exp(m_kf*x)
 
 	Notes:
 		[Reference]
@@ -386,6 +394,9 @@ class ParallelTwoStateChevron(core.FitModel):
 		k_obs = k_obs_A + k_obs_B
 		return {'kobs_A':k_obs_A, 'kobs_B':k_obs_B}
 
+	@property 
+	def equation(self):
+		return r'k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_u^{H_2O}\exp(m_{kf}x)' 
 
 
 
@@ -393,7 +404,7 @@ class ParallelTwoStateChevron(core.FitModel):
 class ParallelTwoStateUnfoldingChevron(core.FitModel):
 	""" Two state chevron plot. 
 
-	k_{obs} = k_u^{H_2O} + exp(m_ku*x) + k_u^{H_2O} + exp(m_kf*x)
+	k_{obs} = k_u^{H_2O}\exp(m_ku*x) + k_u^{H_2O}\exp(m_kf*x)
 
 	Notes:
 		[Reference]
@@ -427,13 +438,12 @@ class ParallelTwoStateUnfoldingChevron(core.FitModel):
 
 
 
-
-def two_state_moving_transition_chevron(x, p0, p=None):
+class TwoStateChevronMovingTransition(core.FitModel):
 	""" Two state chevron with moving transition state.
 	Second order polynomial.
 
-	k_u = k_u^{H_2O} + exp(m_{ku}*x) + exp(m_{ku}^' * x^2)
-	k_f = k_f^{H_2O} + exp(m_{kf}*x) + exp(m_{kf}^' * x^2)
+	k_u = k_u^{H_2O} * \exp(m_{ku}*x) * \exp(m_{ku}^' * x^2)
+	k_f = k_f^{H_2O} * \exp(m_{kf}*x) * \exp(m_{kf}^' * x^2)
 
 	k_{obs} = k_u + k_f
 
@@ -443,15 +453,24 @@ def two_state_moving_transition_chevron(x, p0, p=None):
 		further. 
 		PNAS (1999) vol. 96 (26) pp. 14854-9
 	"""
+	def __init__(self):
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([50., 1.3480, 5e-4, 1., 1.])
 
-	if not p:
-		p = {'ku': p0[0], 'mu': p0[1], \
-			 'kf': p0[2], 'mf': p0[3], 'm_prime': p0[4]}
+	def fit_func(self, x, ku, mu, kf, mf, mprime):
+		k_obs = ku * np.exp(mu*x)*np.exp(m_prime*x*x) + kf*np.exp(-mf*x)*np.exp(-m_prime*x*x)
 
-	k_u = p['ku'] + np.exp(p['mu']*x) + np.exp(p['m_prime']*x**2)
-	k_f = p['kf'] + np.exp(-p['mf']*x) + np.exp(-p['m_prime']*x**2)
-	k_obs = k_u + k_f
-	return k_obs
+	def error_func(self, y): 
+		return np.log(y)
+
+	@property
+	def equation(self):
+		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku}*x) \cdot \exp(m^\' x^2) \\ \
+				k_f = k_f^{H_2O} \cdot \exp(m_{kf}*x) \cdot \exp(m^\' x^2) \\ \
+				k_{obs} = k_u + k_f'
+
 	
 
 
