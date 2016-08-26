@@ -45,8 +45,6 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 
-
-
 def kappa(x, DeltaG, m_value):
 	""" kappa: energy term for intrinsic stability of a domain """
 	return np.exp(-(DeltaG - m_value*x) / constants.RT)
@@ -102,6 +100,8 @@ class IsingDomain(object):
 		self.DG_interface = -4.
 		self.m_intrinsic = -.5
 		self.m_interface = -.5
+
+		self.labels = ['DG_i', 'DG_ij', 'm_i', 'm_ij']
 
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x)*self.tau(x), folded],[self.kappa(x), folded]])
 
@@ -191,16 +191,14 @@ class GlobalFitWrapper(object):
 
 
 		if len(self.proteins) < 1:
-			raise ValueError('GlobalFitIsing must have at least two proteins to fit.')
-
+			raise ValueError('GlobalFitIsing must have at least one curve to fit.')
 
 		# here we can set all of the parameters for the fit
-		for domain in self.domains:
-			i = self.domains.index(domain)*4
+		for idx, domain in enumerate(self.domains):
 			domain.DG_intrinsic = x[0]	# TODO - proper sharing of params across domain types
-			domain.DG_interface = x[i+1]
-			domain.m_intrinsic = x[i+2]
-			domain.m_interface = x[i+3]
+			domain.DG_interface = x[4*idx+1]
+			domain.m_intrinsic = x[4*idx+2]
+			domain.m_interface = x[4*idx+3]
 
 
 		# calculate the sum deviation of the fits from the raw data
@@ -262,6 +260,17 @@ class GlobalFitWrapper(object):
 		self.proteins.append({'n':len(q_topology), 'curve':curve, 'partition':q})
 
 
+	@property 
+	def domain_params(self):
+		""" Return the ordered list of domain parameters for printing the results of the fit """
+		domain_params = []
+		for domain in self.domains:
+			for l in domain.labels:
+				domain_params.append(domain.name+" "+l)
+		return domain_params
+
+
+
 			
 
 
@@ -321,9 +330,9 @@ class IsingPartitionFunction(object):
 	def subpopulation(self, x, i):
 		""" Return the fraction folded for a sub population of the states """
 		q_n = self.partition(x)
-		sum_q_i = np.sum( self.subpartition(x, i, rev=True), axis=0 )
+		q_i = self.subpartition(x, i, rev=True) 
 		#sum_q_i = np.sum( [ self.subpartition(x, i, rev=True) for i in xrange(self.n)], axis=0 )
-		theta = sum_q_i / (self.n * q_n)
+		theta = q_i / q_n
 		return 1.-theta
 
 
@@ -357,10 +366,21 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[]):
 
 	# do the fitting
 	print 'Performing global optimisation of Ising model...'
-	result = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=10, tol=1e-8)
+	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=10, tol=1e-8)
 	print 'Done.'
 
-	#print result
+	if r.success:
+		result = zip(fit_func.domain_params, r.x.tolist()) 
+	else:
+		print "Could not find a solution..."
+		return None
+	
+
+	#TODO: calculate the errors on each of the parameters
+	print "Model: Heteropolymer Ising Model"
+	for res in result:
+		print "{0:s}: {1:2.2f}".format(res[0], res[1])
+
 
 	plot_Ising(fit_func)
 	plot_folded(fit_func.proteins[-1]['partition'])

@@ -290,7 +290,10 @@ class FoldingData(object):
 				x,y = self.x, self.y
 
 			# perform the actual fitting
-			out = optimize.curve_fit(self.__fit_func, x, y, p0=p0, maxfev=20000)
+			try:
+				out = optimize.curve_fit(self.__fit_func, x, y, p0=p0, maxfev=20000)
+			except RuntimeWarning:
+				raise Exception("Optimisation could not complete. Try adjusting your fitting parameters (p0)")
 
 			self.fit_params = np.array( self.__fit_func.get_fit_params(x, *list(out[0])) )
 			self.fit_covar = out[1]
@@ -384,6 +387,26 @@ class FoldingData(object):
 	def print_fit_params(self):
 		if isinstance(self.fit_params, np.ndarray):
 			print self.fit_params
+
+
+	def plot(self, title='', marker='ko-'):
+		""" Plot a simple figure of the data, this is context dependent
+		"""
+
+		if not isinstance(title, basestring):
+			raise TypeError('Plot title must be specified as a string')
+
+		plt.figure(figsize=(10,6))
+		if isinstance(self, Chevron):
+			plt.semilogy(self.x, self.y, marker)
+			plt.ylabel(r'$k (s^{-1})')
+		else:
+			plt.plot(self.x, self.y, marker)
+			plt.ylabel('Signal')
+
+		plt.xlabel(self.denaturant_label)
+		plt.title(title)
+		plt.show()
 
 
 
