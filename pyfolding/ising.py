@@ -29,7 +29,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 
 # use a global optimisation algorithm for the Ising model fitting
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, minimize
 
 # import PyFolding specific libraries
 import constants
@@ -339,6 +339,32 @@ class IsingPartitionFunction(object):
 
 
 
+def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100)):
+	"""
+	Calculate Hessian from jacobian, and covariance from Hessian: 
+	covar = (J^T . J)^{-1}.
+
+	Then calculate the error based on the SE of the variance.
+
+	This is definitely a bit wonky at the moment!
+
+	Notes:
+		This is **NOT** tested at all
+
+	"""
+
+	num_params = len(np.ravel(jac))
+	covar = np.linalg.pinv( np.matrix(jac).T * np.matrix(jac) )
+	errors = [np.sqrt(covar[p,p]) / np.sqrt(1.*len(x)) for p in xrange(num_params)]
+	return errors
+
+
+
+
+
+
+
+
 def fit_heteropolymer(equilibrium_curves=[], topologies=[]):
 	""" An example script to fit a series of data sets to a heteropolymer ising model.
 
@@ -367,19 +393,30 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[]):
 	# do the fitting
 	print 'Performing global optimisation of Ising model...'
 	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=10, tol=1e-8)
-	print 'Done.'
-
-	if r.success:
-		result = zip(fit_func.domain_params, r.x.tolist()) 
-	else:
-		print "Could not find a solution..."
-		return None
 	
 
+	if not r.success:
+		print "Could not find a solution..."
+		return None
 	#TODO: calculate the errors on each of the parameters
-	print "Model: Heteropolymer Ising Model"
+
+	if hasattr(r, 'jac'):
+		# the fit has the jacobian
+		jac = r.jac
+	else:
+		r_min = minimize(fit_func, np.copy(r.x), method='L-BFGS-B', bounds=fit_func.bounds)
+		jac = r_min.jac
+
+	# calculate the errors
+	r_err = calculate_error_from_jacobian(jac)
+
+	# make a zipped list of params, fit values and estimated errors
+	result = zip(fit_func.domain_params, r.x.tolist(), r_err) 
+
+	print 'Fitting results:'
+	print '(NOTE: Careful with the errors here.)'
 	for res in result:
-		print "{0:s}: {1:2.2f}".format(res[0], res[1])
+		print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(res[0], res[1], res[2])
 
 
 	plot_Ising(fit_func)
