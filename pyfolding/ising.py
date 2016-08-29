@@ -29,7 +29,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 
 # use a global optimisation algorithm for the Ising model fitting
-from scipy.optimize import differential_evolution, minimize
+from scipy.optimize import differential_evolution, minimize, leastsq
 
 # import PyFolding specific libraries
 import constants
@@ -354,7 +354,12 @@ def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100)):
 	"""
 
 	num_params = len(np.ravel(jac))
-	covar = np.linalg.pinv( np.matrix(jac).T * np.matrix(jac) )
+
+	if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
+		print "Warning: Determinant of zero indicates errors are unlikely to represent true error"
+		return [np.inf for p in xrange(num_params)]
+
+	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
 	errors = [np.sqrt(covar[p,p]) / np.sqrt(1.*len(x)) for p in xrange(num_params)]
 	return errors
 
@@ -365,7 +370,7 @@ def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100)):
 
 
 
-def fit_heteropolymer(equilibrium_curves=[], topologies=[]):
+def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8):
 	""" An example script to fit a series of data sets to a heteropolymer ising model.
 
 	
@@ -391,8 +396,9 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[]):
 		print ' + added {0:s} with topology {1:s}'.format(protein.ID, [d().name for d in topology])
 
 	# do the fitting
-	print 'Performing global optimisation of Ising model...'
-	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=10, tol=1e-8)
+	print '\nPerforming global optimisation of Ising model ({0:d} curves, Population size: {1:d}, Tolerance: {2:.2E})...'.format(len(equilibrium_curves), popsize, tol)
+
+	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol)
 	
 
 	if not r.success:
@@ -413,8 +419,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[]):
 	# make a zipped list of params, fit values and estimated errors
 	result = zip(fit_func.domain_params, r.x.tolist(), r_err) 
 
-	print 'Fitting results:'
-	print '(NOTE: Careful with the errors here.)'
+	print '\nFitting results (NOTE: Careful with the errors here): '
 	for res in result:
 		print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(res[0], res[1], res[2])
 

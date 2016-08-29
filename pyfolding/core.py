@@ -135,7 +135,7 @@ def check_filename(directory, filename):
 		raise TypeError('Pyfolding expects a filename as a string')
 
 	if not filename.lower().endswith(('.csv', '.CSV')):
-		raise TypeError('PyFolding expects a .CSV file as input: {0:s}'.format(filename))
+		raise IOError('PyFolding expects a .CSV file as input: {0:s}'.format(filename))
 
 	if not os.path.exists(os.path.join(directory, filename)):
 		raise IOError('PyFolding could not find the file: {0:s}'.format(os.path.join(directory, filename)))
