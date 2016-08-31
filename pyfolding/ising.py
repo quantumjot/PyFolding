@@ -536,7 +536,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
 		# note to interested reader - this is a really weird way of doing this!
 		with open(save_filename, 'wb') as csvfile:
-			r = csv.DictWriter(csvfile, fieldnames=fnames, dialect=csv.excel_tab)
+			r = csv.DictWriter(csvfile, fieldnames=fnames, dialect=csv.excel_tab, delimiter=',')
 			r.writeheader()
 
 			for i in xrange(len(x)):
