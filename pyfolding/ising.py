@@ -21,6 +21,7 @@ Lowe, A.R. 2015-2016
 
 """
 
+import sys
 import time
 import inspect
 import numpy as np 
@@ -40,8 +41,8 @@ __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
 
 
-
-
+# bounds (DG_i, DG_ij, m_i, m_ij)
+ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
 
 
 
@@ -119,46 +120,70 @@ class IsingDomain(object):
 		
 	
 
+""" Pre-defined domain topologies for GlobalFitIsing """
 
-class RepeatDomain(IsingDomain):
-	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-		
-		# bounds (DG_i, DG_ij, m_i, m_ij)
-		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
-		self.name = "Repeat"
-
+def list_models():
+	""" Print out which models are pre-defined here """
+	clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+	fit_models = [ cls[0] for cls in clsmembers if cls[1].__bases__[0] == IsingDomain ]
+	return fit_models
 
 
 class HelixDomain(IsingDomain):
 	def __init__(self):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 		
-		# bounds (DG_i, DG_ij, m_i, m_ij)
-		#self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
-		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
+		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "Helix"
 
+class RepeatDomain(IsingDomain):
+	def __init__(self):
+		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
+		
+		self.bounds = ACCEPTABLE_BOUNDS
+		self.name = "Repeat"
+
+class MutantRepeatDomain(IsingDomain):
+	def __init__(self):
+		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
+		
+		self.bounds = ACCEPTABLE_BOUNDS
+		self.name = "MutantRepeat"
 
 class LoopDomain(IsingDomain):
 	def __init__(self):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 
-		# bounds (DG_i, DG_ij, m_i, m_ij)
-		#self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
-		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
+		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "Loop"
 
+class MutantLoopDomain(IsingDomain):
+	def __init__(self):
+		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
+
+		self.bounds = ACCEPTABLE_BOUNDS
+		self.name = "MutantLoop"
 
 class CapDomain(IsingDomain):
 	def __init__(self):
 		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
 
-		# bounds (DG_i, DG_ij, m_i, m_ij)
-		#self.bounds = ((1., 6.),(-9.,-1.),(-.8,-.5),(-.8,-.5))
-		self.bounds = ((1., 9.),(-9.,-1.),(-2.5,-.1),(-2.5,-.1))
+		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "Cap"
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
+
+class MutantCapDomain(IsingDomain):
+	def __init__(self):
+		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
+
+		self.bounds = ACCEPTABLE_BOUNDS
+		self.name = "MutantCap"
+		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
+
+
+
+
+
 
 
 
