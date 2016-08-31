@@ -523,6 +523,9 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		if not isinstance(save_filename, basestring):
 			raise TypeError("Save path must be a string")
 
+		if not save_filename.endswith(('.csv', '.CSV')):
+			save_filename = save_filename+".csv"
+
 		# make a list of the field names for the csv file
 		fnames = [fit_func.proteins[0]['curve'].denaturant_label]
 		for p in equilibrium_curves:
@@ -554,7 +557,7 @@ def plot_Ising(fit_func):
 	"""
 
 
-	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rt', 'mv', 'gv', 'cv', 'bv', 'kv']
+	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rv', 'mv', 'gv', 'cv', 'bv', 'kv']
 
 	# plot the fits
 	plt.figure(figsize=(14,8))
