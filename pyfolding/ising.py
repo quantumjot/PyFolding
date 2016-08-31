@@ -444,8 +444,15 @@ class FitProgress(object):
 
 
 
-def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8):
+def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8, **kwargs):
 	""" An example script to fit a series of data sets to a heteropolymer ising model.
+
+	Args:
+		equilibrium_curves
+		topologies
+		popsize
+		tol
+		save
 
 	
 	Notes:
@@ -507,6 +514,38 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	plot_Ising(fit_func)
 	plot_folded(fit_func.proteins[-1]['partition'])
 
+	if "save" in kwargs:
+
+		# import the CSV writer
+		import csv
+
+		save_filename = kwargs['save']
+		if not isinstance(save_filename, basestring):
+			raise TypeError("Save path must be a string")
+
+		# make a list of the field names for the csv file
+		fnames = [fit_func.proteins[0]['curve'].denaturant_label]
+		for p in equilibrium_curves:
+			fnames.append(p.ID)
+
+		# now put iterators into a dictionary
+		x = np.linspace(0.,10.,100)
+		csv_results = {fnames[0]: iter(x) }
+		for protein in fit_func.proteins:
+			csv_results[protein['curve'].ID] = iter( protein['partition'].theta(x) )
+
+		# note to interested reader - this is a really weird way of doing this!
+		with open(save_filename, 'wb') as csvfile:
+			r = csv.DictWriter(csvfile, fieldnames=fnames, dialect=csv.excel_tab)
+			r.writeheader()
+
+			for i in xrange(len(x)):
+				h = {k: csv_results[k].next() for k in csv_results.keys()}
+				r.writerow(h)
+
+		print "Written out .csv file of fits..."
+
+
 	return result
 
 
@@ -525,9 +564,9 @@ def plot_Ising(fit_func):
 	for protein in fit_func.proteins:
 		idx = fit_func.proteins.index(protein)
 		xv = protein['curve'].x
-		plt.plot(xv, protein['curve'].y, cmap[idx], ms=10)
+		plt.plot(xv, protein['curve'].y, cmap[idx], ms=4)
 		
-	plt.legend( [p['curve'].ID for p in fit_func.proteins] )
+	plt.legend( [p['curve'].ID for p in fit_func.proteins], loc = 'upper left')
 	
 	for protein in fit_func.proteins:
 		idx = fit_func.proteins.index(protein)
@@ -550,7 +589,7 @@ def plot_Ising(fit_func):
 		first_deriv = np.gradient(protein['partition'].theta(xv))
 		pk_max.append( (protein['n'], xv[np.argmax(np.abs(first_deriv))]) )
 		plt.plot(xv, np.abs(first_deriv), cmap[idx][0]+'-', lw=2)
-	plt.legend( [p['curve'].ID for p in fit_func.proteins] )
+	#plt.legend( [p['curve'].ID for p in fit_func.proteins] )
 	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
 	plt.ylabel('First derivative of fit function')
 
@@ -558,7 +597,7 @@ def plot_Ising(fit_func):
 	ax2 = plt.subplot2grid((2,2), (1,1), rowspan=1)
 	h,x = plot_folded(fit_func.proteins[-1]['partition'])
 	for i in xrange(h.shape[1]):
-		plt.plot(x, h[:,i])
+		plt.plot(x, h[:,i], cmap[i]+'-', lw=2, markersize=4)
 	dn = iter(['_{0:d}'.format(i) for i in xrange(len(fit_func.proteins[-1]['partition'].topology))])
 	plt.legend([d.name+dn.next() for d in fit_func.proteins[-1]['partition'].topology ])
 	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
