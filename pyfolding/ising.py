@@ -135,6 +135,7 @@ class HelixDomain(IsingDomain):
 		
 		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "Helix"
+		self.used_variables = [0, 1, 2, 3]
 
 class RepeatDomain(IsingDomain):
 	def __init__(self):
@@ -142,6 +143,7 @@ class RepeatDomain(IsingDomain):
 		
 		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "Repeat"
+		self.used_variables = [0, 1, 2, 3]
 
 class MutantRepeatDomain(IsingDomain):
 	def __init__(self):
@@ -149,6 +151,7 @@ class MutantRepeatDomain(IsingDomain):
 		
 		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "MutantRepeat"
+		self.used_variables = [0, 1, 2, 3]
 
 class LoopDomain(IsingDomain):
 	def __init__(self):
@@ -156,6 +159,7 @@ class LoopDomain(IsingDomain):
 
 		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "Loop"
+		self.used_variables = [0, 1, 2, 3]
 
 class MutantLoopDomain(IsingDomain):
 	def __init__(self):
@@ -163,6 +167,7 @@ class MutantLoopDomain(IsingDomain):
 
 		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "MutantLoop"
+		self.used_variables = [0, 1, 2, 3]
 
 class CapDomain(IsingDomain):
 	def __init__(self):
@@ -171,6 +176,7 @@ class CapDomain(IsingDomain):
 		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "Cap"
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
+		self.used_variables = [0, 2]
 
 class MutantCapDomain(IsingDomain):
 	def __init__(self):
@@ -179,6 +185,7 @@ class MutantCapDomain(IsingDomain):
 		self.bounds = ACCEPTABLE_BOUNDS
 		self.name = "MutantCap"
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
+		self.used_variables = [0, 2]
 
 
 
@@ -220,7 +227,7 @@ class GlobalFitWrapper(object):
 
 		# here we can set all of the parameters for the fit
 		for idx, domain in enumerate(self.domains):
-			domain.DG_intrinsic = x[0]	# TODO - proper sharing of params across domain types
+			domain.DG_intrinsic = x[4*idx]	# TODO - proper sharing of params across domain types
 			domain.DG_interface = x[4*idx+1]
 			domain.m_intrinsic = x[4*idx+2]
 			domain.m_interface = x[4*idx+3]
@@ -364,7 +371,7 @@ class IsingPartitionFunction(object):
 
 
 
-def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100)):
+def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100), used_variables=[]):
 	"""
 	Calculate Hessian from jacobian, and covariance from Hessian: 
 	covar = (J^T . J)^{-1}.
@@ -376,9 +383,17 @@ def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100)):
 	Notes:
 		This is **NOT** tested at all
 
+		TODO: Take out unconstrained variables!!!
+
 	"""
 
 	num_params = len(np.ravel(jac))
+
+	if not used_variables:
+		used_variables = [i for i in xrange(num_params)]
+		num_params = len(used_variables)
+
+	jac = jac[used_variables]
 
 	if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
 		print "Warning: Determinant of zero indicates errors are unlikely to represent true error"
@@ -501,10 +516,15 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		jac = r_min.jac
 
 	# calculate the errors
-	r_err = calculate_error_from_jacobian(jac)
+	used = []
+	for domain_idx, domain in enumerate(fit_func.domains):
+		for u in domain.used_variables:
+			used.append(u+domain_idx*4)
+
+	r_err = calculate_error_from_jacobian(jac, used_variables=used)
 
 	# make a zipped list of params, fit values and estimated errors
-	result = zip(fit_func.domain_params, r.x.tolist(), r_err) 
+	result = zip([fit_func.domain_params[i] for i in used], r.x.tolist(), r_err) 
 
 	print '\nFitting results (NOTE: Careful with the errors here): '
 	for res in result:
