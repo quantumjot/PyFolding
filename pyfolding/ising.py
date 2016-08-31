@@ -21,7 +21,7 @@ Lowe, A.R. 2015-2016
 
 """
 
-
+import time
 import inspect
 import numpy as np 
 import scipy as sp
@@ -366,7 +366,56 @@ def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100)):
 
 
 
+class FitProgress(object):
+	""" Class to take care of updating the user as to the fitting progress
+	"""
 
+	def __init__(self, update_freq=10):
+		self.__iter = 0
+		self.__val = None
+		self.__update_freq = update_freq
+		self.__timer = time.time()
+		self.__iteration_times = []
+		self.__convergence_tzero = None
+
+	def __call__(self, xk, convergence=None):
+		
+		# keep track of the loop timing
+		this_iter = time.time() - self.__timer
+		self.__timer = time.time()
+		self.__iteration_times.append(this_iter)
+
+		# keep track of the convergence
+		if self.__iter == 0:
+			self.__convergence_tzero = convergence
+
+		# iterate
+		self.__iter+=1
+
+		# are we finished?
+		if isinstance(xk, bool):
+			if xk: return
+
+		if self.__iter % self.__update_freq == 0:
+
+			# remove some loop times and calculate an average:
+			sum_time, loop_iter = 0, 0
+			while self.__iteration_times and loop_iter < self.__update_freq:
+				sum_time += self.__iteration_times.pop(0)
+				loop_iter += 1
+
+			# average time per iteration
+			avg_time = sum_time / loop_iter
+
+			# NOTE: this doesn't make a lot of sense since there is a non-linear approach to the result!!
+			# rate of convergence
+			convergence_rate = np.abs((convergence - self.__convergence_tzero) / (avg_time * self.__iter))
+
+			# make an assumption about time remaining
+			time_remaining = (1.-convergence) / convergence_rate
+
+			#print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, Timing: {2:2.2f}s, Remaining: {3:2.2f}s) ".format(self.__iter, convergence, avg_time, time_remaining)
+			print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, Timing: {2:2.2f}s) ".format(self.__iter, convergence, avg_time)
 
 
 
@@ -398,7 +447,13 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	# do the fitting
 	print '\nPerforming global optimisation of Ising model ({0:d} curves, Population size: {1:d}, Tolerance: {2:.2E})...'.format(len(equilibrium_curves), popsize, tol)
 
-	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol)
+	# give the user some feedback if this is going to take some time
+	if popsize > 10 or len(equilibrium_curves)>1:
+		callback = FitProgress()
+	else:
+		callback = None
+
+	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol, callback=callback)
 	
 
 	if not r.success:
