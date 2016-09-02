@@ -459,7 +459,7 @@ class FitProgress(object):
 
 
 
-def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8, **kwargs):
+def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8, maxiter=None, **kwargs):
 	""" An example script to fit a series of data sets to a heteropolymer ising model.
 
 	Args:
@@ -500,7 +500,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	else:
 		callback = None
 
-	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol, callback=callback)
+	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol, callback=callback, maxiter=maxiter)
 	
 
 	if not r.success:
