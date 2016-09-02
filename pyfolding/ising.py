@@ -42,18 +42,18 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 # bounds (DG_i, DG_ij, m_i, m_ij)
+PARAMETER_LABELS = ('DG_i', 'DG_ij', 'm_i', 'm_ij')
 ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
 
 
 
-def kappa(x, DeltaG, m_value):
-	""" kappa: energy term for intrinsic stability of a domain """
+	
+
+def free_energy_m(x, DeltaG, m_value):
 	return np.exp(-(DeltaG - m_value*x) / constants.RT)
 
-def tau(x, DeltaG, m_value):
-	""" tau: energy term for interface stability between domains """
-	m_value = 0.0
-	return np.exp(-(DeltaG - m_value*x) / constants.RT)
+def free_energy(x, DeltaG, m_value):
+	return np.exp( -DeltaG / constants.RT )
 
 
 
@@ -86,7 +86,7 @@ class IsingDomain(object):
 	Notes:
 
 	"""
-	def __init__(self, k_func=kappa, t_func=tau):
+	def __init__(self, k_func=free_energy_m, t_func=free_energy):
 		if hasattr(k_func, '__call__'):
 			self.__kappa = k_func
 		else:
@@ -97,26 +97,44 @@ class IsingDomain(object):
 		else:
 			raise TypeError("Ising domain tau function must be a callable function")
 
-		self.DG_intrinsic = 2.
-		self.DG_interface = -4.
-		self.m_intrinsic = -.5
-		self.m_interface = -.5
+		self.DG_i = 2.
+		self.DG_ij = -4.
+		self.m_i = -.5
+		self.m_ij = -.5
 
-		self.labels = ['DG_i', 'DG_ij', 'm_i', 'm_ij']
+		self.used_variables = (0, 1, 2) # add 3 for m_ij term
+
+		# restrict the default bounds to those used variables
+		self.bounds = ACCEPTABLE_BOUNDS
 
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x)*self.tau(x), folded],[self.kappa(x), folded]])
 
+
 	def kappa(self, x):
 		""" Return the DG_intrinsic """
-		return self.__kappa(x, self.DG_intrinsic, self.m_intrinsic)
+		return self.__kappa(x, self.DG_i, self.m_i)
  
 	def tau(self, x):
-		""" Return the DG_intrinsic """
-		return self.__tau(x, self.DG_interface, self.m_interface)
+		""" Return the DG_interface """
+		return self.__tau(x, self.DG_ij, self.m_ij)
 
 	def q_i(self, x, folded=1):
 		""" Return the q_i matrix """
 		return self.q_func(x, folded)
+
+
+	@property 
+	def bounds(self):
+		return tuple([ self.__bounds[i] for i in self.used_variables ])
+	@bounds.setter
+	def bounds(self, bounds):
+		if not isinstance(bounds, tuple):
+			raise TypeError("Fit bounds must be specified as a tuple")
+		self.__bounds = bounds
+
+	@property 
+	def labels(self):
+		return [ PARAMETER_LABELS[i] for i in self.used_variables ]
 		
 	
 
@@ -129,63 +147,52 @@ def list_models():
 	return fit_models
 
 
+
+
 class HelixDomain(IsingDomain):
 	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-		
-		self.bounds = ACCEPTABLE_BOUNDS
+		IsingDomain.__init__(self)
 		self.name = "Helix"
-		self.used_variables = [0, 1, 2, 3]
+
 
 class RepeatDomain(IsingDomain):
 	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-		
-		self.bounds = ACCEPTABLE_BOUNDS
+		IsingDomain.__init__(self)
 		self.name = "Repeat"
-		self.used_variables = [0, 1, 2, 3]
+
 
 class MutantRepeatDomain(IsingDomain):
 	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-		
-		self.bounds = ACCEPTABLE_BOUNDS
+		IsingDomain.__init__(self)
 		self.name = "MutantRepeat"
-		self.used_variables = [0, 1, 2, 3]
+
 
 class LoopDomain(IsingDomain):
 	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-
-		self.bounds = ACCEPTABLE_BOUNDS
+		IsingDomain.__init__(self)
 		self.name = "Loop"
-		self.used_variables = [0, 1, 2, 3]
+
 
 class MutantLoopDomain(IsingDomain):
 	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-
-		self.bounds = ACCEPTABLE_BOUNDS
+		IsingDomain.__init__(self)
 		self.name = "MutantLoop"
-		self.used_variables = [0, 1, 2, 3]
+
 
 class CapDomain(IsingDomain):
 	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-
-		self.bounds = ACCEPTABLE_BOUNDS
+		IsingDomain.__init__(self)
 		self.name = "Cap"
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
-		self.used_variables = [0, 2]
+		self.used_variables = (0, 2)
+
 
 class MutantCapDomain(IsingDomain):
 	def __init__(self):
-		IsingDomain.__init__(self, k_func=kappa, t_func=tau)
-
-		self.bounds = ACCEPTABLE_BOUNDS
+		IsingDomain.__init__(self)
 		self.name = "MutantCap"
 		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
-		self.used_variables = [0, 2]
+		self.used_variables = (0, 2)
 
 
 
@@ -225,12 +232,19 @@ class GlobalFitWrapper(object):
 		if len(self.proteins) < 1:
 			raise ValueError('GlobalFitIsing must have at least one curve to fit.')
 
+		p_val = iter(x)
+
 		# here we can set all of the parameters for the fit
 		for idx, domain in enumerate(self.domains):
+			"""
 			domain.DG_intrinsic = x[4*idx]	# TODO - proper sharing of params across domain types
 			domain.DG_interface = x[4*idx+1]
 			domain.m_intrinsic = x[4*idx+2]
 			domain.m_interface = x[4*idx+3]
+			"""
+
+			for p in domain.labels:
+				setattr(domain, p, p_val.next())
 
 
 		# calculate the sum deviation of the fits from the raw data
@@ -370,8 +384,23 @@ class IsingPartitionFunction(object):
 
 
 
+def calculate_fit_residuals(fit_func):
+	res = np.array([])
+	r_squared = []
+	for protein in fit_func.proteins:
+		y_data = protein['curve'].y 
+		y_fit = protein['partition'].theta( protein['curve'].x )
+		res = np.concatenate((res, y_data-y_fit))
 
-def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100), used_variables=[]):
+		SS_tot = np.sum((y_data - np.mean(y_data))**2)
+		SS_res = np.sum((y_data - y_fit)**2)
+		r_squared.append(1.- SS_res / SS_tot)
+
+	return res, r_squared
+
+
+
+def calculate_error_from_jacobian(jac, residuals):
 	"""
 	Calculate Hessian from jacobian, and covariance from Hessian: 
 	covar = (J^T . J)^{-1}.
@@ -383,24 +412,17 @@ def calculate_error_from_jacobian(jac, x=np.linspace(0,10,100), used_variables=[
 	Notes:
 		This is **NOT** tested at all
 
-		TODO: Take out unconstrained variables!!!
-
+		http://stats.stackexchange.com/questions/71154/when-an-analytical-jacobian-is-available-is-it-better-to-approximate-the-hessia
 	"""
 
 	num_params = len(np.ravel(jac))
-
-	if not used_variables:
-		used_variables = [i for i in xrange(num_params)]
-		num_params = len(used_variables)
-
-	jac = jac[used_variables]
 
 	if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
 		print "Warning: Determinant of zero indicates errors are unlikely to represent true error"
 		return [np.inf for p in xrange(num_params)]
 
 	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
-	errors = [np.sqrt(covar[p,p]) / np.sqrt(1.*len(x)) for p in xrange(num_params)]
+	errors = [np.sqrt(float(covar[p,p]) * np.var( residuals )) / np.sqrt(1.*len(residuals)) for p in xrange(num_params)]
 	return errors
 
 
@@ -506,8 +528,8 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	if not r.success:
 		print "Could not find a solution..."
 		return None
-	#TODO: calculate the errors on each of the parameters
-
+	
+	# calculate the errors on each of the parameters
 	if hasattr(r, 'jac'):
 		# the fit has the jacobian
 		jac = r.jac
@@ -516,19 +538,17 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		jac = r_min.jac
 
 	# calculate the errors
-	used = []
-	for domain_idx, domain in enumerate(fit_func.domains):
-		for u in domain.used_variables:
-			used.append(u+domain_idx*4)
-
-	r_err = calculate_error_from_jacobian(jac, used_variables=used)
+	r_res, r_squared = calculate_fit_residuals(fit_func)
+	r_err = calculate_error_from_jacobian(jac, r_res)
 
 	# make a zipped list of params, fit values and estimated errors
-	result = zip([fit_func.domain_params[i] for i in used], r.x.tolist(), r_err) 
+	result = zip(fit_func.domain_params, r.x.tolist(), r_err)
 
 	print '\nFitting results (NOTE: Careful with the errors here): '
 	for res in result:
 		print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(res[0], res[1], res[2])
+	for r_sq in zip([protein.ID for protein in equilibrium_curves], r_squared):
+		print u"{0:s} R^2: {1:2.5f}".format(r_sq[0], r_sq[1])
 
 
 	plot_Ising(fit_func)
