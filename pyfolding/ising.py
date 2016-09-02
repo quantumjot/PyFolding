@@ -432,7 +432,7 @@ class FitProgress(object):
 	""" Class to take care of updating the user as to the fitting progress
 	"""
 
-	def __init__(self, update_freq=10):
+	def __init__(self, update_freq=100):
 		self.__iter = 0
 		self.__val = None
 		self.__update_freq = update_freq
