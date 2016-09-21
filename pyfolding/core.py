@@ -32,7 +32,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from scipy import optimize
 
-
+import constants
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
@@ -394,8 +394,10 @@ class FoldingData(object):
 			self.__fit.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
 			self.__fit.y = self.__fit_func.fit_func(self.__fit.x, *list(self.__fit.fit_params))
 			self.__fit.covar = out[1]
-			self.__fit.residuals = self.y_raw - self.__fit.y
-			self.__fit.r_squared = r_squared(y_data=self.y_raw, y_fit=self.__fit.y)
+
+			fit_y_data_x = self.__fit_func.fit_func(self.x, *list(self.__fit.fit_params))
+			self.__fit.residuals = self.y_raw - fit_y_data_x 
+			self.__fit.r_squared = r_squared(y_data=self.y_raw, y_fit=fit_y_data_x)
 
 
 			# store locally ?
@@ -739,7 +741,6 @@ class FitModel(object):
 
 	def get_fit_params(self, x, *args):
 		fit_args = [args[v] for v in self.__params]
-
 		# if we have constants replace the arguments
 		# with the constants
 		if self.constants: 
