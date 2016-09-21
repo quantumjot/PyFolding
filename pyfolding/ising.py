@@ -384,50 +384,6 @@ class IsingPartitionFunction(object):
 
 
 
-# def calculate_fit_residuals(fit_func):
-# 	res = np.array([])
-# 	r_squared = []
-# 	for protein in fit_func.proteins:
-# 		y_data = protein['curve'].y 
-# 		y_fit = protein['partition'].theta( protein['curve'].x )
-# 		res = np.concatenate((res, y_data-y_fit))
-
-# 		SS_tot = np.sum((y_data - np.mean(y_data))**2)
-# 		SS_res = np.sum((y_data - y_fit)**2)
-# 		r_squared.append(1.- SS_res / SS_tot)
-
-# 	return res, r_squared
-
-
-
-# def calculate_error_from_jacobian(jac, residuals):
-# 	"""
-# 	Calculate Hessian from jacobian, and covariance from Hessian: 
-# 	covar = (J^T . J)^{-1}.
-
-# 	Then calculate the error based on the SE of the variance.
-
-# 	This is definitely a bit wonky at the moment!
-
-# 	Notes:
-# 		This is **NOT** tested at all
-
-# 		http://stats.stackexchange.com/questions/71154/when-an-analytical-jacobian-is-available-is-it-better-to-approximate-the-hessia
-# 	"""
-
-# 	num_params = len(np.ravel(jac))
-
-# 	if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
-# 		print "Warning: Determinant of zero indicates errors are unlikely to represent true error"
-# 		return [np.inf for p in xrange(num_params)]
-
-# 	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
-# 	errors = [np.sqrt(float(covar[p,p]) * np.var( residuals )) / np.sqrt(1.*len(residuals)) for p in xrange(num_params)]
-# 	return errors
-
-
-
-
 
 def calculate_fit_residuals(fit_func):
 	res = np.array([])
@@ -716,6 +672,9 @@ def plot_folded(partition):
 
 
 def plot_domains(topologies, labels=None):
+	""" Function to generate a pretty plot of the domain architecture of 
+	the various protein topologies presented.
+	"""
 
 	from matplotlib.patches import Patch
 
@@ -727,15 +686,21 @@ def plot_domains(topologies, labels=None):
 	cmap = ['r', 'k', 'g', 'b', 'c', 'm', 'y']
 	for t in topologies:
 		for d in t:
-			if d().name not in topology_types: 
+
+			# if the topology has come from the fit function, these will
+			# not be instantiated, deal with that:
+			if not isinstance(t[0], IsingDomain):
+				d = d()
+
+			if d.name not in topology_types: 
 				
-				if 'DG_ij' not in d().labels:
+				if 'DG_ij' not in d.labels:
 					interaction = False
 				else:
 					interaction = True
 
-				topology_map[d().name] = {'color':cmap[len(topology_types)], 'interaction':interaction, 'labels':d().labels}
-				topology_types.append(d().name)
+				topology_map[d.name] = {'color':cmap[len(topology_types)], 'interaction':interaction, 'labels':d.labels}
+				topology_types.append(d.name)
 
 	# plot the domain figure
 	plt.figure(figsize=(14,8))
@@ -745,7 +710,10 @@ def plot_domains(topologies, labels=None):
 		for x, domain in enumerate(topology):
 			#ax.plot(x,y,'k.')
 
-			domain_name = domain().name
+			if not isinstance(domain, IsingDomain):
+				domain_name = domain().name
+			else:
+				domain_name = domain.name
 
 			# draw a circle to represent the domain
 			c = plt.Circle((x*1.5, y), 0.45, edgecolor=topology_map[domain_name]['color'], facecolor='w', label=domain_name)
