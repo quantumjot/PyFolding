@@ -384,23 +384,66 @@ class IsingPartitionFunction(object):
 
 
 
+# def calculate_fit_residuals(fit_func):
+# 	res = np.array([])
+# 	r_squared = []
+# 	for protein in fit_func.proteins:
+# 		y_data = protein['curve'].y 
+# 		y_fit = protein['partition'].theta( protein['curve'].x )
+# 		res = np.concatenate((res, y_data-y_fit))
+
+# 		SS_tot = np.sum((y_data - np.mean(y_data))**2)
+# 		SS_res = np.sum((y_data - y_fit)**2)
+# 		r_squared.append(1.- SS_res / SS_tot)
+
+# 	return res, r_squared
+
+
+
+# def calculate_error_from_jacobian(jac, residuals):
+# 	"""
+# 	Calculate Hessian from jacobian, and covariance from Hessian: 
+# 	covar = (J^T . J)^{-1}.
+
+# 	Then calculate the error based on the SE of the variance.
+
+# 	This is definitely a bit wonky at the moment!
+
+# 	Notes:
+# 		This is **NOT** tested at all
+
+# 		http://stats.stackexchange.com/questions/71154/when-an-analytical-jacobian-is-available-is-it-better-to-approximate-the-hessia
+# 	"""
+
+# 	num_params = len(np.ravel(jac))
+
+# 	if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
+# 		print "Warning: Determinant of zero indicates errors are unlikely to represent true error"
+# 		return [np.inf for p in xrange(num_params)]
+
+# 	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
+# 	errors = [np.sqrt(float(covar[p,p]) * np.var( residuals )) / np.sqrt(1.*len(residuals)) for p in xrange(num_params)]
+# 	return errors
+
+
+
+
+
 def calculate_fit_residuals(fit_func):
 	res = np.array([])
-	r_squared = []
+	r_sq = []
 	for protein in fit_func.proteins:
 		y_data = protein['curve'].y 
 		y_fit = protein['partition'].theta( protein['curve'].x )
+
 		res = np.concatenate((res, y_data-y_fit))
+		r_sq.append( core.r_squared(y_data=y_data, y_fit=y_fit) )
 
-		SS_tot = np.sum((y_data - np.mean(y_data))**2)
-		SS_res = np.sum((y_data - y_fit)**2)
-		r_squared.append(1.- SS_res / SS_tot)
-
-	return res, r_squared
+	return res, r_sq
 
 
 
-def calculate_error_from_jacobian(jac, residuals):
+def calculate_error_from_jacobian(jac):
 	"""
 	Calculate Hessian from jacobian, and covariance from Hessian: 
 	covar = (J^T . J)^{-1}.
@@ -418,13 +461,12 @@ def calculate_error_from_jacobian(jac, residuals):
 	num_params = len(np.ravel(jac))
 
 	if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
-		print "Warning: Determinant of zero indicates errors are unlikely to represent true error"
-		return [np.inf for p in xrange(num_params)]
+		print "Warning: Determinant of zero indicates that this is a non-unique, poor solution!"
+		return np.zeros((num_params,num_params))+np.inf
 
 	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
-	errors = [np.sqrt(float(covar[p,p]) * np.var( residuals )) / np.sqrt(1.*len(residuals)) for p in xrange(num_params)]
-	return errors
-
+	#errors = [np.sqrt(float(covar[p,p]) * np.var( residuals )) / np.sqrt(1.*len(residuals)) for p in xrange(num_params)]
+	return covar
 
 
 
@@ -468,15 +510,6 @@ class FitProgress(object):
 
 			# average time per iteration
 			avg_time = sum_time / loop_iter
-
-			# NOTE: this doesn't make a lot of sense since there is a non-linear approach to the result!!
-			# rate of convergence
-			convergence_rate = np.abs((convergence - self.__convergence_tzero) / (avg_time * self.__iter))
-
-			# make an assumption about time remaining
-			time_remaining = (1.-convergence) / convergence_rate
-
-			#print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, Timing: {2:2.2f}s, Remaining: {3:2.2f}s) ".format(self.__iter, convergence, avg_time, time_remaining)
 			print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, Timing: {2:2.2f}s) ".format(self.__iter, convergence, avg_time)
 
 
@@ -505,6 +538,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	if not isinstance(topologies, list):
 		raise TypeError('topologies must be a list of IsingDomain type')	
 
+	results = []
 	fit_func = GlobalFitWrapper()
 
 	# set up the global fit
@@ -522,9 +556,9 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	else:
 		callback = None
 
+	# perform the actual fitting operation
 	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol, callback=callback, maxiter=maxiter)
 	
-
 	if not r.success:
 		print "Could not find a solution..."
 		return None
@@ -539,20 +573,33 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
 	# calculate the errors
 	r_res, r_squared = calculate_fit_residuals(fit_func)
-	r_err = calculate_error_from_jacobian(jac, r_res)
+	r_cov = calculate_error_from_jacobian(jac)
 
-	# make a zipped list of params, fit values and estimated errors
-	result = zip(fit_func.domain_params, r.x.tolist(), r_err)
+
+	for i, protein in enumerate(fit_func.proteins):
+
+		result = core.FitResult(fit_name="Heteropolymer Ising Model", fit_args=fit_func.domain_params)
+		result.ID = protein['curve'].ID
+		result.fit_params = r.x.tolist()
+		result.method = "scipy.optimize.differential_evolution"
+		result.y = protein['partition'].theta( result.x )
+		result.covar = r_cov
+		result.residuals = r_res		# NOTE: these are the total residuals as opposed to the per curve residuals
+		result.r_squared = r_squared[i]
+
+		results.append( result )
 
 	print '\nFitting results (NOTE: Careful with the errors here): '
-	for res in result:
-		print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(res[0], res[1], res[2])
-	for r_sq in zip([protein.ID for protein in equilibrium_curves], r_squared):
-		print u"{0:s} R^2: {1:2.5f}".format(r_sq[0], r_sq[1])
+	for r_arg, r_val, r_err in results[0].details:
+		print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
+	for result in results:
+		print u"{0:s} R^2: {1:2.5f}".format(result.ID, result.r_squared)
 
-
+	# now plot the output
+	plot_domains(topologies, labels=[protein.ID for protein in equilibrium_curves])
 	plot_Ising(fit_func)
 	plot_folded(fit_func.proteins[-1]['partition'])
+
 
 	if "save" in kwargs:
 
@@ -589,38 +636,34 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		print "Written out .csv file of fits..."
 
 
-	return result
+	return results
 
 
 def plot_Ising(fit_func):
 	""" Function to plot fitted Ising model data.
 	"""
 
-
-	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rv', 'mv', 'gv', 'cv', 'bv', 'kv']
+	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rv', 'mv', 'gv', 'cv', 'bv', 'kv', 
+			'rs', 'ms', 'gs', 'cs', 'bs', 'ks', 'r.', 'm.', 'g.', 'c.', 'b.', 'k.']
 
 	# plot the fits
 	plt.figure(figsize=(14,8))
-	#plt.subplot(1,2,1)
 	ax1 = plt.subplot2grid((2,2), (0,0), rowspan=2)
 
 	for protein in fit_func.proteins:
 		idx = fit_func.proteins.index(protein)
 		xv = protein['curve'].x
-		plt.plot(xv, protein['curve'].y, cmap[idx], ms=4)
+		ax1.plot(xv, protein['curve'].y, cmap[idx % len(cmap)], ms=4)
 		
-	plt.legend( [p['curve'].ID for p in fit_func.proteins], loc = 'upper left')
+	#plt.legend( [p['curve'].ID for p in fit_func.proteins], loc='upper left')
 	
 	for protein in fit_func.proteins:
 		idx = fit_func.proteins.index(protein)
 		xv = np.linspace(0., np.max(protein['curve'].x), 100)
-		plt.plot(xv, protein['partition'].theta(xv), cmap[idx][0]+'-', lw=2)
+		ax1.plot(xv, protein['partition'].theta(xv), cmap[idx % len(cmap)][0]+'-', lw=2, label=protein['curve'].ID)
 
-
-
-
-	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
-	plt.ylabel('Fraction unfolded')
+	ax1.set_xlabel(fit_func.proteins[0]['curve'].denaturant_label)
+	ax1.set_ylabel('Fraction unfolded')
 
 
 	# now plot the first derivative
@@ -631,20 +674,31 @@ def plot_Ising(fit_func):
 		xv = np.linspace(0.,10.,1000)
 		first_deriv = np.gradient(protein['partition'].theta(xv))
 		pk_max.append( (protein['n'], xv[np.argmax(np.abs(first_deriv))]) )
-		plt.plot(xv, np.abs(first_deriv), cmap[idx][0]+'-', lw=2)
-	#plt.legend( [p['curve'].ID for p in fit_func.proteins] )
-	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
-	plt.ylabel('First derivative of fit function')
+		ax2.plot(xv, np.abs(first_deriv), cmap[idx % len(cmap)][0]+'-', lw=2, label=protein['curve'].ID)
+
+	ax2.set_xlabel(fit_func.proteins[0]['curve'].denaturant_label)
+	ax2.set_ylabel('First derivative of fit function')
 
 
-	ax2 = plt.subplot2grid((2,2), (1,1), rowspan=1)
+	ax3 = plt.subplot2grid((2,2), (1,1), rowspan=1)
 	h,x = plot_folded(fit_func.proteins[-1]['partition'])
+	dn = iter(['{0:s}_{1:d}'.format(d.name,i) for i,d in enumerate(fit_func.proteins[-1]['partition'].topology)])
 	for i in xrange(h.shape[1]):
-		plt.plot(x, h[:,i], cmap[i]+'-', lw=2, markersize=4)
-	dn = iter(['_{0:d}'.format(i) for i in xrange(len(fit_func.proteins[-1]['partition'].topology))])
-	plt.legend([d.name+dn.next() for d in fit_func.proteins[-1]['partition'].topology ])
-	plt.xlabel(fit_func.proteins[0]['curve'].denaturant_label)
-	plt.ylabel('Fraction unfolded (subpopulation)')
+		plt.plot(x, h[:,i], cmap[i % len(cmap)]+'-', lw=2, markersize=4, label=dn.next())
+	ax3.set_xlabel(fit_func.proteins[0]['curve'].denaturant_label)
+	ax3.set_ylabel('Fraction unfolded (subpopulation)')
+
+	# do some formatting with the smaller plots to fit legends beside them
+	# http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
+	box2 = ax2.get_position()
+	ax2.set_position([box2.x0, box2.y0, box2.width*0.8, box2.height])
+	box3 = ax3.get_position()
+	ax3.set_position([box3.x0, box3.y0, box3.width*0.8, box3.height])
+
+	# Put a legend below current axis
+	ax2.legend(loc='center left', bbox_to_anchor=(1., 0.5))
+	ax3.legend(loc='center left', bbox_to_anchor=(1., 0.5))
+
 	plt.show()
 
 
@@ -660,6 +714,76 @@ def plot_folded(partition):
 
 
 
+
+def plot_domains(topologies, labels=None):
+
+	from matplotlib.patches import Patch
+
+	if not labels:
+		labels = ['Protein {0:d}'.format(i) for i in xrange(len(topologies))]
+	
+	topology_types = []
+	topology_map = {}
+	cmap = ['r', 'k', 'g', 'b', 'c', 'm', 'y']
+	for t in topologies:
+		for d in t:
+			if d().name not in topology_types: 
+				
+				if 'DG_ij' not in d().labels:
+					interaction = False
+				else:
+					interaction = True
+
+				topology_map[d().name] = {'color':cmap[len(topology_types)], 'interaction':interaction, 'labels':d().labels}
+				topology_types.append(d().name)
+
+	# plot the domain figure
+	plt.figure(figsize=(14,8))
+	ax = plt.subplot(111)
+
+	for y, topology in enumerate(topologies):
+		for x, domain in enumerate(topology):
+			#ax.plot(x,y,'k.')
+
+			domain_name = domain().name
+
+			# draw a circle to represent the domain
+			c = plt.Circle((x*1.5, y), 0.45, edgecolor=topology_map[domain_name]['color'], facecolor='w', label=domain_name)
+			ax.add_artist(c)
+
+			# add on any labels:
+			if 'm_i' in topology_map[domain_name]['labels']:
+				#ax.text(x,y+.2,'$m_{i}^{'+domain_name+'}$', horizontalalignment='center')
+				ax.text(x*1.5,y+.1,'$m_{i}$', horizontalalignment='center', fontsize=18)
+			if 'DG_i' in topology_map[domain_name]['labels']:
+				ax.text(x*1.5,y-.3,'$\Delta G_{i}$', horizontalalignment='center', fontsize=18)
+
+			# draw arrows to represent interactions
+			if topology_map[domain_name]['interaction']:
+				ax.arrow(x*1.5, y, -1., 0, head_width=0.1, head_length=0.2, fc='k', ec='k')
+
+				if 'm_ij' in topology_map[domain_name]['labels']:
+					ax.text(x*1.5-.75,y+.1,'$m_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
+				if 'DG_ij' in topology_map[domain_name]['labels']:
+					ax.text(x*1.5-.75,y-.3,'$\Delta G_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
+
+
+	#ax.set_xticks(np.arange(-1., len(topologies)+1.)+0.5, minor=False)
+	ax.set_yticks(np.arange(len(topologies)), minor=False)
+	ax.set_xticklabels([], minor=False, rotation='vertical')
+	ax.set_yticklabels(labels, minor=False)
+
+	# make the legend entries
+	l = [ Patch(edgecolor=topology_map[d]['color'], facecolor='w', label=d) for d in topology_types ]
+
+
+	ax.set_xlim([-1.,11.])
+	ax.set_ylim([-1., len(topologies)])
+	ax.set_aspect('equal', adjustable='box')
+	plt.legend(handles=l)
+	plt.title('Ising heteropolymer model domain topologies')
+	plt.show()
+	return
 
 
 

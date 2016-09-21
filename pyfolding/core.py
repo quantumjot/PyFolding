@@ -40,6 +40,13 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 
+def set_temperature(temp=None):
+	""" Set the temperature.
+	"""
+	raise NotImplementedError
+
+
+
 
 def test(protein_ID='Simulated protein'):
 	"""
@@ -112,19 +119,19 @@ def test(protein_ID='Simulated protein'):
 	print 'Test completed!'
 
 	# plot the output
-	plot_figure(equilibrium, chevron, show=True)
+	plot_figure(equilibrium, chevron, display=True)
 
 
 
 
+"""
+===========================================================
+FILE I/O OPERATIONS
+===========================================================
+"""
 
 
 
-def display_fit_params(p_names, p_values, p_errs=None, fit_model=None):
-	"""
-	Write out the parameters to the display or to a log
-	"""
-	raise NotImplementedError
 
 
 def check_filename(directory, filename):
@@ -220,7 +227,11 @@ def read_equilibrium_data(directory=None, filename=None):
 
 
 
-
+"""
+===========================================================
+BASE CLASSES
+===========================================================
+"""
 
 
 
@@ -237,6 +248,92 @@ class Protein(object):
 
 	@property 
 	def kf_H20(self): return self.chevron.fitted[0]
+
+
+
+
+
+
+class FitResult(object):
+	""" Fitting result object.
+	"""
+
+	def __init__(self, fit_name=None, fit_args=None):
+		self.ID = None
+		self.fit_args = fit_args 
+		self.name = fit_name
+		self.x = np.linspace(0., 10., 100)
+		self.y = None
+		self.covar = None
+		self.residuals = None
+		self.r_squared = None
+
+		self.fit_errors = None
+		self.fit_params = None
+
+		self.__method = "scipy.optimize.curve_fit"
+
+	@property 
+	def method(self): return self.__method
+	@method.setter 
+	def method(self, method=None):
+		if not isinstance(method, basestring): 
+			raise TypeError("FitResult: Method must be a string")
+		self.__method = method
+
+	def display(self):
+		""" Print the errors and fit values """
+
+		table_width = max([len("Model: "+self.name), len(" Fitting results "), 50])
+
+		print u"="*table_width
+		print u" Fitting results "
+		print u"="*table_width
+		if self.ID: print u"ID: {0:s}".format(self.ID)
+		print u"Model: {0:s}".format(self.name)
+		print u"Method: {0:s} \n".format(self.method)
+		for e in self.details:
+			fit_arg, fit_val, fit_err = e
+			print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f}".format(fit_arg, fit_val, fit_err)
+
+		print u"-"*table_width
+		#print u"R^2: {0:2.5f}".format(self.r_squared)
+		print u"="*table_width
+
+	@property 
+	def errors(self):
+		""" Calculates the SEM of the fitted parameters, using the (hopefully 
+			well formed) covariance matrix from the curve fitting algorithm.
+		"""
+
+		if not isinstance(self.covar, np.ndarray):
+			raise ValueError("FitResult: Covariance matrix is not defined")
+
+		if not isinstance(self.residuals, np.ndarray):
+			raise ValueError("FitResult: Residuals are not defined")			
+
+		num_params = len(self.fit_args)
+		errors = [np.sqrt(float(self.covar[p,p]) * np.var( self.residuals )) / 
+				np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
+		return errors
+
+	@property 
+	def details(self):
+		""" Return a zipped list of the fit arguments, values and errors """
+		return zip(self.fit_args, self.fit_params, self.errors)
+
+	@property 
+	def standard_error(self):
+		""" Return the standard error of the fit """
+		return np.std(self.residuals) / np.sqrt(1.*len(self.residuals))
+
+	def export(self, filename):
+		raise NotImplementedError
+
+
+
+
+
 
 
 
@@ -269,6 +366,10 @@ class FoldingData(object):
 		if self.__fit_func:
 			return self.__fit_func.fit_func_args
 
+	@property 
+	def results(self):
+		return self.__fit
+
 	def fit(self, p0=None, data=None):
 		""" Fit the data to the defined model. Use p0 to 
 		introduce the estimated start values.
@@ -278,24 +379,27 @@ class FoldingData(object):
 			# set the default fitting parameters
 			if not p0: p0 = self.__fit_func.default_params
 
-			if isinstance(self, Chevron):
-				if data == 'unfolding':
-					x,y = self.unfolding_limb()
-				elif data == 'folding':
-					x,y = self.refolding_limb()
-				else:
-					x,y = self.x, self.y
-				y = np.log(y)
-			else:
-				x,y = self.x, self.y
-
 			# perform the actual fitting
 			try:
-				out = optimize.curve_fit(self.__fit_func, x, y, p0=p0, maxfev=20000)
+				out = optimize.curve_fit(self.__fit_func, self.x, self.y, p0=p0, maxfev=20000)
 			except RuntimeWarning:
 				raise Exception("Optimisation could not complete. Try adjusting your fitting parameters (p0)")
 
-			self.fit_params = np.array( self.__fit_func.get_fit_params(x, *list(out[0])) )
+			# create a results structure
+			self.__fit = FitResult(fit_name=self.fit_func, fit_args=self.fit_func_args)
+			self.__fit.ID = self.ID
+			self.__fit.method = "scipy.optimize.curve_fit"
+
+			# use get_fit_params in case we have any constants defined
+			self.__fit.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
+			self.__fit.y = self.__fit_func.fit_func(self.__fit.x, *list(self.__fit.fit_params))
+			self.__fit.covar = out[1]
+			self.__fit.residuals = self.y_raw - self.__fit.y
+			self.__fit.r_squared = r_squared(y_data=self.y_raw, y_fit=self.__fit.y)
+
+
+			# store locally ?
+			self.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
 			self.fit_covar = out[1]
 
 			if hasattr(self.__fit_func, "components"):
@@ -304,103 +408,47 @@ class FoldingData(object):
 		else:
 			raise AttributeError("Fit function must be defined")
 
-		print "-----------------"
-		print " Fitting results "
-		print "-----------------"
-		print "Model: {0:s}".format(self.__fit_func.name)
-		for e in self.errors:
-			fit_arg, fit_val, fit_err = e
-			print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f}".format(fit_arg, fit_val, fit_err)
-		print "-----------------"
 
+		self.__fit.display()
 
+		
 	@property 
 	def fitted_x(self):
+		raise DeprecationWarning("Warning, this feature will be deprecated soon. Use .results for the fit results")
 		return np.linspace(0., 10., 100)
 
 	@property 
 	def fitted(self):
+		raise DeprecationWarning("Warning, this feature will be deprecated soon. Use .results for the fit results")
 		if isinstance(self.fit_params, np.ndarray):
 			x = self.fitted_x
 			return np.copy( self.__fit_func.fit_func(x, *list(self.fit_params)) )
-
-	@property 
-	def residuals(self):
-		if isinstance(self.fit_params, np.ndarray):
-			if isinstance(self, Chevron):
-				residuals = np.log(self.y) - self.__fit_func(self.x, *list(self.fit_params))
-			else:
-				residuals = self.y - self.__fit_func(self.x, *list(self.fit_params))
-			return residuals
-		else:
-			return np.zeros(self.x.shape)
-
-	@property 
-	def error(self):
-		""" Calculates the standard error based on the residuals of the fit.
-
-		$S.E. = \frac{\sigma}{\sqrt{N}}$
-
-		"""
-		if isinstance(self.fit_params, np.ndarray):
-			res = self.residuals
-			return np.std(res) / np.sqrt(1.*len(res))
-
-	@property
-	def r_squared(self):
-		""" Calculates the r-squared value of the fit.
-		"""
-		if isinstance(self.fit_params, np.ndarray):
-			res = self.residuals
-			
-
-			if isinstance(self, Chevron): 
-				y_bar = np.mean(np.log(self.y))
-				y = np.log(self.y)
-			else:
-				y = self.y
-				y_bar = np.mean(y)
-			f_i = self.__fit_func(self.x, *list(self.fit_params))
-
-			SS_tot = np.sum((y - y_bar)**2)
-			SS_res = np.sum((y - f_i)**2)
-
-			return 1.- SS_res / SS_tot
-
-
-	@property
-	def errors(self):
-		""" Calculates the SEM of the fitted parameters, using
-		the (hopefully well formed) covariance matrix from 
-		the curve fitting.
-		"""
-		errors = []
-		for p in xrange(len(self.fit_params)):
-			fit_arg = self.__fit_func.fit_func_args[p]
-			fit_val = self.fit_params[p]
-			fit_variance = self.fit_covar[p][p]
-			fit_err = np.sqrt(fit_variance) / np.sqrt(1.*len(self.x))
-			errors.append([fit_arg, fit_val, fit_err])
-		return errors
-
 
 	def print_fit_params(self):
 		if isinstance(self.fit_params, np.ndarray):
 			print self.fit_params
 
-
-	def plot(self, title='', marker='ko-'):
+	def plot(self, title='', marker='ko-', display_fit=True):
 		""" Plot a simple figure of the data, this is context dependent
 		"""
 
 		if not isinstance(title, basestring):
 			raise TypeError('Plot title must be specified as a string')
 
+		# if there is a fit in memory, display that if the user wants it
+		if isinstance(self.fit_params, np.ndarray):
+			fit_x = self.results.x
+			fit_y = self.results.y
+		else:
+			display_fit = False 
+
 		plt.figure(figsize=(10,6))
 		if isinstance(self, Chevron):
-			plt.semilogy(self.x, self.y, marker)
+			if display_fit: plt.semilogy(fit_x, fit_y, 'r-')
+			plt.semilogy(self.x, self.y_raw, marker)
 			plt.ylabel(r'$k (s^{-1})')
 		else:
+			if display_fit: plt.plot(fit_x, fit_y, 'r-')
 			plt.plot(self.x, self.y, marker)
 			plt.ylabel('Signal')
 
@@ -437,7 +485,10 @@ class Chevron(FoldingData):
 	@property 
 	def x(self): return np.array(self.denaturant[self.phases[0]])
 	@property 
-	def y(self): return np.array(self.rates[self.phases[0]])
+	def y(self): return np.array(np.log(self.rates[self.phases[0]]))
+
+	@property 
+	def y_raw(self): return np.array(self.rates[self.phases[0]])
 
 
 	@property
@@ -465,7 +516,7 @@ class Chevron(FoldingData):
 		elif phase not in self.phases: 
 			return None
 		denaturant, rates = [], []
-		for d,r in zip(self.denaturant[phase], self.rates[phase]):
+		for d,r in zip(self.denaturant[phase], self.rate(phase)):
 			if d > self.midpoint:
 				denaturant.append(d)
 				rates.append(r)
@@ -480,7 +531,7 @@ class Chevron(FoldingData):
 		elif phase not in self.phases: 
 			return None
 		denaturant, rates = [], []
-		for d,r in zip(self.denaturant[phase], self.rates[phase]):
+		for d,r in zip(self.denaturant[phase], self.rate(phase)):
 			if d <= self.midpoint:
 				denaturant.append(d)
 				rates.append(r)
@@ -494,7 +545,10 @@ class Chevron(FoldingData):
 			phase = self.phases[0]
 		elif phase not in self.phases: 
 			return None
-		return self.denaturant[phase], self.rates[phase]
+		return self.denaturant[phase], self.rate(phase)
+
+	def rate(self, phase=None):
+		return np.log(self.rates[phase])
 
 
 
@@ -524,6 +578,9 @@ class EquilibriumDenaturationCurve(FoldingData):
 	def x(self): return np.array(self.denaturant[self.curves[0]])
 	@property 
 	def y(self): return np.array(self.signal[self.curves[0]])
+
+	@property 
+	def y_raw(self): return self.y
 
 	@property 
 	def normalised(self):
@@ -580,6 +637,10 @@ def FIT_ERROR(x):
 
 
 
+
+
+
+
 class GlobalFit(object):
 	""" Wrapper function to perform global fitting
 	"""
@@ -606,6 +667,11 @@ class GlobalFit(object):
 			x_this = np.array( self.x[self.fit_funcs.index(fit_func)] )
 			ret = np.append( ret, fit_func(x_this, *fit_args) )
 		return ret
+
+
+
+
+
 
 
 
@@ -717,7 +783,22 @@ class FitModel(object):
 
 
 
-def plot_figure(equilibrium, chevron, pth=None, show=False, save=False):
+
+def r_squared(y_data=None, y_fit=None):
+	return 1. - np.sum((y_data - y_fit)**2) / np.sum((y_data - np.mean(y_data))**2)
+
+
+def phi(ref_protein, mut_protein):
+	""" Makes this easier to use! """
+	from phi import phi
+	return phi(ref_protein, cmp_protein)
+
+
+
+
+
+
+def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	""" Plot a figure with the data and fits combined.
 	"""
 
@@ -725,22 +806,21 @@ def plot_figure(equilibrium, chevron, pth=None, show=False, save=False):
 	dfive = equilibrium.point(0.05)
 	dninetyfive = equilibrium.point(0.95)
 
-	fity = chevron.fitted
-	res = chevron.residuals
-	fiteq = equilibrium.fitted
+	fity = chevron.results.y
+	res = chevron.results.residuals
+	fiteq = equilibrium.results.y
 
 	plt.figure(figsize=(14,8))
 	plt.subplot2grid((4,2),(0,0))
 	plt.plot([dfifty,dfifty],[-.1,1.1],'b-',[dfive,dfive],[-.1,1.1],'b:', [dninetyfive,dninetyfive],[-.1,1.1],'b:')
-	plt.plot(np.linspace(0., 10., 100), fiteq, 'k-', linewidth=2)
 	plt.plot(equilibrium.x, equilibrium.y,'wo')
+	plt.plot(np.linspace(0., 10., 100), fiteq, 'r-', linewidth=2)
 	plt.ylim([-.1,1.1])
 	plt.ylabel('Signal (A.U.)')
 	plt.title(chevron.ID)
 	plt.subplot2grid((4,2),(1,0), rowspan=2)
 	plt.semilogy()
 	plt.plot([dfifty,dfifty],[0.01,100.],'b-',[dfive,dfive],[0.01,100.],'b:', [dninetyfive,dninetyfive],[0.01,100.],'b:')
-	plt.plot(np.linspace(0., 10., 100), fity, 'k-', linewidth=2)
 	if chevron.components:
 		x = np.linspace(0., 10., 100)
 		for c in chevron.components:
@@ -748,7 +828,8 @@ def plot_figure(equilibrium, chevron, pth=None, show=False, save=False):
 
 	if 'k2' in chevron.phases:
 		plt.plot(chevron.denaturant['k2'], chevron.rates['k2'], 'w^')
-	plt.plot(chevron.x, chevron.y, 'wo')		
+	plt.plot(chevron.x, chevron.y_raw, 'wo')
+	plt.plot(np.linspace(0., 10., 100), fity, 'r-', linewidth=2)		
 	plt.ylabel(r'$k_{obs} (s^{-1})$')
 	plt.xlim((0,10))
 	plt.ylim((0.01,100.))
@@ -766,19 +847,19 @@ def plot_figure(equilibrium, chevron, pth=None, show=False, save=False):
 	t = u"Data-set: {0:s} \n".format(equilibrium.ID) 
 	t+= u"Model: {0:s} \n".format(chevron.fit_func)
 	t+= u"Folding midpoint {0:2.2f} M\n".format(equilibrium.midpoint)
-	t+= u"Fit Standard Error: {0:2.2f} \n".format(chevron.error)
+	t+= u"Fit Standard Error: {0:2.2f} \n".format(chevron.results.standard_error)
 	t+= u"Fitting parameters: \n"
-	for e in chevron.errors:
+	for e in chevron.results.details:
 		fit_arg, fit_val, fit_err = e
 		t+= u"{0:s}: {1:.2e} \u00B1 {2:.2e} \n".format(fit_arg, fit_val, fit_err)
-	t+= u"$R^2$: {0:2.2f} \n".format(chevron.r_squared)
+	t+= u"$R^2$: {0:2.2f} \n".format(chevron.results.r_squared)
 
 	ax = plt.gcf()
 	ax.text(0.65, 0.95, t, horizontalalignment='left', verticalalignment='top', fontsize=10.)
 	plt.tight_layout()
 	if save: 
 		plt.savefig(os.path.join(pth,"Fitting"+equilibrium.ID+"_{0:s}.pdf".format(chevron.fit_func)))
-	if show: 
+	if display: 
 		plt.show()
 	plt.close()
 

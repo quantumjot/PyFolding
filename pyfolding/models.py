@@ -269,15 +269,15 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([172., 1.42, .445, .641, 9.41e3, -2.71313, 1.83e-4, 1.06])
-		self.constants = (('kui',172.), ('mui',1.42), ('kiu',.445), ('miu',.641), ('mif',-2.71313),('mfi',1.06534))
+		self.default_params = np.array([172., 1.42, .445, .641, 9.41e3, 2.71313, 1.83e-4, 1.06])
+		#self.constants = (('kui',172.), ('mui',1.42), ('kiu',.445), ('miu',.641), ('mif',-2.71313),('mfi',1.06534))
 		
 	def fit_func(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_iu = kiu*np.exp(miu*x)
 		k_ui = kui*np.exp(-mui*x)
-		k_if = kif*np.exp(mif*x)
+		k_if = kif*np.exp(-mif*x)
 		k_fi = kfi*np.exp(mfi*x)
-		K_iu = k_iu / (k_ui+k_iu)
+		K_iu = k_ui / (k_ui+k_iu)
 		k_obs = k_fi + k_if / (1.+1./K_iu)
 		return k_obs
 
@@ -287,11 +287,11 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 	def components(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_iu = kiu*np.exp(miu*x)
 		k_ui = kui*np.exp(-mui*x)
-		k_if = kif*np.exp(mif*x)
+		k_if = kif*np.exp(-mif*x)
 		k_fi = kfi*np.exp(mfi*x)
 		k_obs_I = k_iu + k_ui
 		k_obs_N = k_fi + k_if
-		return {'kobs_I':k_obs_I, 'kobs_N':k_obs_N}
+		return {'kobs_I':k_obs_I} #, 'kobs_N':k_obs_N}
 
 	@property 
 	def equation(self):
@@ -459,7 +459,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([50., 1.3480, 5e-4, 1., 1.])
 
-	def fit_func(self, x, ku, mu, kf, mf, mprime):
+	def fit_func(self, x, ku, mu, kf, mf, m_prime):
 		k_obs = ku * np.exp(mu*x)*np.exp(m_prime*x*x) + kf*np.exp(-mf*x)*np.exp(-m_prime*x*x)
 
 	def error_func(self, y): 
@@ -467,8 +467,8 @@ class TwoStateChevronMovingTransition(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku}*x) \cdot \exp(m^\' x^2) \\ \
-				k_f = k_f^{H_2O} \cdot \exp(m_{kf}*x) \cdot \exp(m^\' x^2) \\ \
+		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku}*x) \cdot \exp(m^{\'} x^2) \\ \
+				k_f = k_f^{H_2O} \cdot \exp(m_{kf}*x) \cdot \exp(m^{\'} x^2) \\ \
 				k_{obs} = k_u + k_f'
 
 	

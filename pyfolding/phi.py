@@ -63,10 +63,10 @@ def phi(ref_protein, mut_protein):
 
 	"""
 
-	if not isinstance(ref_protein, pyfolding.Protein):
+	if not isinstance(ref_protein, core.Protein):
 		raise TypeError("Reference protein must be of type pyfolding.Protein")
 
-	if not isinstance(mut_protein, pyfolding.Protein):
+	if not isinstance(mut_protein, core.Protein):
 		raise TypeError("Mutant protein must be of type pyfolding.Protein")
 
 	
