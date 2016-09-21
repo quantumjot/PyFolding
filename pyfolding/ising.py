@@ -376,7 +376,7 @@ class IsingPartitionFunction(object):
 	def subpopulation(self, x, i):
 		""" Return the fraction folded for a sub population of the states """
 		q_n = self.partition(x)
-		q_i = self.subpartition(x, i, rev=True) 
+		q_i = self.subpartition(x, i, rev=False) 
 		#sum_q_i = np.sum( [ self.subpartition(x, i, rev=True) for i in xrange(self.n)], axis=0 )
 		theta = q_i / q_n
 		return 1.-theta
