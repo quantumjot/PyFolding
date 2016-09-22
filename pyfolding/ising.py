@@ -671,7 +671,7 @@ def plot_folded(partition):
 
 
 
-def plot_domains(topologies, labels=None):
+def plot_domains(topologies, labels=None, **kwargs):
 	""" Function to generate a pretty plot of the domain architecture of 
 	the various protein topologies presented.
 	"""
@@ -750,6 +750,16 @@ def plot_domains(topologies, labels=None):
 	ax.set_aspect('equal', adjustable='box')
 	plt.legend(handles=l, loc='lower right')
 	plt.title('Ising heteropolymer model domain topologies')
+
+	if 'save' in kwargs:
+		save_filename = kwargs['save']
+		if not isinstance(save_filename, basestring):
+			raise TypeError("Save path must be a string")
+		if not save_filename.endswith(('.pdf', '.PDF')):
+			save_filename = save_filename+".pdf"
+
+		plt.savefig(save_filename, dpi=144., pad_inches=0)
+
 	plt.show()
 	return
 
