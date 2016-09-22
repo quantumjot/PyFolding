@@ -50,10 +50,12 @@ ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
 	
 
 def free_energy_m(x, DeltaG, m_value):
-	return np.exp(-(DeltaG - m_value*x) / constants.RT)
+	#return np.exp(-(DeltaG - m_value*x) / constants.RT)
+	return np.exp(-(DeltaG - m_value*x) / core.temperature.RT)
 
 def free_energy(x, DeltaG, m_value):
-	return np.exp( -DeltaG / constants.RT )
+	#return np.exp( -DeltaG / constants.RT )
+	return np.exp( -DeltaG / core.temperature.RT )
 
 
 
@@ -386,16 +388,16 @@ class IsingPartitionFunction(object):
 
 
 def calculate_fit_residuals(fit_func):
-	res = np.array([])
+	r_res = np.array([])
 	r_sq = []
 	for protein in fit_func.proteins:
 		y_data = protein['curve'].y 
 		y_fit = protein['partition'].theta( protein['curve'].x )
 
-		res = np.concatenate((res, y_data-y_fit))
+		r_res = np.concatenate((r_res, y_data-y_fit))
 		r_sq.append( core.r_squared(y_data=y_data, y_fit=y_fit) )
 
-	return res, r_sq
+	return r_res, r_sq
 
 
 
@@ -420,7 +422,7 @@ def calculate_error_from_jacobian(jac):
 		print "Warning: Determinant of zero indicates that this is a non-unique, poor solution!"
 		return np.zeros((num_params,num_params))+np.inf
 
-	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
+	covar = np.linalg.inv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
 	#errors = [np.sqrt(float(covar[p,p]) * np.var( residuals )) / np.sqrt(1.*len(residuals)) for p in xrange(num_params)]
 	return covar
 
@@ -531,9 +533,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	r_res, r_squared = calculate_fit_residuals(fit_func)
 	r_cov = calculate_error_from_jacobian(jac)
 
-
 	for i, protein in enumerate(fit_func.proteins):
-
 		result = core.FitResult(fit_name="Heteropolymer Ising Model", fit_args=fit_func.domain_params)
 		result.ID = protein['curve'].ID
 		result.fit_params = r.x.tolist()
@@ -547,7 +547,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
 	print '\nFitting results (NOTE: Careful with the errors here): '
 	for r_arg, r_val, r_err in results[0].details:
-		print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
+	 	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
 	for result in results:
 		print u"{0:s} R^2: {1:2.5f}".format(result.ID, result.r_squared)
 
@@ -727,8 +727,8 @@ def plot_domains(topologies, labels=None):
 				ax.text(x*1.5,y-.3,'$\Delta G_{i}$', horizontalalignment='center', fontsize=18)
 
 			# draw arrows to represent interactions
-			if topology_map[domain_name]['interaction']:
-				ax.arrow(x*1.5, y, -1., 0, head_width=0.1, head_length=0.2, fc='k', ec='k')
+			if topology_map[domain_name]['interaction'] and x!=0:
+				ax.arrow(x*1.5-.3, y, -1., 0, head_width=0.1, head_length=0.2, fc='k', ec='k')
 
 				if 'm_ij' in topology_map[domain_name]['labels']:
 					ax.text(x*1.5-.75,y+.1,'$m_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
@@ -748,7 +748,7 @@ def plot_domains(topologies, labels=None):
 	ax.set_xlim([-1.,11.])
 	ax.set_ylim([-1., len(topologies)])
 	ax.set_aspect('equal', adjustable='box')
-	plt.legend(handles=l)
+	plt.legend(handles=l, loc='lower right')
 	plt.title('Ising heteropolymer model domain topologies')
 	plt.show()
 	return

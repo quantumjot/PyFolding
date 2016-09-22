@@ -97,7 +97,7 @@ class TwoStateEquilibrium(core.FitModel):
 
 
 	def fit_func(self, x, m, d50):
-		F = (np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT)
+		F = (np.exp((m*(x-d50)))/core.temperature.RT) / (1.+np.exp((m*(x-d50)))/core.temperature.RT)
 		return F
 
 	@property
@@ -127,7 +127,7 @@ class TwoStateEquilibriumSloping(core.FitModel):
 
 	def fit_func(self, x, alpha_f, beta_f, alpha_u, beta_u, m, d50):
 		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * (\
-		( np.exp((m*(x-d50)))/constants.RT) / (1.+np.exp((m*(x-d50)))/constants.RT))
+		( np.exp((m*(x-d50)))/core.temperature.RT) / (1.+np.exp((m*(x-d50)))/core.temperature.RT))
 		return F
 
 	@property
@@ -157,8 +157,8 @@ class HomozipperIsingEquilibrium(core.FitModel):
 		if DG_intrinsic<0. or DG_interface>0.:
 			return core.FIT_ERROR(x)
 
-		k = np.exp(-(DG_intrinsic - m_intrinsic*x) / constants.RT)
-		t = np.exp(-(DG_interface - m_interface*x) / constants.RT)
+		k = np.exp(-(DG_intrinsic - m_intrinsic*x) / core.temperature.RT)
+		t = np.exp(-(DG_interface - m_interface*x) / core.temperature.RT)
 		pre_factor = (k/(n*(k*t-1))) 
 		numerator = n*(k*t)**(n+2) - (n+2)*(k*t)**(n+1) + (n+2)*k*t-n
 		denominator = (k*t-1)**2 + k*((k*t)**(n+1) - (n+1)*k*t+n )

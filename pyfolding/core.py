@@ -39,13 +39,70 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 
+class __Temperature(object):
+	""" Maintain temperature information across all functions. Meant to be a wrapper
+	for a global variable, temperature which is used across different models.
 
-def set_temperature(temp=None):
-	""" Set the temperature.
+	Args:
+		temperature:	set the temperature in celsius 
+
+	Properties:
+		temperature:	return the temperature in celsius 
+		RT:				return the product of the ideal gas constant and the temperature
+
+	Notes:
+		This changes the temperature globally, so be careful when using it, since all 
+		subsequent calculations will use this temperature.
+
+		This is also not to be used by USERS!
 	"""
-	raise NotImplementedError
+	def __init__(self):
+		self.__temperature = constants.TEMPERATURE_CELSIUS
+
+	@property 
+	def temperature(self): return self.__temperature
+	@temperature.setter 
+	def temperature(self, value=constants.TEMPERATURE_CELSIUS):
+		import numbers
+		if not isinstance(value, numbers.Real):
+			return TypeError("Temperature must be specified as a number")
+		if value < 0 or value > 100:
+			raise ValueError("Temperature ({0:2.2f}) is not in valid range (0-100 degrees C)".format(value))
+		self.__temperature = value
+
+	@property 
+	def RT(self):
+		return constants.IDEAL_GAS_CONSTANT_KCAL * (273.15 + self.temperature)
+
+temperature = __Temperature()
 
 
+def set_temperature(value=constants.TEMPERATURE_CELSIUS):
+	""" Set the temperature.
+
+	Args:
+		temperature:	set the temperature in celsius
+
+	Returns:
+		None 
+
+	Usage:
+
+		>> pyfolding.set_temperature( 10.2 )
+
+
+	"""
+	temperature.temperature = value
+	print u"Set temperature to {0:2.2f}\u00B0C".format(value)
+	print "(NOTE: Careful, this sets the temperature for all subsequent calculations)"
+
+
+
+"""
+===========================================================
+TEST FUNCTION
+===========================================================
+"""
 
 
 def test(protein_ID='Simulated protein'):
@@ -313,8 +370,7 @@ class FitResult(object):
 			raise ValueError("FitResult: Residuals are not defined")			
 
 		num_params = len(self.fit_args)
-		errors = [np.sqrt(float(self.covar[p,p]) * np.var( self.residuals )) / 
-				np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
+		errors = [np.sqrt(float(self.covar[p,p]) * np.var(self.residuals)) / np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
 		return errors
 
 	@property 
