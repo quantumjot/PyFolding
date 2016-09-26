@@ -238,13 +238,8 @@ class GlobalFitWrapper(object):
 
 		# here we can set all of the parameters for the fit
 		for idx, domain in enumerate(self.domains):
-			"""
-			domain.DG_intrinsic = x[4*idx]	# TODO - proper sharing of params across domain types
-			domain.DG_interface = x[4*idx+1]
-			domain.m_intrinsic = x[4*idx+2]
-			domain.m_interface = x[4*idx+3]
-			"""
 
+			# set the shared parameters for this fit
 			for p in domain.labels:
 				setattr(domain, p, p_val.next())
 
@@ -422,8 +417,7 @@ def calculate_error_from_jacobian(jac):
 		print "Warning: Determinant of zero indicates that this is a non-unique, poor solution!"
 		return np.zeros((num_params,num_params))+np.inf
 
-	covar = np.linalg.inv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
-	#errors = [np.sqrt(float(covar[p,p]) * np.var( residuals )) / np.sqrt(1.*len(residuals)) for p in xrange(num_params)]
+	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
 	return covar
 
 
@@ -736,7 +730,6 @@ def plot_domains(topologies, labels=None, **kwargs):
 					ax.text(x*1.5-.75,y-.3,'$\Delta G_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
 
 
-	#ax.set_xticks(np.arange(-1., len(topologies)+1.)+0.5, minor=False)
 	ax.set_yticks(np.arange(len(topologies)), minor=False)
 	ax.set_xticklabels([], minor=False, rotation='vertical')
 	ax.set_yticklabels(labels, minor=False)

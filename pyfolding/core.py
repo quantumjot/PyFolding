@@ -72,7 +72,7 @@ class __Temperature(object):
 
 	@property 
 	def RT(self):
-		return constants.IDEAL_GAS_CONSTANT_KCAL * (273.15 + self.temperature)
+		return constants.IDEAL_GAS_CONSTANT_KCAL * (constants.ZERO_KELVIN + self.temperature)
 
 temperature = __Temperature()
 
