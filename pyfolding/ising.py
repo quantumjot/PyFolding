@@ -50,11 +50,9 @@ ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
 	
 
 def free_energy_m(x, DeltaG, m_value):
-	#return np.exp(-(DeltaG - m_value*x) / constants.RT)
 	return np.exp(-(DeltaG - m_value*x) / core.temperature.RT)
 
 def free_energy(x, DeltaG, m_value):
-	#return np.exp( -DeltaG / constants.RT )
 	return np.exp( -DeltaG / core.temperature.RT )
 
 
@@ -86,6 +84,9 @@ class IsingDomain(object):
 
 
 	Notes:
+
+		t_func and k_func can be intialised with m-value dependencies,
+		or not, by specifying the free_energy or free_energy_m funcs.
 
 	"""
 	def __init__(self, k_func=free_energy_m, t_func=free_energy):
@@ -283,9 +284,6 @@ class GlobalFitWrapper(object):
 		q_topology = []
 		for domain in topology:
 			
-			#if not issubclass(topology, IsingDomain):
-			#	raise TypeError('GlobalFitIsing.append protein topologies must be specified using IsingModel classes')
-
 			if domain not in self.domain_types:
 				new_domain = domain() # instantiate this and append it to the list of domains
 				self.domains.append( new_domain )
@@ -374,7 +372,6 @@ class IsingPartitionFunction(object):
 		""" Return the fraction folded for a sub population of the states """
 		q_n = self.partition(x)
 		q_i = self.subpartition(x, i, rev=False) 
-		#sum_q_i = np.sum( [ self.subpartition(x, i, rev=True) for i in xrange(self.n)], axis=0 )
 		theta = q_i / q_n
 		return 1.-theta
 
@@ -402,11 +399,10 @@ def calculate_error_from_jacobian(jac):
 	covar = (J^T . J)^{-1}.
 
 	Then calculate the error based on the SE of the variance.
-
 	This is definitely a bit wonky at the moment!
 
 	Notes:
-		This is **NOT** tested at all
+		This is **NOT** tested very well
 
 		http://stats.stackexchange.com/questions/71154/when-an-analytical-jacobian-is-available-is-it-better-to-approximate-the-hessia
 	"""
@@ -762,5 +758,4 @@ def plot_domains(topologies, labels=None, **kwargs):
 
 
 if __name__ == "__main__":
-	Test_EWAN()
-	#test_domains()
+	pass

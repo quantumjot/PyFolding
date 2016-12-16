@@ -97,7 +97,7 @@ class TwoStateEquilibrium(core.FitModel):
 
 
 	def fit_func(self, x, m, d50):
-		F = (np.exp((m*(x-d50)))/core.temperature.RT) / (1.+np.exp((m*(x-d50)))/core.temperature.RT)
+		F = np.exp(m*(x-d50)/core.temperature.RT / (1.+np.exp(m*(x-d50)/core.temperature.RT)
 		return F
 
 	@property
