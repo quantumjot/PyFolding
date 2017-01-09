@@ -97,7 +97,7 @@ class TwoStateEquilibrium(core.FitModel):
 
 
 	def fit_func(self, x, m, d50):
-		F = np.exp(m*(x-d50)/core.temperature.RT / (1.+np.exp(m*(x-d50)/core.temperature.RT)
+		F = ( np.exp((m*(x-d50))/constants.RT)) / (1.+np.exp np.exp((m*(x-d50))/constants.RT))
 		return F
 
 	@property
@@ -127,12 +127,148 @@ class TwoStateEquilibriumSloping(core.FitModel):
 
 	def fit_func(self, x, alpha_f, beta_f, alpha_u, beta_u, m, d50):
 		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * (\
-		( np.exp((m*(x-d50)))/core.temperature.RT) / (1.+np.exp((m*(x-d50)))/core.temperature.RT))
+		( np.exp((m*(x-d50))/constants.RT)) / (1.+np.exp((m*(x-d50))/constants.RT)))
 		return F
 
 	@property
 	def equation(self):
 		return r'F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}'
+
+
+
+
+class TwoStateDimerEquilibrium(core.FitModel):
+	""" Two State model for a dimer denaturation Equilibrium.
+	i.e.  N2 = 2D
+
+	Y_0 = Y_N * (1 - F_D) + Y_D * F_D
+	Y_N = alpha_N + beta_N * x
+	Y_D = alpha_D + beta_D * x
+	F_D = (((K_U)^2 + (8 * K_U * P_t - K_U)^0.5)/(4 * P_t)
+	K_U = exp((RT * ln(P_t)-m(d_{50}-x)))/RT)
+
+	Notes:
+		Mallam and Jackson. Folding studies on a knotted protein. 
+		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
+
+	Comments:
+		Pt is a variable that needs to be set, So it like Ising model when you need 
+		to define a specific value to a curve.	
+		Could this be the self-constants code line ?
+
+	"""
+	
+	def __init__(self):
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5.])
+		self.constants = (('Pt',7),)
+
+	def fit_func(self, x, alpha_N, beta_N, alpha_D, beta_D, m, d50):
+		K_U = np.exp(((constants.RT * np.ln(Pt))-(m*d50)-x) / constants.RT)
+		F_D = ((K_U^2 + (8 * K_U * Pt))^0.5 - K_U) / (4*Pt)
+		Y_0 = ((alpha_N + beta_N*x)*(1-F_D)) +  ((alpha_D + beta_D*x)*(F_D))
+		return Y_0
+
+	"""
+	@property
+	def equation(self):
+		return r'Y_0 = (\alpha_N+\beta_N x) \cdot (1-F_D) + Y_D \cdot F_D \\ 
+				\text{where}\\ 
+				F_D = \frac{(K_U^2 + (8 * K_U * Pt))^0.5 - K_U / 4*Pt} (\alpha_u+\beta_u x) \\ 
+				K_U = \frac{\exp(((constants.RT * np.ln(Pt))-(m*d50)-x) / constants.RT}'
+	"""
+
+
+
+class ThreeStateMonoIEquilibrium(core.FitModel):
+	""" Three State model for a dimer denaturation Equilibrium.
+	i.e.  N2 = I2 = 2D
+
+	Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
+	F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
+	K1 = exp((DG1 + m1*x)/RT)
+	K2 = exp((DG2 + m2*x)/RT)
+
+	Notes:
+		Mallam and Jackson. Folding studies on a knotted protein. 
+		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
+
+	Comments:
+		Pt is a variable that needs to be set, So it like Ising model when you need 
+		to define a specific value to a curve.	
+		also needs to fit to multiple datasets 
+	
+	"""
+	
+	def __init__(self):
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 2.])
+		self.constants = (('Pt',7),)
+
+	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
+		K1 = np.exp((-DG1 + (m1*x)) / constants.RT)
+		K2 = np.exp((-DG2 + (m2*x)) / constants.RT)
+		F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
+		Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
+		return Y_rel
+
+	
+	"""
+	@property
+	def equation(self):
+		return r'Y_rel = (Y_N \cdot \frac{(2PtF_D^2/K1K2)} + (Y_I \cdot \frac{(2PtF_D^2)/K2)} + (Y_D * F_D) \\ 
+			\text{where}\\ F_D = \frac {- K1K2 + ((K1K2)^2 + (8(1+K1)(K1K2)Pt))^0.5) / 4Pt(1+K1)} \\ 
+			K1 = \frac {\exp((-DG1 + (m1 x)) / RT)} \\ K2 = \frac {\exp((-DG2 + (m2 x)) / RT)} '
+	"""
+
+class ThreeStateDimericIEquilibrium(core.FitModel):
+	""" Three State model for a dimer denaturation Equilibrium.
+	i.e.  N2 = 2I = 2D
+
+	Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
+	F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
+	K1 = exp((DG1 + m1*x)/RT)
+	K2 = exp((DG2 + m2*x)/RT)
+
+	Notes:
+		Mallam and Jackson. Folding studies on a knotted protein. 
+		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
+
+	Comments:
+		Pt is a variable that needs to be set, So it like Ising model when you need 
+		to define a specific value to a curve.	
+		also needs to fit to multiple datasets.
+		
+	"""
+	
+	def __init__(self):
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 3.])
+		self.constants = (('Pt',7),)
+
+	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
+		K1 = np.exp((-DG1 + (m1*x)) / constants.RT)
+		K2 = np.exp((-DG2 + (m2*x)) / constants.RT)
+		F_I = -(K1*(1+K2) + ((K1^2*(1+K2)^2 +(8*Pt*K1))^0.5)) / (4*Pt)
+		Y_rel = (Y_N * ((2*Pt*F_I^2)/K1)) + (Y_I * F_I) + (Y_D * (K2*F_I))
+		return Y_rel
+
+	
+	"""
+	@property
+	def equation(self):
+		return r'Y_rel = (Y_N \cdot \frac{(2PtF_I^2/K1)} + (Y_I F_I} + (Y_D * (K2F_I)) \\ 
+			\text{where} \\ 
+			F_I = \frac {- K1(1+K2) + (K1^2 \cdot(1+K2)^2 + (8 Pt K1))^0.5) / 4Pt} \\ 
+			K1 = \frac {\exp((-DG1 + (m1 x)) / RT)} \\ 
+			K2 = \frac {\exp((-DG2 + (m2 x)) / RT)}'
+	"""
 
 
 
