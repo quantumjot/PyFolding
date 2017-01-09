@@ -97,7 +97,7 @@ class TwoStateEquilibrium(core.FitModel):
 
 
 	def fit_func(self, x, m, d50):
-		F = ( np.exp((m*(x-d50))/constants.RT)) / (1.+np.exp np.exp((m*(x-d50))/constants.RT))
+		F = ( np.exp((m*(x-d50))/constants.RT)) / (1.+np.exp((m*(x-d50))/constants.RT))
 		return F
 
 	@property
@@ -242,7 +242,7 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
 		Pt is a variable that needs to be set, So it like Ising model when you need 
 		to define a specific value to a curve.	
 		also needs to fit to multiple datasets.
-		
+
 	"""
 	
 	def __init__(self):
