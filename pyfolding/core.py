@@ -283,6 +283,50 @@ def read_equilibrium_data(directory=None, filename=None):
 
 
 
+def write_CSV(filename, data, verbose=True):
+	"""
+	Write out data in a convenient CSV format for import into other 
+	plotting and analysis packages.
+
+	Args:
+		filename
+		data
+		verbose
+	
+	Notes:
+
+	"""
+
+	if not isinstance(filename, basestring):
+		raise IOError("Filename must be a string")
+
+	
+	# # convert numpy arrays to python lists
+	# if isinstance(x, np.ndarray):
+	# 	x = x.tolist()
+		
+	# if isinstance(y, np.ndarray):
+	# 	y = y.tolist()
+		
+	if not filename.endswith('.csv', '.CSV'):
+		filename+='.csv'
+	
+	# data should be a dictionary
+	fnames = data.keys()
+
+	csv_results = {'Denaturant (M)': iter(x), 'Fraction unfolded': iter(y)}
+	
+	with open(filename, 'wb') as csvfile:
+		print "Writing .csv file ({0:s})...".format(filename)
+		r = csv.DictWriter(csvfile, fieldnames=fnames, dialect=csv.excel_tab, delimiter=',')
+		r.writeheader()
+
+		for i in xrange(len(x)):
+			h = {k: csv_results[k].next() for k in csv_results.keys()}
+			r.writerow(h)
+
+
+
 
 """
 ===========================================================
