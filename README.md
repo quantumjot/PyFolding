@@ -27,7 +27,7 @@ $ python setup.py install
 ### Testing the installation
 
 Once installed, a simple script will execute the test function. This tests
-whether the package has installed correctly.  The following script is found in /tests/test_installation.py
+whether the package has installed correctly.  The following script is found in ./notebooks/
 
 ```python
 # import the pyfolding package
@@ -74,16 +74,22 @@ Raw data for PyFolding should be provided in .csv files.
 
 ### Current models supported
 
-+ Two-state equilibrium unfolding
-+ Three-state equilibrium unfolding
-+ Homopoylmer Ising model for equilibrium unfolding
-+ Heteropolymer Ising model for equilibrium unfolding
-+ Two-state chevron
-+ Two-state with moving transition state chevron
-+ Three-state chevron with fast pre-equilibrium chevron 
-+ Three-state chevron with fast phase chevron
-+ Three-state sequential barriers chevron
-+ Parallel two-state chevrons
++ Homopolymer Ising Equilibrium
++ Heteropolymer Ising Equilibrium
++ Parallel Two-State Chevron
++ Parallel Two-State Unfolding Chevron
++ Three State Chevron
++ Three State Dimeric Intermediate Equilibrium
++ Three State Fast Phase Chevron
++ Three State Monomeric Intermediate Equilibrium
++ Three State Sequential Barriers Chevron
++ Two State Chevron
++ Two State Chevron Moving Transition State
++ Two State Dimer Equilibrium
++ Two State Equilibrium
++ Two State EquilibriumSloping
+
+A 'TemplateModel' is provided for adding additional models.
 
 ---
 ### Example scripts
@@ -123,4 +129,4 @@ folding.plot_figure(equilibrium, chevron)
 ---
 ### IPython Notebooks
 
-PyFolding can be used within IPython Notebooks. Several example notebooks are provided in the examples folder.
+PyFolding can be used within IPython Notebooks. Several example notebooks are provided in the notebooks folder.
