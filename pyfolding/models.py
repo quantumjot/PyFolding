@@ -97,7 +97,7 @@ class TwoStateEquilibrium(core.FitModel):
 
 
 	def fit_func(self, x, m, d50):
-		F = ( np.exp((m*(x-d50))/constants.RT)) / (1.+np.exp((m*(x-d50))/constants.RT))
+		F = ( np.exp((m*(x-d50))/core.temperature.RT)) / (1.+np.exp((m*(x-d50))/core.temperature.RT))
 		return F
 
 	@property
@@ -127,7 +127,7 @@ class TwoStateEquilibriumSloping(core.FitModel):
 
 	def fit_func(self, x, alpha_f, beta_f, alpha_u, beta_u, m, d50):
 		F = (alpha_f+beta_f*x) + (alpha_u+beta_u*x) * (\
-		( np.exp((m*(x-d50))/constants.RT)) / (1.+np.exp((m*(x-d50))/constants.RT)))
+		( np.exp((m*(x-d50))/core.temperature.RT)) / (1.+np.exp((m*(x-d50))/core.temperature.RT)))
 		return F
 
 	@property
@@ -166,7 +166,7 @@ class TwoStateDimerEquilibrium(core.FitModel):
 		self.constants = (('Pt',7),)
 
 	def fit_func(self, x, alpha_N, beta_N, alpha_D, beta_D, m, d50):
-		K_U = np.exp(((constants.RT * np.ln(Pt))-(m*d50)-x) / constants.RT)
+		K_U = np.exp(((core.temperature.RT * np.ln(Pt))-(m*d50)-x) / core.temperature.RT)
 		F_D = ((K_U^2 + (8 * K_U * Pt))^0.5 - K_U) / (4*Pt)
 		Y_0 = ((alpha_N + beta_N*x)*(1-F_D)) +  ((alpha_D + beta_D*x)*(F_D))
 		return Y_0
@@ -210,8 +210,8 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
 		self.constants = (('Pt',7),)
 
 	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
-		K1 = np.exp((-DG1 + (m1*x)) / constants.RT)
-		K2 = np.exp((-DG2 + (m2*x)) / constants.RT)
+		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
+		K2 = np.exp((-DG2 + (m2*x)) / core.temperature.RT)
 		F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
 		Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
 		return Y_rel
@@ -253,8 +253,8 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
 		self.constants = (('Pt',7),)
 
 	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
-		K1 = np.exp((-DG1 + (m1*x)) / constants.RT)
-		K2 = np.exp((-DG2 + (m2*x)) / constants.RT)
+		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
+		K2 = np.exp((-DG2 + (m2*x)) / core.temperature.RT)
 		F_I = -(K1*(1+K2) + ((K1^2*(1+K2)^2 +(8*Pt*K1))^0.5)) / (4*Pt)
 		Y_rel = (Y_N * ((2*Pt*F_I^2)/K1)) + (Y_I * F_I) + (Y_D * (K2*F_I))
 		return Y_rel

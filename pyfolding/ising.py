@@ -386,6 +386,9 @@ class IsingPartitionFunction(object):
 
 
 def calculate_fit_residuals(fit_func):
+	"""
+	Function to calculate the residuals of a fit.
+	"""
 	r_res = np.array([])
 	r_sq = []
 	for protein in fit_func.proteins:
@@ -482,6 +485,8 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	Notes:
 		Optimisation is performed using differential evolution (a GA)
 		http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html#scipy.optimize.differential_evolution
+
+		TODO (2017/04/10) - Implement the saving using the core save function
 	
 	"""
 

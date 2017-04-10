@@ -5,7 +5,7 @@ PyFolding is a simple Python based framework for fitting kinetic and thermodynam
 protein folding data.  It includes several basic models and is extensible to enable fitting
 of more interesting models.
 
-NOTE: This project is still in progress, and the results may not yet be accurate...
+NOTE: This project is still under construction and is constantly changing.
 
 ---
 
