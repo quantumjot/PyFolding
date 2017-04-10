@@ -67,7 +67,9 @@ def dummy_free_energy(x):
 
 
 class IsingDomain(object):
-	""" Template class for derivative Ising domains to describe a
+	""" 
+
+	Template class for derivative Ising domains to describe a
 	protein topology.
 
 	Protein topologies can be described using, for example, a list
@@ -208,7 +210,9 @@ class MutantCapDomain(IsingDomain):
 
 
 class GlobalFitWrapper(object):
-	""" GlobalFitWrapper
+	""" 
+
+	GlobalFitWrapper
 
 	A wrapper for global fitting of the Ising model. Collects together all of the protein 
 	topologies, shares fitting paramers and calls the respective objective functions.
@@ -321,7 +325,8 @@ class GlobalFitWrapper(object):
 
 
 class IsingPartitionFunction(object):
-	""" General partition function object for Ising models.
+	""" 
+	General partition function object for Ising models.
 	"""
 	def __init__(self, topology=None):
 		if not isinstance(topology, list):
@@ -428,7 +433,8 @@ def calculate_error_from_jacobian(jac):
 
 
 class FitProgress(object):
-	""" Class to take care of updating the user as to the fitting progress
+	""" 
+	Class to take care of updating the user as to the fitting progress
 	"""
 
 	def __init__(self, update_freq=100):
@@ -472,7 +478,9 @@ class FitProgress(object):
 
 
 def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8, maxiter=None, **kwargs):
-	""" An example script to fit a series of data sets to a heteropolymer ising model.
+	""" 
+
+	An example script to fit a series of data sets to a heteropolymer ising model.
 
 	Args:
 		equilibrium_curves
@@ -597,7 +605,8 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
 
 def plot_Ising(fit_func):
-	""" Function to plot fitted Ising model data.
+	""" 
+	Function to plot fitted Ising model data.
 	"""
 
 	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rv', 'mv', 'gv', 'cv', 'bv', 'kv', 
@@ -673,7 +682,8 @@ def plot_folded(partition):
 
 
 def plot_domains(topologies, labels=None, **kwargs):
-	""" Function to generate a pretty plot of the domain architecture of 
+	""" 
+	Function to generate a pretty plot of the domain architecture of 
 	the various protein topologies presented.
 	"""
 
