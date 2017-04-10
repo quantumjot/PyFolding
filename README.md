@@ -5,6 +5,8 @@ PyFolding is a simple Python based framework for fitting kinetic and thermodynam
 protein folding data.  It includes several basic models and is extensible to enable fitting
 of more interesting models.
 
+NOTE: This project is still in progress, and the results may not yet be accurate...
+
 ---
 
 ### Requirements
@@ -74,20 +76,20 @@ Raw data for PyFolding should be provided in .csv files.
 
 ### Current models supported
 
-+ Homopolymer Ising Equilibrium
-+ Heteropolymer Ising Equilibrium
-+ Parallel Two-State Chevron
-+ Parallel Two-State Unfolding Chevron
-+ Three State Chevron
-+ Three State Dimeric Intermediate Equilibrium
-+ Three State Fast Phase Chevron
-+ Three State Monomeric Intermediate Equilibrium
-+ Three State Sequential Barriers Chevron
-+ Two State Chevron
-+ Two State Chevron Moving Transition State
-+ Two State Dimer Equilibrium
-+ Two State Equilibrium
-+ Two State EquilibriumSloping
++ Homopolymer Ising equilibrium
++ Heteropolymer Ising equilibrium
++ Parallel Two-State chevron
++ Parallel Two-State Unfolding chevron
++ Three State chevron
++ Three State Dimeric Intermediate equilibrium
++ Three State Fast-Phase chevron
++ Three State Monomeric Intermediate equilibrium
++ Three State Sequential Barriers chevron
++ Two State chevron
++ Two State chevron Moving Transition State
++ Two State Dimer equilibrium
++ Two State equilibrium
++ Two State equilibrium with sloping baselines
 
 A 'TemplateModel' is provided for adding additional models.
 

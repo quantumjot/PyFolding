@@ -55,6 +55,9 @@ def free_energy_m(x, DeltaG, m_value):
 def free_energy(x, DeltaG, m_value):
 	return np.exp( -DeltaG / core.temperature.RT )
 
+def dummy_free_energy(x):
+	return np.exp( -0. / core.temperature.RT )
+
 
 
 
@@ -110,7 +113,7 @@ class IsingDomain(object):
 		# restrict the default bounds to those used variables
 		self.bounds = ACCEPTABLE_BOUNDS
 
-		self.q_func = lambda x, folded: np.matrix([[self.kappa(x)*self.tau(x), folded],[self.kappa(x), folded]])
+		self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x)*tau(x), folded],[self.kappa(x), folded]])
 
 
 	def kappa(self, x):
@@ -121,9 +124,9 @@ class IsingDomain(object):
 		""" Return the DG_interface """
 		return self.__tau(x, self.DG_ij, self.m_ij)
 
-	def q_i(self, x, folded=1):
+	def q_i(self, x, tau, folded=1):
 		""" Return the q_i matrix """
-		return self.q_func(x, folded)
+		return self.q_func(x, tau, folded)
 
 
 	@property 
@@ -186,7 +189,7 @@ class CapDomain(IsingDomain):
 	def __init__(self):
 		IsingDomain.__init__(self)
 		self.name = "Cap"
-		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
+		self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
 		self.used_variables = (0, 2)
 
 
@@ -194,7 +197,7 @@ class MutantCapDomain(IsingDomain):
 	def __init__(self):
 		IsingDomain.__init__(self)
 		self.name = "MutantCap"
-		self.q_func = lambda x, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
+		self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
 		self.used_variables = (0, 2)
 
 
@@ -346,11 +349,14 @@ class IsingPartitionFunction(object):
 		if not folded.size:
 			folded = np.ones((self.n,))
 
+		# this is the sequence of tau functions, as a list of pointers to functions
+		tau_func = [dummy_free_energy] + [self.topology[i].tau for i in xrange(self.n-1)]
+
 		# calculate the full partition function for the fully folded protein
 		q_i = np.matrix([0,1])
 		for i in xrange(self.n):
 			domain = self.topology[i]
-			q_i = q_i * domain.q_i(x, folded=folded[i])
+			q_i = q_i * domain.q_i(x, tau_func[i], folded=folded[i])
 		q_i = q_i * np.matrix([1,1]).T
 		return  np.asarray( q_i.flatten() )[0][0]
 
