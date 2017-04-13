@@ -68,6 +68,7 @@ def dummy_free_energy(x):
 
 class IsingDomain(object):
 	""" 
+	IsingDomain
 
 	Template class for derivative Ising domains to describe a
 	protein topology.
@@ -79,14 +80,23 @@ class IsingDomain(object):
 
 	p = [RepeatDomain, RepeatDomain, LoopDomain, RepeatDomain]
 
-	Variable sharing can be performed by class re-use.
+	Variable sharing can be performed by class re-use, i.e. pointers
+	to instantiated domains.
 
 	Args:
 		k_func
 		t_func
 
 	Member functions:
+		tau - the tau function for this domain (coupling)
+		kappa - the kappa function for this domain (intrinsic)
+		q_i - calculate the weighted matrix for this domain, using the 
+			intrinsic kappa function and a tau function specified by the 
+			topology.
 
+	Properties:
+		bounds - the bounds for the optimisation algorithm
+		labels - the parameter labels of the domain
 
 	Notes:
 
@@ -211,7 +221,6 @@ class MutantCapDomain(IsingDomain):
 
 class GlobalFitWrapper(object):
 	""" 
-
 	GlobalFitWrapper
 
 	A wrapper for global fitting of the Ising model. Collects together all of the protein 
@@ -219,24 +228,30 @@ class GlobalFitWrapper(object):
 
 	Args:
 
-	Members:
-
 	Member functions:
-		
+		append - take a protein topology and the equilibrium denaturation curve and append
+				the data to the set. Automatically calculate domain reuse for variable 
+				sharing. Also generates the partition function (IsingPartitionFunction) for 
+				this new protein.
+
+	Properties:
+		bounds - the parameter bounds for this global optimisation	
+		domain_params - return the list of parameters required for the optimisation	
 
 	Notes:
-		2016/07/30 (ARL) - Need to sort out proper variable sharing
+		2016/07/30 (ARL) - Need to sort out proper variable sharing. DONE!
 
 	"""
 
 	def __init__(self):
+		""" Initialise variables for the global optimisation """
 		self.proteins = []
 		self.domains = []
 		self.domain_types = []
 
 
 	def __call__(self, x, *args):
-		"""This is the call used by the fitting function to evalutate the parameters passed in """
+		""" This is the call used by the fitting function to evalutate the parameters passed in """
 
 
 		if len(self.proteins) < 1:
@@ -326,7 +341,54 @@ class GlobalFitWrapper(object):
 
 class IsingPartitionFunction(object):
 	""" 
-	General partition function object for Ising models.
+	General partition function object for Ising models. Based on the 
+	matrix formulation for a heteropolymer ising model. Briefly:
+
+	\begin{equation}
+	\begin{aligned}
+	\kappa(x) &= \exp(-(\Delta G_{intrinsic} - m_{intrinsic}x) / RT) \\
+	\tau(x) &= \exp(-\Delta G_{interface}) / RT) \\
+	q(i) &= 
+	\begin{bmatrix} 0 & 1\end{bmatrix}
+	\begin{bmatrix} \kappa_1\tau_{-1} & 1\\ \kappa & 1 \end{bmatrix}
+	...
+	\begin{bmatrix} \kappa_n\tau_{n-1} & 1\\ \kappa & 1 \end{bmatrix}
+	\begin{bmatrix} 1 \\ 1\end{bmatrix} \\
+	\theta &=  \frac{1}{nq(n)} \sum_{i=0}^{n}{q(i)}
+	\end{aligned}
+	\end{equation}
+
+	Each protein has it's own partition function. The partition function 
+	relies on a fully defined topology, i.e. a 1D (Python) list of 
+	instantiated IsingDomain objects. The full partition function can 
+	be calculated from this assuming i,i-1 coupling.
+
+	Subpartition functions can also be calculated as well as the 
+	fraction of folded molecules (theta).
+
+	In the futute, it would be nice to consider other topologies,
+	perhaps as graphs.
+
+	Args:
+		topology - essentially a python list of IsingDomain objects
+
+
+	Member functions:
+		partition - calculate the full (or sub) partition function given
+			the topology
+		subpartition - calculate a subpartition function (calls partition)
+		theta - calculate the fraction of folded molecules at some value of x
+		subpopulation - return the fraction folded for a subpopulation
+
+	Properties:
+		__len__ - the number of domains in this topology.
+
+	Notes:
+		Matrix formulation is from:
+		Aksel and Barrick. Analysis of repeat-protein folding using 
+		nearest-neighbor statistical mechanical models. 
+		Methods in enzymology (2009) vol. 455 pp. 95-125
+
 	"""
 	def __init__(self, topology=None):
 		if not isinstance(topology, list):
@@ -415,6 +477,12 @@ def calculate_error_from_jacobian(jac):
 	Then calculate the error based on the SE of the variance.
 	This is definitely a bit wonky at the moment!
 
+	Args:
+		jac - the jacobian matrix from the minimisation.
+
+	Returns:
+		covar - the covariance matrix for the parameters of the fit.
+
 	Notes:
 		This is **NOT** tested very well
 
@@ -473,7 +541,8 @@ class FitProgress(object):
 
 			# average time per iteration
 			avg_time = sum_time / loop_iter
-			print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, Timing: {2:2.2f}s) ".format(self.__iter, convergence, avg_time)
+			print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, \
+				Timing: {2:2.2f}s per iteration) ".format(self.__iter, convergence, avg_time)
 
 
 

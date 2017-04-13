@@ -36,6 +36,7 @@ import constants
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
+__version__ = 0.03
 
 
 
@@ -166,11 +167,13 @@ def test(protein_ID='Simulated protein'):
 
 	for p_truth, p_fit in zip(truth['eq'], equilibrium.fit_params):
 		if (p_truth - p_fit)**2 > acceptible_error:
-			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
+			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds \
+				bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
 
 	for p_truth, p_fit in zip(truth['kin'], chevron.fit_params):
 		if (p_truth - p_fit)**2 > acceptible_error:
-			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
+			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds \
+				bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
 
 
 	print 'Test completed!'
