@@ -298,7 +298,11 @@ def write_CSV(filename, data, verbose=True):
 	
 	Notes:
 
+		WORK IN PROGRESS
+
 	"""
+
+	raise NotImplementedError
 
 	if not isinstance(filename, basestring):
 		raise IOError("Filename must be a string")

@@ -43,7 +43,8 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 # bounds (DG_i, DG_ij, m_i, m_ij)
 PARAMETER_LABELS = ('DG_i', 'DG_ij', 'm_i', 'm_ij')
-ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
+#ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
+ACCEPTABLE_BOUNDS = ((-10., 10.),(-10.,10.),(-3.,0.),(-3.,0.))
 
 
 
@@ -409,6 +410,13 @@ class IsingPartitionFunction(object):
 	def __len__(self):
 		return self.n
 
+
+	def tau_func(self):
+		""" Return the tau functions 
+		This is the sequence of tau functions, as a list of pointers to functions
+		"""
+		return [dummy_free_energy] + [self.topology[i].tau for i in xrange(self.n-1)]
+
 	def partition(self, x, folded=np.array([])):
 		""" Populate the partition function given the weights.
 		"""
@@ -417,7 +425,8 @@ class IsingPartitionFunction(object):
 			folded = np.ones((self.n,))
 
 		# this is the sequence of tau functions, as a list of pointers to functions
-		tau_func = [dummy_free_energy] + [self.topology[i].tau for i in xrange(self.n-1)]
+		# tau_func = [dummy_free_energy] + [self.topology[i].tau for i in xrange(self.n-1)]
+		tau_func = self.tau_func()
 
 		# calculate the full partition function for the fully folded protein
 		q_i = np.matrix([0,1])
@@ -502,7 +511,11 @@ def calculate_error_from_jacobian(jac):
 
 class FitProgress(object):
 	""" 
-	Class to take care of updating the user as to the fitting progress
+	FitProgress
+
+	A callback to take care of updating the user as to the fitting progress.
+	Estimates the time taken per iteration and the convergence of the fit,
+	to give an idea of what remains and how long it may take.
 	"""
 
 	def __init__(self, update_freq=100):
@@ -541,8 +554,7 @@ class FitProgress(object):
 
 			# average time per iteration
 			avg_time = sum_time / loop_iter
-			print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, \
-				Timing: {2:2.2f}s per iteration) ".format(self.__iter, convergence, avg_time)
+			print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, Timing: {2:2.2f}s per iteration) ".format(self.__iter, convergence, avg_time)
 
 
 
@@ -799,21 +811,26 @@ def plot_domains(topologies, labels=None, **kwargs):
 			c = plt.Circle((x*1.5, y), 0.45, edgecolor=topology_map[domain_name]['color'], facecolor='w', label=domain_name)
 			ax.add_artist(c)
 
+			i_str = str(x)
+			ij_str = str(x)
+
+
 			# add on any labels:
 			if 'm_i' in topology_map[domain_name]['labels']:
 				#ax.text(x,y+.2,'$m_{i}^{'+domain_name+'}$', horizontalalignment='center')
-				ax.text(x*1.5,y+.1,'$m_{i}$', horizontalalignment='center', fontsize=18)
+				ax.text(x*1.5,y+.1,'$m^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=topology_map[domain_name]['color'])
 			if 'DG_i' in topology_map[domain_name]['labels']:
-				ax.text(x*1.5,y-.3,'$\Delta G_{i}$', horizontalalignment='center', fontsize=18)
+				ax.text(x*1.5,y-.3,'$\Delta G^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=topology_map[domain_name]['color'])
 
 			# draw arrows to represent interactions
-			if topology_map[domain_name]['interaction'] and x!=0:
-				ax.arrow(x*1.5-.3, y, -1., 0, head_width=0.1, head_length=0.2, fc='k', ec='k')
+			if topology_map[domain_name]['interaction'] and x!=len(topology)-1: #x!=0:
+				#ax.arrow(x*1.5-.3, y, -1., 0, head_width=0.1, head_length=0.2, fc='k', ec='k')
 
 				if 'm_ij' in topology_map[domain_name]['labels']:
-					ax.text(x*1.5-.75,y+.1,'$m_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
+					ax.text(x*1.5+.9,y+.1,'$m^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
 				if 'DG_ij' in topology_map[domain_name]['labels']:
-					ax.text(x*1.5-.75,y-.3,'$\Delta G_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
+					#ax.text(x*1.5-.75,y-.3,'$\Delta G_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
+					ax.text(x*1.5+.9,y,'$\Delta G^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
 
 
 	ax.set_yticks(np.arange(len(topologies)), minor=False)
