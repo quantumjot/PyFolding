@@ -294,7 +294,8 @@ class HomozipperIsingEquilibrium(core.FitModel):
 			return core.FIT_ERROR(x)
 
 		k = np.exp(-(DG_intrinsic - m_intrinsic*x) / core.temperature.RT )
-		t = np.exp(-(DG_interface - m_interface*x) / core.temperature.RT )
+		#t = np.exp(-(DG_interface - m_interface*x) / core.temperature.RT )
+		t = np.exp(-(DG_interface) / core.temperature.RT )
 		pre_factor = (k/(n*(k*t-1))) 
 		numerator = n*(k*t)**(n+2) - (n+2)*(k*t)**(n+1) + (n+2)*k*t-n
 		denominator = (k*t-1)**2 + k*((k*t)**(n+1) - (n+1)*k*t+n )

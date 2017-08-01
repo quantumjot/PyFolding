@@ -688,6 +688,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 def plot_Ising(fit_func):
 	""" 
 	Function to plot fitted Ising model data.
+
 	"""
 
 	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rv', 'mv', 'gv', 'cv', 'bv', 'kv', 
@@ -762,10 +763,13 @@ def plot_folded(partition):
 
 
 
-def plot_domains(topologies, labels=None, **kwargs):
+def plot_domains(topologies, labels=None, fold=True, **kwargs):
 	""" 
 	Function to generate a pretty plot of the domain architecture of 
 	the various protein topologies presented.
+
+	Fold is a boolean that collapses sequences of similar domains for smaller representation.
+	
 	"""
 
 	from matplotlib.patches import Patch
