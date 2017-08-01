@@ -44,7 +44,7 @@ __email__ = "a.lowe@ucl.ac.uk"
 # bounds (DG_i, DG_ij, m_i, m_ij)
 PARAMETER_LABELS = ('DG_i', 'DG_ij', 'm_i', 'm_ij')
 #ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
-ACCEPTABLE_BOUNDS = ((-10., 10.),(-10.,10.),(-3.,0.),(-3.,0.))
+ACCEPTABLE_BOUNDS = ((-10., 10.),(-10.,10.),(-3.,0.1),(-3.,0.1))
 
 
 

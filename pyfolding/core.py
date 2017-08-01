@@ -477,7 +477,7 @@ class FoldingData(object):
 	def results(self):
 		return self.__fit
 
-	def fit(self, p0=None, data=None):
+	def fit(self, p0=None, constants=None):
 		""" Fit the data to the defined model. Use p0 to 
 		introduce the estimated start values.
 		"""
@@ -485,6 +485,11 @@ class FoldingData(object):
 
 			# set the default fitting parameters
 			if not p0: p0 = self.__fit_func.default_params
+
+			# set any constants
+			if constants: 
+				# TODO: error checking/parsing here
+				self.__fit_func.constants = constants
 
 			# perform the actual fitting
 			try:
@@ -767,13 +772,26 @@ class GlobalFit(object):
 			# append it and instantiate it
 			self.__fit_funcs.append( fit_func() )
 
+	@property 
+	def constants(self): 
+		return [f.constants for f in self.__fit_funcs]
+	@constants.setter
+	def constants(self, constants=None):
+		if len(constants) != len(self.__fit_funcs):
+			raise ValueError("Number of constants should be the same as number of fit functions")
+
+		for constant, fit_func in zip(constants, self.__fit_funcs):
+			fit_func.constants = constant
+
+
+
 	def __call__(self, *args):
 		""" Dummy call for all fit functions """
 		x = args[0]
 		fit_args = args[1:]
 		ret = np.array(())
-		for fit_func in self.fit_funcs:
-			x_this = np.array( self.x[self.fit_funcs.index(fit_func)] )
+		for i, fit_func in enumerate(self.fit_funcs):
+			x_this = np.array( self.x[i] )
 			ret = np.append( ret, fit_func(x_this, *fit_args) )
 		return ret
 
