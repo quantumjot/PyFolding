@@ -761,6 +761,41 @@ def plot_folded(partition):
 	return h,x
 
 
+def collapse_topology(topology):
+	"""
+	Collapse a topology into a compact representation.
+	"""
+
+	# make a copy so that we don't do this in place
+	topology_full = list(topology)
+	compact = []
+	counter = 0
+
+	domain = topology_full.pop(0)
+
+	while topology_full:
+		next_domain = topology_full.pop(0)
+		if next_domain is domain:
+			counter += 1
+		else:
+			compact.append((domain, counter+1))
+			counter = 0
+			domain = next_domain
+
+	# clean up
+	compact.append((domain, counter+1))
+
+	return compact
+
+
+
+
+def brace(x,y, rev=1, length=0.95):
+	xb = [x+(rev*.4), x+(rev*.5), x+(rev*.5), x+(rev*.4)]
+	yb = [y+length/2, y+length/2, y-length/2, y-length/2]
+	return xb,yb
+
+
 
 
 def plot_domains(topologies, labels=None, fold=True, **kwargs):
@@ -768,8 +803,12 @@ def plot_domains(topologies, labels=None, fold=True, **kwargs):
 	Function to generate a pretty plot of the domain architecture of 
 	the various protein topologies presented.
 
-	Fold is a boolean that collapses sequences of similar domains for smaller representation.
-	
+
+	Args:
+		topologies: the protein topologies
+		labels: protein names
+		fold: a boolean that collapses sequences of similar domains for smaller representation.
+
 	"""
 
 	from matplotlib.patches import Patch
@@ -777,64 +816,69 @@ def plot_domains(topologies, labels=None, fold=True, **kwargs):
 	if not labels:
 		labels = ['Protein {0:d}'.format(i) for i in xrange(len(topologies))]
 	
-	topology_types = []
-	topology_map = {}
+
+	# collapse the topologies
+	compact = []
+	domain_types = set()
+
+	for l,t in zip(labels, topologies):
+
+		domain_types.update([d().name for d in t])
+		
+		c = collapse_topology(t)
+		if not fold:
+			tc = []
+			for d,n in c: tc += [(d,1)]*n 
+			c = tc
+
+		compact.append((l, c))
+
+
+	# set up the plotting
+	domain_types = list(domain_types)
+	
+	d_color = lambda name: cmap[ domain_types.index(name) ]
 	cmap = ['r', 'k', 'g', 'b', 'c', 'm', 'y']
-	for t in topologies:
-		for d in t:
 
-			# if the topology has come from the fit function, these will
-			# not be instantiated, deal with that:
-			if not isinstance(t[0], IsingDomain):
-				d = d()
-
-			if d.name not in topology_types: 
-				
-				if 'DG_ij' not in d.labels:
-					interaction = False
-				else:
-					interaction = True
-
-				topology_map[d.name] = {'color':cmap[len(topology_types)], 'interaction':interaction, 'labels':d.labels}
-				topology_types.append(d.name)
-
-	# plot the domain figure
+	# now we want to plot these
 	plt.figure(figsize=(14,8))
 	ax = plt.subplot(111)
 
-	for y, topology in enumerate(topologies):
-		for x, domain in enumerate(topology):
-			#ax.plot(x,y,'k.')
+	for y, (protein, topology) in enumerate(compact):
+		for x, (domain, d_cnt) in enumerate(topology):
 
-			if not isinstance(domain, IsingDomain):
-				domain_name = domain().name
-			else:
-				domain_name = domain.name
+			name = domain().name
+			c = plt.Circle((x*1.5, y), 0.45, edgecolor=d_color(name), facecolor='w', label=name)
+	 		ax.add_artist(c)
 
-			# draw a circle to represent the domain
-			c = plt.Circle((x*1.5, y), 0.45, edgecolor=topology_map[domain_name]['color'], facecolor='w', label=domain_name)
-			ax.add_artist(c)
 
-			i_str = str(x)
+	 		# if we're folding, then plot braces to show that
+	 		if d_cnt > 1:
+	 			lb_x, lb_y = brace(x*1.5,y, rev=-1)
+	 			rb_x, rb_y = brace(x*1.5,y, rev=1)
+	 			b = plt.Line2D(lb_x, lb_y, color='k')
+	 			ax.add_artist(b)
+	 			b = plt.Line2D(rb_x, rb_y, color='k')
+	 			ax.add_artist(b)
+	 			ax.text(x*1.5+.55, y-.4, str(d_cnt), color='k')
+
+
+	 	 	i_str = str(x)
 			ij_str = str(x)
 
-
 			# add on any labels:
-			if 'm_i' in topology_map[domain_name]['labels']:
-				#ax.text(x,y+.2,'$m_{i}^{'+domain_name+'}$', horizontalalignment='center')
-				ax.text(x*1.5,y+.1,'$m^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=topology_map[domain_name]['color'])
-			if 'DG_i' in topology_map[domain_name]['labels']:
-				ax.text(x*1.5,y-.3,'$\Delta G^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=topology_map[domain_name]['color'])
+			if hasattr(domain(), 'm_i'):
+				ax.text(x*1.5,y+.1,'$m^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=d_color(name))
+			if hasattr(domain(), 'DG_i'):
+				ax.text(x*1.5,y-.3,'$\Delta G^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=d_color(name))
 
 			# draw arrows to represent interactions
-			if topology_map[domain_name]['interaction'] and x!=len(topology)-1: #x!=0:
-				#ax.arrow(x*1.5-.3, y, -1., 0, head_width=0.1, head_length=0.2, fc='k', ec='k')
+			if hasattr(domain(), 'DG_ij') and x!=len(topology)-1:
 
-				if 'm_ij' in topology_map[domain_name]['labels']:
-					ax.text(x*1.5+.9,y+.1,'$m^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
-				if 'DG_ij' in topology_map[domain_name]['labels']:
-					#ax.text(x*1.5-.75,y-.3,'$\Delta G_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
-					ax.text(x*1.5+.9,y,'$\Delta G^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=topology_map[domain_name]['color'])
+				# if hasattr(domain(), 'm_ij'):
+				# 	ax.text(x*1.5+.9,y+.1,'$m^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=d_color(name))
+				ax.text(x*1.5+.9,y,'$\Delta G^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=d_color(name))
+
 
 
 	ax.set_yticks(np.arange(len(topologies)), minor=False)
@@ -842,7 +886,7 @@ def plot_domains(topologies, labels=None, fold=True, **kwargs):
 	ax.set_yticklabels(labels, minor=False)
 
 	# make the legend entries
-	l = [ Patch(edgecolor=topology_map[d]['color'], facecolor='w', label=d) for d in topology_types ]
+	l = [ Patch(edgecolor=d_color(d), facecolor='w', label=d) for d in domain_types ]
 
 
 	ax.set_xlim([-1.,11.])
