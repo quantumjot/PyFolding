@@ -1,4 +1,8 @@
-src/build/*
+build/*
+docs/*
+test/*
+examples/*
+notebooks/.ipynb_checkpoints/*
 *.pyc
 *.pyd
 *.so

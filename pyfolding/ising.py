@@ -2,8 +2,8 @@
 
 """
 Python implementation of common model fitting operations to
-analyse protein folding data. Simply automates some fitting 
-and value calculation. Will be extended to include phi-value 
+analyse protein folding data. Simply automates some fitting
+and value calculation. Will be extended to include phi-value
 analysis and other common calculations.
 
 Allows for quick model evaluation and plotting.
@@ -24,13 +24,13 @@ Lowe, A.R. 2015-2016
 import sys
 import time
 import inspect
-import numpy as np 
+import numpy as np
 import scipy as sp
 
 import matplotlib.pyplot as plt
 
 # use a global optimisation algorithm for the Ising model fitting
-from scipy.optimize import differential_evolution, minimize, leastsq
+from scipy.optimize import differential_evolution, minimize, leastsq, curve_fit
 
 # import PyFolding specific libraries
 import constants
@@ -48,7 +48,7 @@ ACCEPTABLE_BOUNDS = ((-10., 10.),(-10.,10.),(-3.,0.1),(-3.,0.1))
 
 
 
-	
+
 
 def free_energy_m(x, DeltaG, m_value):
 	return np.exp(-(DeltaG - m_value*x) / core.temperature.RT)
@@ -68,7 +68,7 @@ def dummy_free_energy(x):
 
 
 class IsingDomain(object):
-	""" 
+	"""
 	IsingDomain
 
 	Template class for derivative Ising domains to describe a
@@ -91,8 +91,8 @@ class IsingDomain(object):
 	Member functions:
 		tau - the tau function for this domain (coupling)
 		kappa - the kappa function for this domain (intrinsic)
-		q_i - calculate the weighted matrix for this domain, using the 
-			intrinsic kappa function and a tau function specified by the 
+		q_i - calculate the weighted matrix for this domain, using the
+			intrinsic kappa function and a tau function specified by the
 			topology.
 
 	Properties:
@@ -132,7 +132,7 @@ class IsingDomain(object):
 	def kappa(self, x):
 		""" Return the DG_intrinsic """
 		return self.__kappa(x, self.DG_i, self.m_i)
- 
+
 	def tau(self, x):
 		""" Return the DG_interface """
 		return self.__tau(x, self.DG_ij, self.m_ij)
@@ -142,7 +142,7 @@ class IsingDomain(object):
 		return self.q_func(x, tau, folded)
 
 
-	@property 
+	@property
 	def bounds(self):
 		return tuple([ self.__bounds[i] for i in self.used_variables ])
 	@bounds.setter
@@ -151,11 +151,11 @@ class IsingDomain(object):
 			raise TypeError("Fit bounds must be specified as a tuple")
 		self.__bounds = bounds
 
-	@property 
+	@property
 	def labels(self):
 		return [ PARAMETER_LABELS[i] for i in self.used_variables ]
-		
-	
+
+
 
 """ Pre-defined domain topologies for GlobalFitIsing """
 
@@ -221,23 +221,23 @@ class MutantCapDomain(IsingDomain):
 
 
 class GlobalFitWrapper(object):
-	""" 
+	"""
 	GlobalFitWrapper
 
-	A wrapper for global fitting of the Ising model. Collects together all of the protein 
+	A wrapper for global fitting of the Ising model. Collects together all of the protein
 	topologies, shares fitting paramers and calls the respective objective functions.
 
 	Args:
 
 	Member functions:
 		append - take a protein topology and the equilibrium denaturation curve and append
-				the data to the set. Automatically calculate domain reuse for variable 
-				sharing. Also generates the partition function (IsingPartitionFunction) for 
+				the data to the set. Automatically calculate domain reuse for variable
+				sharing. Also generates the partition function (IsingPartitionFunction) for
 				this new protein.
 
 	Properties:
-		bounds - the parameter bounds for this global optimisation	
-		domain_params - return the list of parameters required for the optimisation	
+		bounds - the parameter bounds for this global optimisation
+		domain_params - return the list of parameters required for the optimisation
 
 	Notes:
 		2016/07/30 (ARL) - Need to sort out proper variable sharing. DONE!
@@ -281,7 +281,7 @@ class GlobalFitWrapper(object):
 		return np.sum(res)
 
 
-	@property 
+	@property
 	def bounds(self):
 		""" Return the expected bounds for fitting based on the domain topologies
 		used.
@@ -294,10 +294,10 @@ class GlobalFitWrapper(object):
 
 		return bounds
 
-	
+
 	def append(self, curve, topology):
 		""" Append an equilibrium curve, with associated data. Generate a topology
-		and the associated partition function 
+		and the associated partition function
 		"""
 		if not isinstance(curve, core.EquilibriumDenaturationCurve):
 			raise TypeError('GlobalFitIsing.append must receive an EquilibriumDenaturationCurve as input')
@@ -306,7 +306,7 @@ class GlobalFitWrapper(object):
 		# now go through the domain topology and set up domains as necessary
 		q_topology = []
 		for domain in topology:
-			
+
 			if domain not in self.domain_types:
 				new_domain = domain() # instantiate this and append it to the list of domains
 				self.domains.append( new_domain )
@@ -324,7 +324,7 @@ class GlobalFitWrapper(object):
 		self.proteins.append({'n':len(q_topology), 'curve':curve, 'partition':q})
 
 
-	@property 
+	@property
 	def domain_params(self):
 		""" Return the ordered list of domain parameters for printing the results of the fit """
 		domain_params = []
@@ -335,21 +335,21 @@ class GlobalFitWrapper(object):
 
 
 
-			
+
 
 
 
 
 class IsingPartitionFunction(object):
-	""" 
-	General partition function object for Ising models. Based on the 
+	"""
+	General partition function object for Ising models. Based on the
 	matrix formulation for a heteropolymer ising model. Briefly:
 
 	\begin{equation}
 	\begin{aligned}
 	\kappa(x) &= \exp(-(\Delta G_{intrinsic} - m_{intrinsic}x) / RT) \\
 	\tau(x) &= \exp(-\Delta G_{interface}) / RT) \\
-	q(i) &= 
+	q(i) &=
 	\begin{bmatrix} 0 & 1\end{bmatrix}
 	\begin{bmatrix} \kappa_1\tau_{-1} & 1\\ \kappa & 1 \end{bmatrix}
 	...
@@ -359,12 +359,12 @@ class IsingPartitionFunction(object):
 	\end{aligned}
 	\end{equation}
 
-	Each protein has it's own partition function. The partition function 
-	relies on a fully defined topology, i.e. a 1D (Python) list of 
-	instantiated IsingDomain objects. The full partition function can 
+	Each protein has it's own partition function. The partition function
+	relies on a fully defined topology, i.e. a 1D (Python) list of
+	instantiated IsingDomain objects. The full partition function can
 	be calculated from this assuming i,i-1 coupling.
 
-	Subpartition functions can also be calculated as well as the 
+	Subpartition functions can also be calculated as well as the
 	fraction of folded molecules (theta).
 
 	In the futute, it would be nice to consider other topologies,
@@ -386,8 +386,8 @@ class IsingPartitionFunction(object):
 
 	Notes:
 		Matrix formulation is from:
-		Aksel and Barrick. Analysis of repeat-protein folding using 
-		nearest-neighbor statistical mechanical models. 
+		Aksel and Barrick. Analysis of repeat-protein folding using
+		nearest-neighbor statistical mechanical models.
 		Methods in enzymology (2009) vol. 455 pp. 95-125
 
 	"""
@@ -400,7 +400,7 @@ class IsingPartitionFunction(object):
 				raise TypeError('IsingPartitionFunction: Model topologies must be specified using IsingDomain classes')
 
 
-		# if everything is OK, set up the topology for this partition function		
+		# if everything is OK, set up the topology for this partition function
 		self.init_topology( topology )
 
 	def init_topology(self, topology=None):
@@ -412,7 +412,7 @@ class IsingPartitionFunction(object):
 
 
 	def tau_func(self):
-		""" Return the tau functions 
+		""" Return the tau functions
 		This is the sequence of tau functions, as a list of pointers to functions
 		"""
 		return [dummy_free_energy] + [self.topology[i].tau for i in xrange(self.n-1)]
@@ -453,7 +453,7 @@ class IsingPartitionFunction(object):
 	def subpopulation(self, x, i):
 		""" Return the fraction folded for a sub population of the states """
 		q_n = self.partition(x)
-		q_i = self.subpartition(x, i, rev=False) 
+		q_i = self.subpartition(x, i, rev=False)
 		theta = q_i / q_n
 		return 1.-theta
 
@@ -468,7 +468,7 @@ def calculate_fit_residuals(fit_func):
 	r_res = np.array([])
 	r_sq = []
 	for protein in fit_func.proteins:
-		y_data = protein['curve'].y 
+		y_data = protein['curve'].y
 		y_fit = protein['partition'].theta( protein['curve'].x )
 
 		r_res = np.concatenate((r_res, y_data-y_fit))
@@ -480,7 +480,7 @@ def calculate_fit_residuals(fit_func):
 
 def calculate_error_from_jacobian(jac):
 	"""
-	Calculate Hessian from jacobian, and covariance from Hessian: 
+	Calculate Hessian from jacobian, and covariance from Hessian:
 	covar = (J^T . J)^{-1}.
 
 	Then calculate the error based on the SE of the variance.
@@ -510,7 +510,7 @@ def calculate_error_from_jacobian(jac):
 
 
 class FitProgress(object):
-	""" 
+	"""
 	FitProgress
 
 	A callback to take care of updating the user as to the fitting progress.
@@ -527,7 +527,7 @@ class FitProgress(object):
 		self.__convergence_tzero = None
 
 	def __call__(self, xk, convergence=None):
-		
+
 		# keep track of the loop timing
 		this_iter = time.time() - self.__timer
 		self.__timer = time.time()
@@ -558,8 +558,89 @@ class FitProgress(object):
 
 
 
+
+
+
+def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **kwargs):
+	"""
+	Fit a homopolymer model to a dataset.
+
+	TODO: Improve this.
+
+	"""
+
+	global_fit = core.GlobalFit()
+	global_fit.fit_funcs = [models.HomozipperIsingEquilibrium for i in xrange(len(equilibrium_curves))]
+	global_fit.constants = [(('n',n),) for n in topologies]
+
+	global_fit.x = [p.x for p in equilibrium_curves]
+
+	x = np.concatenate([p.x for p in equilibrium_curves])
+	y = np.concatenate([p.y for p in equilibrium_curves])
+
+	# fit the curve
+	out, covar = curve_fit(global_fit, x, y, p0=p0, bounds=((0,0,-1.,-10.),(21,10.,1.,0)) )
+
+	# somewhere to store the results
+	results = []
+	covar = covar[1:,1:]
+
+	# calculate errors
+	for i, protein in enumerate(equilibrium_curves):
+
+		# calculate the fit
+		n = topologies[i]
+		fit_args = [n] + out[1:].tolist()
+		fit_y = global_fit.fit_funcs[i](global_fit.x[i], *fit_args)
+
+		result = core.FitResult(fit_name="Homopolymer Ising Model", fit_args=global_fit.fit_funcs[0].fit_func_args[1:])
+		result.ID = protein.ID
+		result.fit_params = out[1:].tolist()
+		result.method = "scipy.optimize.curve_fit"
+		#result.y = protein['partition'].theta( result.x )
+		result.y = fit_y
+		result.covar = covar
+		result.residuals = protein.y - fit_y
+		#result.r_squared = r_squared[i]
+
+		results.append( result )
+
+	print '\nFitting results: '
+	for r_arg, r_val, r_err in results[0].details:
+	 	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
+
+
+	# plot some of the results
+	plt.figure(figsize=(14,8))
+	for i, p in enumerate(equilibrium_curves):
+		plt.plot(p.x, p.y, 'o', p.x, results[i].y, '-')
+	plt.xlabel(p.denaturant_label, fontsize=constants.FONT_SIZE)
+	plt.ylabel('Fraction unfolded', fontsize=constants.FONT_SIZE)
+	plt.show()
+
+
+	if 'save' in kwargs:
+		pass
+
+	return results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8, maxiter=None, **kwargs):
-	""" 
+	"""
 
 	An example script to fit a series of data sets to a heteropolymer ising model.
 
@@ -570,13 +651,13 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		tol
 		save
 
-	
+
 	Notes:
 		Optimisation is performed using differential evolution (a GA)
 		http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html#scipy.optimize.differential_evolution
 
 		TODO (2017/04/10) - Implement the saving using the core save function
-	
+
 	"""
 
 	# do some parsing of the input
@@ -584,7 +665,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		raise TypeError('equilibrium_curves must be a list of EquilibriumDenaturationCurve type')
 
 	if not isinstance(topologies, list):
-		raise TypeError('topologies must be a list of IsingDomain type')	
+		raise TypeError('topologies must be a list of IsingDomain type')
 
 	results = []
 	fit_func = GlobalFitWrapper()
@@ -606,11 +687,11 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
 	# perform the actual fitting operation
 	r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol, callback=callback, maxiter=maxiter)
-	
+
 	if not r.success:
 		print "Could not find a solution..."
 		return None
-	
+
 	# calculate the errors on each of the parameters
 	if hasattr(r, 'jac'):
 		# the fit has the jacobian
@@ -686,13 +767,14 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
 
 def plot_Ising(fit_func):
-	""" 
+	"""
 	Function to plot fitted Ising model data.
 
 	"""
 
-	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rv', 'mv', 'gv', 'cv', 'bv', 'kv', 
-			'rs', 'ms', 'gs', 'cs', 'bs', 'ks', 'r.', 'm.', 'g.', 'c.', 'b.', 'k.']
+	cmap = ['ro', 'mo', 'go', 'co', 'bo', 'ko', 'rv', 'mv', 'gv', 'cv', 'bv',
+			'kv', 'rs', 'ms', 'gs', 'cs', 'bs', 'ks', 'r.', 'm.', 'g.', 'c.',
+			'b.', 'k.']
 
 	# plot the fits
 	plt.figure(figsize=(14,8))
@@ -702,13 +784,14 @@ def plot_Ising(fit_func):
 		idx = fit_func.proteins.index(protein)
 		xv = protein['curve'].x
 		ax1.plot(xv, protein['curve'].y, cmap[idx % len(cmap)], ms=4)
-		
+
 	#plt.legend( [p['curve'].ID for p in fit_func.proteins], loc='upper left')
-	
+
 	for protein in fit_func.proteins:
 		idx = fit_func.proteins.index(protein)
 		xv = np.linspace(0., np.max(protein['curve'].x), 100)
-		ax1.plot(xv, protein['partition'].theta(xv), cmap[idx % len(cmap)][0]+'-', lw=2, label=protein['curve'].ID)
+		ax1.plot(xv, protein['partition'].theta(xv), cmap[idx % len(cmap)][0]+'-',
+			lw=2, label=protein['curve'].ID)
 
 	ax1.set_xlabel(fit_func.proteins[0]['curve'].denaturant_label)
 	ax1.set_ylabel('Fraction unfolded')
@@ -722,7 +805,8 @@ def plot_Ising(fit_func):
 		xv = np.linspace(0.,10.,1000)
 		first_deriv = np.gradient(protein['partition'].theta(xv))
 		pk_max.append( (protein['n'], xv[np.argmax(np.abs(first_deriv))]) )
-		ax2.plot(xv, np.abs(first_deriv), cmap[idx % len(cmap)][0]+'-', lw=2, label=protein['curve'].ID)
+		ax2.plot(xv, np.abs(first_deriv), cmap[idx % len(cmap)][0]+'-', lw=2,
+			label=protein['curve'].ID)
 
 	ax2.set_xlabel(fit_func.proteins[0]['curve'].denaturant_label)
 	ax2.set_ylabel('First derivative of fit function')
@@ -732,7 +816,8 @@ def plot_Ising(fit_func):
 	h,x = plot_folded(fit_func.proteins[-1]['partition'])
 	dn = iter(['{0:s}_{1:d}'.format(d.name,i) for i,d in enumerate(fit_func.proteins[-1]['partition'].topology)])
 	for i in xrange(h.shape[1]):
-		plt.plot(x, h[:,i], cmap[i % len(cmap)]+'-', lw=2, markersize=4, label=dn.next())
+		plt.plot(x, h[:,i], cmap[i % len(cmap)]+'-', lw=2, markersize=4,
+			label=dn.next())
 	ax3.set_xlabel(fit_func.proteins[0]['curve'].denaturant_label)
 	ax3.set_ylabel('Fraction unfolded (subpopulation)')
 
@@ -757,7 +842,7 @@ def plot_folded(partition):
 	x = np.linspace(0.,10.,100)
 	for i in xrange(partition.n):
 		p = partition.subpopulation(x,i)
-		h[:,i] = p 
+		h[:,i] = p
 	return h,x
 
 
@@ -798,16 +883,17 @@ def brace(x,y, rev=1, length=0.95):
 
 
 
-def plot_domains(topologies, labels=None, fold=True, **kwargs):
-	""" 
-	Function to generate a pretty plot of the domain architecture of 
+def plot_domains(topologies, labels=None, collapse=False, **kwargs):
+	"""
+	Function to generate a pretty plot of the domain architecture of
 	the various protein topologies presented.
 
 
 	Args:
 		topologies: the protein topologies
 		labels: protein names
-		fold: a boolean that collapses sequences of similar domains for smaller representation.
+		fold: a boolean that collapses sequences of similar domains for smaller
+			representation.
 
 	"""
 
@@ -815,7 +901,11 @@ def plot_domains(topologies, labels=None, fold=True, **kwargs):
 
 	if not labels:
 		labels = ['Protein {0:d}'.format(i) for i in xrange(len(topologies))]
-	
+
+	if 'fold' in kwargs:
+		raise DeprecationWarning('Fold keyword is being replaced with collapse.')
+		collapse = kwargs['fold']
+
 
 	# collapse the topologies
 	compact = []
@@ -824,11 +914,11 @@ def plot_domains(topologies, labels=None, fold=True, **kwargs):
 	for l,t in zip(labels, topologies):
 
 		domain_types.update([d().name for d in t])
-		
+
 		c = collapse_topology(t)
-		if not fold:
+		if not collapse:
 			tc = []
-			for d,n in c: tc += [(d,1)]*n 
+			for d,n in c: tc += [(d,1)]*n
 			c = tc
 
 		compact.append((l, c))
@@ -836,19 +926,20 @@ def plot_domains(topologies, labels=None, fold=True, **kwargs):
 
 	# set up the plotting
 	domain_types = list(domain_types)
-	
+
 	d_color = lambda name: cmap[ domain_types.index(name) ]
 	cmap = ['r', 'k', 'g', 'b', 'c', 'm', 'y']
 
 	# now we want to plot these
-	plt.figure(figsize=(14,8))
+	plt.figure(figsize=(14, len(topologies)*1.5))
 	ax = plt.subplot(111)
 
 	for y, (protein, topology) in enumerate(compact):
 		for x, (domain, d_cnt) in enumerate(topology):
 
 			name = domain().name
-			c = plt.Circle((x*1.5, y), 0.45, edgecolor=d_color(name), facecolor='w', label=name)
+			c = plt.Circle((x*1.5, y), 0.45, edgecolor=d_color(name),
+						facecolor='w', label=name)
 	 		ax.add_artist(c)
 
 
@@ -868,16 +959,17 @@ def plot_domains(topologies, labels=None, fold=True, **kwargs):
 
 			# add on any labels:
 			if hasattr(domain(), 'm_i'):
-				ax.text(x*1.5,y+.1,'$m^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=d_color(name))
+				ax.text(x*1.5,y+.1,'$m^{'+i_str+'}_{i}$',
+					horizontalalignment='center', fontsize=18, color=d_color(name))
 			if hasattr(domain(), 'DG_i'):
-				ax.text(x*1.5,y-.3,'$\Delta G^{'+i_str+'}_{i}$', horizontalalignment='center', fontsize=18, color=d_color(name))
+				ax.text(x*1.5,y-.3,'$\Delta G^{'+i_str+'}_{i}$',
+					horizontalalignment='center', fontsize=18, color=d_color(name))
 
 			# draw arrows to represent interactions
 			if hasattr(domain(), 'DG_ij') and x!=len(topology)-1:
-
-				# if hasattr(domain(), 'm_ij'):
-				# 	ax.text(x*1.5+.9,y+.1,'$m^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=d_color(name))
-				ax.text(x*1.5+.9,y,'$\Delta G^{'+ij_str+'}_{ij}$', horizontalalignment='center', fontsize=12, rotation=90, color=d_color(name))
+				ax.text(x*1.5+.9,y,'$\Delta G^{'+ij_str+'}_{ij}$',
+					horizontalalignment='center', fontsize=12, rotation=90,
+					color=d_color(name))
 
 
 

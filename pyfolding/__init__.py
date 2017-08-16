@@ -1,4 +1,3 @@
-__all__ = ['constants','ising','models','phi','core']
+__all__ = ['constants','ising','models','phi','core','utils']
 
 from core import *
- 

@@ -10,5 +10,12 @@ RT = IDEAL_GAS_CONSTANT_KCAL * TEMPERATURE_KELVIN
 # error
 FITTING_PENALTY = 1e10
 
+# display properties
+FONT_SIZE = 18
+MARKER_SIZE = 8
+LABEL_SIZE = 18
+LINE_WIDTH = 3
+
+
 if __name__ == "__main__":
 	pass
