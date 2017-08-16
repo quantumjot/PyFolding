@@ -40,7 +40,8 @@ def list_models():
 	FitModel.
 	"""
 	clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
-	fit_models = [ cls[0] for cls in clsmembers if cls[1].__bases__[0] == core.FitModel ]
+	verif = lambda cls: 'Verified: {0}'.format(cls[1]().verified)
+	fit_models = [ (cls[0], verif(cls)) for cls in clsmembers if cls[1].__bases__[0] == core.FitModel ]
 	return fit_models
 
 
@@ -94,6 +95,7 @@ class TwoStateEquilibrium(core.FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1.5, 5.])
+		self.verified = True
 
 
 	def fit_func(self, x, m, d50):
@@ -123,6 +125,7 @@ class TwoStateEquilibriumSloping(core.FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5.])
+		self.verified = True
 
 
 	def fit_func(self, x, alpha_f, beta_f, alpha_u, beta_u, m, d50):
@@ -286,6 +289,7 @@ class HomozipperIsingEquilibrium(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([7, 0.1, -.53, -4.6])
 		self.constants = (('n',7),)
+		self.verified = True
 
 	def fit_func(self, x, n, DG_intrinsic, m_intrinsic, DG_interface):
 		# , m_interface , -0.6
@@ -326,6 +330,7 @@ class TwoStateChevron(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([50., 1.3480, 5e-4, 1.])
 		#self.constants = (('mf',1.76408),('mu',1.13725))
+		self.verified = True
 
 
 	def fit_func(self, x, kf, mf, ku, mu):
@@ -363,6 +368,7 @@ class ThreeStateChevron(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([4.5e-4, -9.5e-1, 1.3e9, -6.9,  1.4e-8, -1.6])
 		#self.constants = (('mif',-0.97996),('mi',-6.00355),('mu',-1.66154))
+		self.verified = True
 
 	def fit_func(self, x, kfi, mif, kif, mi, Kiu, mu):
 		k_fi = kfi*np.exp(-mif*x)
@@ -409,6 +415,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([172., 1.42, .445, .641, 9.41e3, 2.71313, 1.83e-4, 1.06])
 		#self.constants = (('kui',172.), ('mui',1.42), ('kiu',.445), ('miu',.641), ('mif',-2.71313),('mfi',1.06534))
+		self.verified = True
 
 	def fit_func(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_iu = kiu*np.exp(miu*x)
@@ -456,6 +463,7 @@ class ThreeStateSequentialChevron(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([2e4, 0.3480, 20.163, 1.327, 0.3033, 0.2431])
 		# self.constants = (('mui',4.34965),('mif',0.68348),('mfi',0.97966))
+		self.verified = True
 
 	def fit_func(self, x, kui, mui, kif, mif, kfi, mfi):
 		kiu = 1.e4
@@ -596,6 +604,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([50., 1.3480, 5e-4, 1., 1.])
+		self.verified = True
 
 	def fit_func(self, x, ku, mu, kf, mf, m_prime):
 		k_obs = ku * np.exp(mu*x)*np.exp(m_prime*x*x) + kf*np.exp(-mf*x)*np.exp(-m_prime*x*x)

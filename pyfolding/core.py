@@ -795,6 +795,9 @@ class FitModel(object):
 		self.fit_covar = None
 		self.constants = None
 
+		# has this model been verified
+		self.verified = False
+
 	@property
 	def params(self): return self.__params
 	@params.setter
