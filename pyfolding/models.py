@@ -604,10 +604,10 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([50., 1.3480, 5e-4, 1., 1.])
-		self.verified = True
+		self.verified = False
 
 	def fit_func(self, x, ku, mu, kf, mf, m_prime):
-		k_obs = ku * np.exp(mu*x)*np.exp(m_prime*x*x) + kf*np.exp(-mf*x)*np.exp(-m_prime*x*x)
+		k_obs = ku*(np.exp(mu*x)+np.exp(m_prime*x*x)) + kf*(np.exp(mf*x)+np.exp(m_prime*x*x))
 		return k_obs
 
 	def error_func(self, y):

@@ -987,6 +987,12 @@ def plot_chevron(protein, **kwargs):
 
 	if protein.results:
 		plt.semilogy(protein.results.x, protein.results.y, 'r-', linewidth=constants.LINE_WIDTH)
+
+	if protein.components:
+		x = np.linspace(0., 10., 100)
+		for c in protein.components:
+			plt.plot(x, protein.components[c], 'r--', linewidth=constants.LINE_WIDTH)
+			
 	plt.title('{0:s} Chevron Plot'.format(protein.ID), fontsize=constants.FONT_SIZE)
 	#plt.xlim([-0.1, 9])
 	plt.grid(False)
