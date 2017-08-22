@@ -968,7 +968,7 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 
 
 
-def plot_chevron(protein, **kwargs):
+def plot_chevron(protein, components=False,  **kwargs):
 	""" plot_chevron
 
 	Plots a chevron.
@@ -988,13 +988,17 @@ def plot_chevron(protein, **kwargs):
 	if protein.results:
 		plt.semilogy(protein.results.x, protein.results.y, 'r-', linewidth=constants.LINE_WIDTH)
 
-	if protein.components:
+	if protein.components and components:
 		x = np.linspace(0., 10., 100)
 		for c in protein.components:
 			plt.plot(x, protein.components[c], 'r--', linewidth=constants.LINE_WIDTH)
 
 	plt.title('{0:s} Chevron Plot'.format(protein.ID), fontsize=constants.FONT_SIZE)
-	plt.ylim([np.min(protein.y_raw)-10., np.max(protein.y_raw)+10.])
+
+	# only need to scale y axis if the components are plotted too
+	if components:
+		plt.ylim([np.min(protein.y_raw)-10., np.max(protein.y_raw)+10.])
+		
 	plt.grid(False)
 	plt.xlabel(protein.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel(r'$\ k_{obs}$ $(s^{-1})$', fontsize=constants.FONT_SIZE)
