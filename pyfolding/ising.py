@@ -1019,7 +1019,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 	ax.set_ylim([-1., len(topologies)])
 	ax.set_aspect('equal', adjustable='box')
 	plt.legend(handles=l, loc='lower right')
-	plt.title('Ising heteropolymer model domain topologies')
+	plt.title('Ising model domain topologies')
 
 	if 'save' in kwargs:
 		save_filename = kwargs['save']
