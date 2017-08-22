@@ -615,7 +615,7 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **
 	# plot some of the results
 	plt.figure(figsize=(14,8))
 	for i, p in enumerate(equilibrium_curves):
-		plt.plot(p.x, p.y, 'o', p.x, results[i].y, '-')
+		plt.plot(p.x, p.y, 'o', x, results[i].y, '-')
 	plt.xlabel(p.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel('Fraction unfolded', fontsize=constants.FONT_SIZE)
 	plt.show()

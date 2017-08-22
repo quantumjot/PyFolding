@@ -994,7 +994,7 @@ def plot_chevron(protein, **kwargs):
 			plt.plot(x, protein.components[c], 'r--', linewidth=constants.LINE_WIDTH)
 
 	plt.title('{0:s} Chevron Plot'.format(protein.ID), fontsize=constants.FONT_SIZE)
-	#plt.xlim([-0.1, 9])
+	plt.ylim([np.min(protein.y_raw)-1., np.max(protein.y_raw)+1])
 	plt.grid(False)
 	plt.xlabel(protein.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel(r'$\ k_{obs}$ $(s^{-1})$', fontsize=constants.FONT_SIZE)
