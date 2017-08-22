@@ -909,7 +909,7 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	plt.plot([dfifty,dfifty],[-.1,1.1],'b-',[dfive,dfive],[-.1,1.1],'b:', [dninetyfive,dninetyfive],[-.1,1.1],'b:')
 	plt.plot(equilibrium.x, equilibrium.y,'ko' , markersize=constants.MARKER_SIZE)
 	plt.plot(np.linspace(0., 10., 100), fiteq, 'r-', linewidth=constants.LINE_WIDTH)
-	plt.ylim([-.1,1.1])
+	# plt.ylim([-.1,1.1])
 	plt.ylabel('Signal (A.U.)', fontsize=constants.FONT_SIZE)
 	plt.title(chevron.ID, fontsize=constants.FONT_SIZE)
 	plt.subplot2grid((4,2),(1,0), rowspan=2)
@@ -992,7 +992,7 @@ def plot_chevron(protein, **kwargs):
 		x = np.linspace(0., 10., 100)
 		for c in protein.components:
 			plt.plot(x, protein.components[c], 'r--', linewidth=constants.LINE_WIDTH)
-			
+
 	plt.title('{0:s} Chevron Plot'.format(protein.ID), fontsize=constants.FONT_SIZE)
 	#plt.xlim([-0.1, 9])
 	plt.grid(False)
