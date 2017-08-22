@@ -585,6 +585,8 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **
 	results = []
 	covar = covar[1:,1:]
 
+	x = np.linspace(0.,10.,100)
+
 	# calculate errors
 	for i, protein in enumerate(equilibrium_curves):
 
@@ -598,7 +600,7 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **
 		result.fit_params = out[1:].tolist()
 		result.method = "scipy.optimize.curve_fit"
 		#result.y = protein['partition'].theta( result.x )
-		result.y = fit_y
+		result.y = global_fit.fit_funcs[i](x, *fit_args)
 		result.covar = covar
 		result.residuals = protein.y - fit_y
 		#result.r_squared = r_squared[i]
@@ -620,7 +622,39 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **
 
 
 	if 'save' in kwargs:
-		pass
+
+		# import the CSV writer
+		import csv
+
+		save_filename = kwargs['save']
+		if not isinstance(save_filename, basestring):
+			raise TypeError("Save path must be a string")
+
+		if not save_filename.endswith(('.csv', '.CSV')):
+			save_filename = save_filename+".csv"
+
+		# make a list of the field names for the csv file
+		fnames = [equilibrium_curves[0].denaturant_label]
+		for result in results:
+			fnames.append(result.ID)
+
+		# now put iterators into a dictionary
+
+		csv_results = {fnames[0]: iter(x) }
+		for result in results:
+			# NOTE: we should update this to cover the entire x range
+			csv_results[result.ID] = iter(result.y)
+
+		# note to interested reader - this is a really weird way of doing this!
+		with open(save_filename, 'wb') as csvfile:
+			r = csv.DictWriter(csvfile, fieldnames=fnames, dialect=csv.excel_tab, delimiter=',')
+			r.writeheader()
+
+			for i in xrange(len(x)):
+				h = {k: csv_results[k].next() for k in csv_results.keys()}
+				r.writerow(h)
+
+		print "Written out .csv file of fits..."
 
 	return results
 
