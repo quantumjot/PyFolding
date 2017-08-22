@@ -608,6 +608,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 
 	def fit_func(self, x, ku, mu, kf, mf, m_prime):
 		k_obs = ku * np.exp(mu*x)*np.exp(m_prime*x*x) + kf*np.exp(-mf*x)*np.exp(-m_prime*x*x)
+		return k_obs
 
 	def error_func(self, y):
 		return np.log(y)
