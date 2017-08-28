@@ -931,10 +931,25 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 
 	"""
 
+
+	if not isinstance(topologies, list):
+		raise TypeError("Topologies must be a list of topologies.")
+
+	# first we need to check whether the topologies are instantiated classes or
+	# not. If they are already instantiated, then we need to recover the
+	# underlying classes...
+	if isinstance(topologies[0][0], IsingDomain):
+		tmp_topologies = []
+		for t in topologies:
+			new_topology = [d.__class__ for d in t]
+			tmp_topologies.append(new_topology)
+	else:
+		tmp_topologies = topologies
+
 	from matplotlib.patches import Patch
 
 	if not labels:
-		labels = ['Protein {0:d}'.format(i) for i in xrange(len(topologies))]
+		labels = ['Protein {0:d}'.format(i) for i in xrange(len(tmp_topologies))]
 
 	if 'fold' in kwargs:
 		raise DeprecationWarning('Fold keyword is being replaced with collapse.')
@@ -945,7 +960,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 	compact = []
 	domain_types = set()
 
-	for l,t in zip(labels, topologies):
+	for l,t in zip(labels, tmp_topologies):
 
 		domain_types.update([d().name for d in t])
 
@@ -965,7 +980,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 	cmap = ['r', 'k', 'g', 'b', 'c', 'm', 'y']
 
 	# now we want to plot these
-	plt.figure(figsize=(14, len(topologies)*1.5))
+	plt.figure(figsize=(14, len(tmp_topologies)*1.5))
 	ax = plt.subplot(111)
 
 	for y, (protein, topology) in enumerate(compact):
@@ -1007,7 +1022,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 
 
 
-	ax.set_yticks(np.arange(len(topologies)), minor=False)
+	ax.set_yticks(np.arange(len(tmp_topologies)), minor=False)
 	ax.set_xticklabels([], minor=False, rotation='vertical')
 	ax.set_yticklabels(labels, minor=False)
 
@@ -1016,7 +1031,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 
 
 	ax.set_xlim([-1.,11.])
-	ax.set_ylim([-1., len(topologies)])
+	ax.set_ylim([-1., len(tmp_topologies)])
 	ax.set_aspect('equal', adjustable='box')
 	plt.legend(handles=l, loc='lower right')
 	plt.title('Ising model domain topologies')
