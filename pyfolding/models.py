@@ -137,53 +137,8 @@ class TwoStateEquilibriumSloping(core.FitModel):
 	def equation(self):
 		return r'F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}'
 
+# NOTE (ergm) added on 30/8/2017
 
-
-
-class TwoStateDimerEquilibrium(core.FitModel):
-	""" Two State model for a dimer denaturation Equilibrium.
-	i.e.  N2 = 2D
-
-	Y_0 = Y_N * (1 - F_D) + Y_D * F_D
-	Y_N = alpha_N + beta_N * x
-	Y_D = alpha_D + beta_D * x
-	F_D = (((K_U)^2 + (8 * K_U * P_t - K_U)^0.5)/(4 * P_t)
-	K_U = exp((RT * ln(P_t)-m(d_{50}-x)))/RT)
-
-	Notes:
-		Mallam and Jackson. Folding studies on a knotted protein.
-		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
-
-	Comments:
-		Pt is a variable that needs to be set, So it like Ising model when you need
-		to define a specific value to a curve.
-		Could this be the self-constants code line ?
-
-	"""
-
-	def __init__(self):
-		core.FitModel.__init__(self)
-		fit_args = self.fit_func_args
-		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5.])
-		self.constants = (('Pt',7),)
-
-	def fit_func(self, x, alpha_N, beta_N, alpha_D, beta_D, m, d50):
-		K_U = np.exp(((core.temperature.RT * np.ln(Pt))-(m*d50)-x) / core.temperature.RT)
-		F_D = ((K_U^2 + (8 * K_U * Pt))^0.5 - K_U) / (4*Pt)
-		Y_0 = ((alpha_N + beta_N*x)*(1-F_D)) +  ((alpha_D + beta_D*x)*(F_D))
-		return Y_0
-
-	"""
-	@property
-	def equation(self):
-		return r'Y_0 = (\alpha_N+\beta_N x) \cdot (1-F_D) + Y_D \cdot F_D \\
-				\text{where}\\
-				F_D = \frac{(K_U^2 + (8 * K_U * Pt))^0.5 - K_U / 4*Pt} (\alpha_u+\beta_u x) \\
-				K_U = \frac{\exp(((constants.RT * np.ln(Pt))-(m*d50)-x) / constants.RT}'
-	"""
-
-# NOTE(ergm) added this on 30/8/2017
 class ThreeStateEquilibrium (core.FitModel):
 	""" Three state equilbrium denaturation curve.
 
@@ -239,22 +194,27 @@ class ThreeStateEquilibrium (core.FitModel):
 
 
 
-class ThreeStateMonoIEquilibrium(core.FitModel):
-	""" Three State model for a dimer denaturation Equilibrium.
-	i.e.  N2 = I2 = 2D
+class TwoStateDimerEquilibrium(core.FitModel):
+	""" Two State model for a dimer denaturation Equilibrium.
+	i.e.  N2 = 2D
 
-	Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
-	F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
-	K1 = exp((DG1 + m1*x)/RT)
-	K2 = exp((DG2 + m2*x)/RT)
+	Y_0 = Y_N * (1 - F_D) + Y_D * F_D
+	Y_N = alpha_N + beta_N * x
+	Y_D = alpha_D + beta_D * x
+	F_D = (((K_U)^2 + (8 * K_U * P_t - K_U))^0.5)/(4 * P_t)
+	K_U = exp((RT * ln(P_t)-m(d_{50}-x))/RT)
 
 	Notes:
 		Mallam and Jackson. Folding studies on a knotted protein.
 		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
 
 	Comments:
-		Pt is a variable that needs to be set, So it like Ising model when you need
-		to define a specific value to a curve.
+		Y_0 = The spectroscopic signal at a given concentration of urea
+		YN and YD are the spectroscopic signals for native and denatured monomeric subunits at a concentration of Pt
+		K_U = Equilibrium Constant
+		F_D = fraction of unfolded monomers
+		Pt = total protein concentration. This variableneeds to be set per denaturation curve,
+		so it like the homozipper Ising model when you need to define a specific value to a curve.
 		also needs to fit to multiple datasets
 
 	"""
@@ -263,29 +223,32 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 2.])
+		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 1e-6])
 		self.constants = (('Pt',1e-6),)
 
-	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
-		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
-		K2 = np.exp((-DG2 + (m2*x)) / core.temperature.RT)
-		F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
-		Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
-		return Y_rel
+ 	# NOTE (ergm) added on 25/8/2017
+	def fit_func(self, x, alpha_N, beta_N, alpha_D, beta_D, m, d50, Pt):
+		K_U = np.exp(((core.temperature.RT * np.log(Pt))-m*(d50-x)) / core.temperature.RT)
+		F_D = (np.sqrt((np.square(K_U) + (8 * K_U * Pt))) - K_U) / (4*Pt)
+		Y_0 = ((alpha_N + beta_N*x)*(1-F_D)) +  ((alpha_D + beta_D*x)*(F_D))
+		return Y_0
 
-
-	"""
+	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
-		return r'Y_rel = (Y_N \cdot \frac{(2PtF_D^2/K1K2)} + (Y_I \cdot \frac{(2PtF_D^2)/K2)} + (Y_D * F_D) \\
-			\text{where}\\ F_D = \frac {- K1K2 + ((K1K2)^2 + (8(1+K1)(K1K2)Pt))^0.5) / 4Pt(1+K1)} \\
-			K1 = \frac {\exp((-DG1 + (m1 x)) / RT)} \\ K2 = \frac {\exp((-DG2 + (m2 x)) / RT)} '
-	"""
+		return r'\Upsilon_0 = (\alpha_N+\beta_N x) \cdot (1-F_D)  + \Upsilon_D \cdot F_D \\ \
+		\text{where} \\ \
+		F_D = \frac{\sqrt((K_U^2 + (8 K_U Pt)) - K_U}  {4 Pt} \\ \
+		K_U = \exp \frac{(RT \ln(Pt - m(d_{50} - x))} {RT}'
 
-class ThreeStateDimericIEquilibrium(core.FitModel):
+
+
+class ThreeStateMonoIEquilibrium(core.FitModel):
 	""" Three State model for a dimer denaturation Equilibrium.
-	i.e.  N2 = 2I = 2D
+	i.e.  N2 = I2 = 2D
 
+	Y_rel = Y_N*F_N + Y_I*F_I + Y_D*F_D
+	Expanded:
 	Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
 	F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
 	K1 = exp((DG1 + m1*x)/RT)
@@ -296,9 +259,64 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
 		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
 
 	Comments:
-		Pt is a variable that needs to be set, So it like Ising model when you need
-		to define a specific value to a curve.
-		also needs to fit to multiple datasets.
+		Y_0 = The spectroscopic signal at a given concentration of urea
+		YN and YD are the spectroscopic signals for native and denatured states
+		K_U = Equilibrium Constant
+		F_D = fraction of unfolded monomers
+		Pt = total protein concentration. This variableneeds to be set per denaturation curve,
+		so it like the homozipper Ising model when you need to define a specific value to a curve.
+		also needs to fit to multiple datasets
+
+	"""
+	def __init__(self):
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 3., 1e-6])
+		self.constants = (('Pt',1e-6),)
+
+	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
+		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
+		K2 = np.exp((-DG2 + (m2*x)) / core.temperature.RT)
+		F_I = -(K1*(1+K2) + (np.sqrt(np.square(K1) * np.square(1+K2) +(8*Pt*K1)))) / (4*Pt)
+		Y_rel = (Y_N * ((2 * Pt * np.square(F_I))/K1)) + (Y_I * F_I) + (Y_D * (K2*F_I))
+		return Y_rel
+
+
+	@property
+	def equation(self):
+		return r'\Upsilon_{rel} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
+				\text{expanded:} \\ \
+				\Upsilon_{rel} = \Upsilon_N \cdot \frac{2PtF_I^2} {K_1} + \Upsilon_I F_I + \Upsilon_D * K_2F_I \\ \
+				\text{where} \\ \
+				F_I = \frac {- K_1 (1+K_2) + \sqrt(K_1^2 (1+K_2)^2 + (8 Pt K_1))} {4Pt} \\ \
+				K_1 = \exp \frac{-\Delta G_{H_20}^1 + m_1 x} {RT} \\ \
+				K_2 = \exp \frac{-\Delta G_{H_20}^2 + m_2 x} {RT}'
+
+
+class ThreeStateDimericIEquilibrium(core.FitModel):
+	""" Three State model for a dimer denaturation Equilibrium.
+	i.e.  N2 = 2I = 2D
+
+	Y_rel = Y_N*F_N + Y_I*F_I + Y_D*F_D
+	Expanded:
+	Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
+	F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
+	K1 = F_I/F_N = exp((DG1 + m1*x)/RT)
+	K2 = (2*P_t*F_D^2) / F_I = exp((DG2 + m2*x)/RT)
+
+	Notes:
+		Mallam and Jackson. Folding studies on a knotted protein.
+		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
+
+	Comments:
+		Y_rel = The spectroscopic signal at a given concentration of urea
+		Y_N, Y_I and Y_D are the spectroscopic signals for native, intermediate and denatured states
+		K1 & K2 = Equilibrium Constants
+		F_D = fraction of unfolded monomers
+		Pt = total protein concentration. This variableneeds to be set per denaturation curve,
+		so it like the homozipper Ising model when you need to define a specific value to a curve.
+		also needs to fit to multiple datasets
 
 	"""
 
@@ -306,27 +324,27 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 3.])
+		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 2., 1e-6])
 		self.constants = (('Pt',1e-6),)
 
 	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
 		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
 		K2 = np.exp((-DG2 + (m2*x)) / core.temperature.RT)
-		F_I = -(K1*(1+K2) + ((K1^2*(1+K2)^2 +(8*Pt*K1))^0.5)) / (4*Pt)
-		Y_rel = (Y_N * ((2*Pt*F_I^2)/K1)) + (Y_I * F_I) + (Y_D * (K2*F_I))
+		F_D = -((K1*K2) + np.sqrt(np.square(K1*K2) + (8*(1+K1)*(K1*K2)*Pt))) / (4*Pt*(1+K1))
+		Y_rel = (Y_N * ((2 * Pt * np.square(F_D))/(K1*K2))) + (Y_I * ((2 * Pt * np.square(F_D))/K2)) + (Y_D * F_D)
 		return Y_rel
 
 
-	"""
+
 	@property
 	def equation(self):
-		return r'Y_rel = (Y_N \cdot \frac{(2PtF_I^2/K1)} + (Y_I F_I} + (Y_D * (K2F_I)) \\
-			\text{where} \\
-			F_I = \frac {- K1(1+K2) + (K1^2 \cdot(1+K2)^2 + (8 Pt K1))^0.5) / 4Pt} \\
-			K1 = \frac {\exp((-DG1 + (m1 x)) / RT)} \\
-			K2 = \frac {\exp((-DG2 + (m2 x)) / RT)}'
-	"""
-
+		return r'\Upsilon_{rel} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
+			\text{expanded:} \\ \
+			\Upsilon_{rel} = \Upsilon_N \cdot \frac{2PtF_D^2} {K_1 K_2} + \Upsilon_I \frac{2PtF_D^2} {K_2} + \Upsilon_D * (F_D) \\ \
+			\text{where:} \\ \
+			F_D = \frac {- K_1 K_2 + \sqrt((K_1 K_2)^2 + 8(1+K_1)(K_1 K_2)Pt)} {4Pt (1 + K_1)} \\ \
+			K_1 = \exp \frac{-\Delta G_{H_20}^1 + m_1 x} {RT} \\ \
+			K_2 = \exp \frac{-\Delta G_{H_20}^2 + m_2 x} {RT}'
 
 
 class HomozipperIsingEquilibrium(core.FitModel):
@@ -361,6 +379,18 @@ class HomozipperIsingEquilibrium(core.FitModel):
 		theta = pre_factor * (numerator / denominator)
 		return 1.-theta
 
+	# NOTE (ergm) added on 23/8/2017
+
+	@property
+	def equation(self):
+		return r'\text{the partition function } (Z) \text{ and thus fraction of folded protein } (f) \text{ of n arrayed repeats are given by:}  \\ \
+			Z = 1 + \frac{\kappa([\kappa \tau]^{n+1} - [n+1]\kappa \tau - n)} {(\kappa \tau - 1)^2}  \\ \
+			f = \frac{1} {n} \sum^{n}_{i=0}i\frac{(n-i+1)\kappa^i\tau^{i-1}} {Z} \\ \
+			\text{where:  } \kappa = \exp\frac{-G_i + m_i x} {RT}  \
+			\text{  &  } \tau = \exp\frac{-G_{ij}} {RT} '
+
+
+
 
 """
 ==========================================================
@@ -382,7 +412,7 @@ class TwoStateChevron(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([50., 1.3480, 5e-4, 1.])
+		self.default_params = np.array([100., 1.3480, 5e-4, 1.])
 		#self.constants = (('mf',1.76408),('mu',1.13725))
 		self.verified = True
 
@@ -393,6 +423,13 @@ class TwoStateChevron(core.FitModel):
 
 	def error_func(self, y):
 		return np.log(y)
+
+	# NOTE (ergm) added on 24/8/2017
+	def components(self, x, kf, mf, ku, mu):
+		k_f = kf*np.exp(-mf*x)
+		k_u = ku*np.exp(mu*x)
+		k_obs = k_f + k_u
+		return {'k_f':k_f, 'k_u':k_u}
 
 	@property
 	def equation(self):
@@ -453,9 +490,13 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 				k_{if}^{H_2O} * exp((m_i - m_{if})*x) /
 				(1 + 1 / K_{iu})
 
+
+
 	where:
 
-	K_{iu} = K_{iu}^{H_2O} * exp((m_u-m_i)*x)
+    kui = kui{H2O} * exp(-mui*x)
+    kiu = kiu{H2O} * exp(miu*x)
+    Kiu = kiu/(kiu + kui)
 
 	Notes:
 		Parker et al. An integrated kinetic analysis of
@@ -467,7 +508,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([172., 1.42, .445, .641, 9.41e3, 2.71313, 1.83e-4, 1.06])
+		self.default_params = np.array([172., 1.42, .445, .641, 1e4, 2.71313, 1.83e-3, 1.06])
 		#self.constants = (('kui',172.), ('mui',1.42), ('kiu',.445), ('miu',.641), ('mif',-2.71313),('mfi',1.06534))
 		self.verified = True
 
@@ -492,7 +533,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		k_obs_N = k_fi + k_if
 		return {'kobs_I':k_obs_I} #, 'kobs_N':k_obs_N}
 
-	# NOTE (ergm) EDIT 23/8/2017
+	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
 		return r'k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) / (1 + 1 /K_{iu}^{H_2O}\exp((m_u-m_i)x))  \\ \
@@ -551,7 +592,11 @@ class ThreeStateSequentialChevron(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'k_{obs} = 0.5(-A_2 \pm \sqrt{A_2^2 - 4A_1}) \\ \text{where}\\ A_1 = -(k_{ui} + k_{iu} + k_{if} + k_{fi}) \\A_2 = k_{ui}(k_{if} + k_{fi}) + k_{iu}k_{if} \\ \text{and} \\k_{ui} = k_{ui}^{H_2O}\exp(-m_{ui}x) \\k_{iu} = k_{iu}^{H_2O}\exp(-m_{iu}x) \\ etc...'
+		return r'k_{obs} = 0.5(-A_2 \pm \sqrt{A_2^2 - 4A_1}) \\ \
+		\text{where}\\ A_1 = -(k_{ui} + k_{iu} + k_{if} + k_{fi}) \\ \
+		A_2 = k_{ui}(k_{if} + k_{fi}) + k_{iu}k_{if} \\ \
+		\text{and} \\k_{ui} = k_{ui}^{H_2O}\exp(-m_{ui}x) \\ \
+		k_{iu} = k_{iu}^{H_2O}\exp(-m_{iu}x) \\ etc...'
 
 
 
@@ -598,9 +643,15 @@ class ParallelTwoStateChevron(core.FitModel):
 		k_obs = k_obs_A + k_obs_B
 		return {'kobs_A':k_obs_A, 'kobs_B':k_obs_B}
 
+	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
-		return r'k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_u^{H_2O}\exp(m_{kf}x)'
+		return r'\Delta G^A = k_f^A / k_u^A \\ \
+					k_u^B = k_f^B / \Delta G^A \\ \
+					m_u^B = (m_f^A + m_u^A) - (m_f^B) \\ \
+					k_{obs}^A = k_f^A exp(-m_f^A x) + k_u^A exp(m_u^A x) \\ \
+					k_{obs}^B = k_f^B exp(-m_f^B x) + k_u^B exp(m_u^B x) \\ \
+					k_{obs} = k_obs^A + k_obs^B'
 
 
 
@@ -639,6 +690,13 @@ class ParallelTwoStateUnfoldingChevron(core.FitModel):
 		k_obs = k_obs_A + k_obs_B
 		return {'kobs_A':k_obs_A, 'kobs_B':k_obs_B}
 
+	# NOTE (ergm) added on 23/8/2017
+	@property
+	def equation(self):
+		return r'k_obs^A = k_u^A exp(m_u^A x) \\ \
+		k_obs^B = k_u^B exp(m_u^B x) \\ \
+				k_{obs} = k_obs^A + k_obs^B'
+
 
 
 
@@ -646,8 +704,8 @@ class TwoStateChevronMovingTransition(core.FitModel):
 	""" Two state chevron with moving transition state.
 	Second order polynomial.
 
-	k_u = k_u^{H_2O} * \exp(m_{ku}*x) * \exp(m_{ku}^' * x^2)
-	k_f = k_f^{H_2O} * \exp(m_{kf}*x) * \exp(m_{kf}^' * x^2)
+	k_u = k_u^{H_2O} * \exp(m_{ku}*x) * \exp(m_{prime}^' * x^2)
+	k_f = k_f^{H_2O} * \exp(m_{kf}*x) * \exp(m_{prime}^' * x^2)
 
 	k_{obs} = k_u + k_f
 
@@ -661,24 +719,64 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([50., 1.3480, 5e-4, 1., 1.])
+
+		# NOTE (ergm) added on 23/8/2017
+		self.default_params = np.array([5e-5, 0.2, 10., 0.2, -1.])
 		self.verified = False
 
+	# NOTE (ergm) added on 23/8/2017
 	def fit_func(self, x, ku, mu, kf, mf, m_prime):
-		k_obs = ku*(np.exp(mu*x)+np.exp(m_prime*x*x)) + kf*(np.exp(mf*x)+np.exp(m_prime*x*x))
+		k_obs = ku*(np.exp(mu*x))*(np.exp(m_prime*x*x)) + kf*(np.exp(mf*x))*(np.exp(m_prime*x*x))
 		return k_obs
 
 	def error_func(self, y):
 		return np.log(y)
 
+	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
-		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku}*x) \cdot \exp(m^{\'} x^2) \\ \
-				k_f = k_f^{H_2O} \cdot \exp(m_{kf}*x) \cdot \exp(m^{\'} x^2) \\ \
+		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku} x) \cdot \exp(m^{*} x^2) \\ \
+		k_f = k_f^{H_2O} \cdot \exp(m_{kf} x) \cdot \exp(m^{*} x^2) \\ \
 				k_{obs} = k_u + k_f'
 
 
 
+# NOTE (ergm) added on 24/8/217
+class CurvedChevronPolynomialFit(core.FitModel):
+	""" Chevron fit with 2 different second order polynomials for kf & ku.
+
+	k_u = k_u^{H_2O} * \exp(mu_{ku}*x) * \exp(m_{ku}^' * x^2)
+	k_f = k_f^{H_2O} * \exp(mf_{kf}*x) * \exp(m_{kf}^' * x^2)
+
+	k_{obs} = k_u + k_f
+
+	Notes:
+
+
+	"""
+	def __init__(self):
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+
+		# NOTE (ergm) added on 23/8/2017
+		self.default_params = np.array([5e-5, 1., -0.5, 100., 1., -0.5])
+		self.verified = False
+
+	# NOTE (ergm) added on 26/8/217
+	def fit_func(self, x, ku, mu, mu_prime, kf, mf, mf_prime):
+		k_obs = ku*(np.exp(mu*x))*(np.exp(mu_prime*x*x)) + kf*(np.exp(mf*x))*(np.exp(mf_prime*x*x))
+		return k_obs
+
+	def error_func(self, y):
+		return np.log(y)
+
+	# NOTE (ergm) added on 23/8/2017
+	@property
+	def equation(self):
+		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku} x) \cdot \exp(m_{ku}^{*} x^2) \\ \
+		k_f = k_f^{H_2O} \cdot \exp(m_{kf} x) \cdot \exp(m_{kf}^{*} x^2) \\ \
+				k_{obs} = k_u + k_f'
 
 
 if __name__ == "__main__":
