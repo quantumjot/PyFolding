@@ -202,11 +202,17 @@ class CapDomain(IsingDomain):
 	def __init__(self):
 		IsingDomain.__init__(self)
 		self.name = "Cap"
-		self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x), folded],[self.kappa(x), folded]])
 		self.used_variables = (0, 2)
 
 
 class MutantCapDomain(IsingDomain):
+	def __init__(self):
+		IsingDomain.__init__(self)
+		self.name = "MutantCap"
+		self.used_variables = (0, 2)
+
+
+class DecoupleCapDomain(IsingDomain):
 	def __init__(self):
 		IsingDomain.__init__(self)
 		self.name = "MutantCap"

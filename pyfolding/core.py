@@ -448,12 +448,25 @@ class FoldingData(object):
 	@property
 	def results(self):
 		return self.__fit
+	@results.setter
+	def results(self, result):
+		if not isinstance(result, FitResult):
+			raise TypeError("Results must be of type FitResult")
+
+		print "Warning: overwriting fit result for {0:s}".format(self)
+		self.__fit = result
 
 	def fit(self, p0=None, constants=None):
-		""" Fit the data to the defined model. Use p0 to
-		introduce the estimated start values.
+		""" Fit the data to the defined model. Use p0 to introduce the estimated
+		 start values.
+
+		 TODO(arl): Should sort out how constants are passed to curve fit,
+		 since they will affect errors in current form.
 		"""
 		if self.__fit_func:
+
+			# reset components
+			self.components = None
 
 			# set the default fitting parameters
 			if not p0: p0 = self.__fit_func.default_params
@@ -661,7 +674,7 @@ class EquilibriumDenaturationCurve(FoldingData):
 
 	@property
 	def normalised(self):
-		""" TODO: Return a normalised equilbrium curve.
+		""" TODO(arl): Return a normalised equilbrium curve.
 		"""
 		raise NotImplementedError
 
@@ -677,6 +690,11 @@ class EquilibriumDenaturationCurve(FoldingData):
 			return self.fit_params[ self.fit_func_args.index('d50') ]
 		else:
 			return None
+
+	@property
+	def two_state(self):
+		""" Return whether this is a two state model or not """
+		return 'd50' in self.fit_func_args
 
 	def point(self, fraction_folded=0.5):
 		""" Return the denaturant concentration for a particular
@@ -895,38 +913,51 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 
 	TODO: Clean this up. It is terrible.
 	"""
-
-	dfifty = equilibrium.midpoint
-	dfive = equilibrium.point(0.05)
-	dninetyfive = equilibrium.point(0.95)
+	if equilibrium.two_state:
+		dfifty = equilibrium.midpoint
+		dfive = equilibrium.point(0.05)
+		dninetyfive = equilibrium.point(0.95)
 
 	fity = chevron.results.y
 	res = chevron.results.residuals
 	fiteq = equilibrium.results.y
 
+	eq_y_range = (np.min(equilibrium.y)-.1, np.max(equilibrium.y)+.1)
+	kin_x_range = (-.1, np.max(chevron.x)+.1)
+	#kin_y_range = (np.min(chevron.y)-.1, np.max(chevron.y)+.1)
+
+	# PLOT THE EQUILIBRIUM DATA
 	plt.figure(figsize=(14,8))
 	plt.subplot2grid((4,2),(0,0))
-	plt.plot([dfifty,dfifty],[-.1,1.1],'b-',[dfive,dfive],[-.1,1.1],'b:', [dninetyfive,dninetyfive],[-.1,1.1],'b:')
+	if equilibrium.two_state:
+		plt.plot([dfifty,dfifty],eq_y_range,'b-',[dfive,dfive],eq_y_range,'b:',
+				[dninetyfive,dninetyfive],eq_y_range,'b:')
 	plt.plot(equilibrium.x, equilibrium.y,'ko' , markersize=constants.MARKER_SIZE)
-	plt.plot(np.linspace(0., 10., 100), fiteq, 'r-', linewidth=constants.LINE_WIDTH)
-	# plt.ylim([-.1,1.1])
+	plt.plot(equilibrium.results.x, fiteq, 'r-', linewidth=constants.LINE_WIDTH)
 	plt.ylabel('Signal (A.U.)', fontsize=constants.FONT_SIZE)
 	plt.title(chevron.ID, fontsize=constants.FONT_SIZE)
+	plt.xlim(kin_x_range)
+
+
+	# PLOT THE CHEVRON
 	plt.subplot2grid((4,2),(1,0), rowspan=2)
 	plt.semilogy()
-	plt.plot([dfifty,dfifty],[0.001,100.],'b-',[dfive,dfive],[0.001,100.],'b:', [dninetyfive,dninetyfive],[0.001,100.],'b:')
+	if equilibrium.two_state:
+		plt.plot([dfifty,dfifty],[0.001,100.],'b-',[dfive,dfive],[0.001,100.],
+				'b:', [dninetyfive,dninetyfive],[0.001,100.],'b:')
 	if chevron.components:
-		x = np.linspace(0., 10., 100)
 		for c in chevron.components:
-			plt.plot(x, chevron.components[c], 'r--', linewidth=constants.LINE_WIDTH)
+			plt.plot(chevron.results.x, chevron.components[c], 'r--', linewidth=constants.LINE_WIDTH)
 
 	if 'k2' in chevron.phases:
-		plt.plot(chevron.denaturant['k2'], chevron.rates['k2'], 'w^', markersize=constants.MARKER_SIZE)
+		plt.plot(chevron.denaturant['k2'], chevron.rates['k2'], 'b^', markersize=constants.MARKER_SIZE)
 	plt.plot(chevron.x, chevron.y_raw, 'ko' , markersize=constants.MARKER_SIZE)
-	plt.plot(np.linspace(0., 10., 100), fity, 'r-', linewidth=constants.LINE_WIDTH)
+	plt.plot(chevron.results.x, fity, 'r-', linewidth=constants.LINE_WIDTH)
 	plt.ylabel(r'$k_{obs} (s^{-1})$', fontsize=constants.FONT_SIZE)
-	plt.xlim((0,10))
-	plt.ylim((0.001,100.))
+	plt.xlim(kin_x_range)
+	#plt.ylim(kin_y_range)
+
+	# PLOT THE RESIDUALS
 	plt.subplot2grid((4,2),(3,0))
 	markerline, stemlines, baseline = plt.stem(chevron.x, res, 'k:')
 	plt.setp(markerline, 'markerfacecolor', 'k')
@@ -935,7 +966,7 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	plt.plot([0.,10.],[0.,0.],'k-', linewidth=constants.LINE_WIDTH)
 	plt.xlabel(chevron.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel(r'$k_{fit}-k_{obs} (s^{-1})$', fontsize=constants.FONT_SIZE)
-	plt.xlim((0,10))
+	plt.xlim(kin_x_range)
 	plt.ylim((-0.5,0.5))
 
 
@@ -946,10 +977,14 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	for e in equilibrium.results.details:
 		fit_arg, fit_val, fit_err = e
 		t+= u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} \n".format(fit_arg, fit_val, fit_err)
-	t+= u"Folding midpoint: {0:2.2f} M\n".format(equilibrium.midpoint)
+	if equilibrium.two_state:
+		t+= u"Folding midpoint: {0:2.2f} M\n".format(equilibrium.midpoint)
 	t+= u"$R^2$: {0:2.2f} \n".format(equilibrium.results.r_squared)
 	t+= u"\n"
-	t+= u"Kinetic Model: {0:s} \n".format(chevron.fit_func)
+	try:
+		t+= u"Kinetic Model: {0:s} \n".format(chevron.fit_func)
+	except:
+		pass
 	t+= u"Fit Standard Error: {0:2.2f} \n".format(chevron.results.standard_error)
 	for e in chevron.results.details:
 		fit_arg, fit_val, fit_err = e
@@ -998,7 +1033,7 @@ def plot_chevron(protein, components=False,  **kwargs):
 	# only need to scale y axis if the components are plotted too
 	if components:
 		plt.ylim([np.min(protein.y_raw)-10., np.max(protein.y_raw)+10.])
-		
+
 	plt.grid(False)
 	plt.xlabel(protein.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel(r'$\ k_{obs}$ $(s^{-1})$', fontsize=constants.FONT_SIZE)

@@ -183,6 +183,60 @@ class TwoStateDimerEquilibrium(core.FitModel):
 				K_U = \frac{\exp(((constants.RT * np.ln(Pt))-(m*d50)-x) / constants.RT}'
 	"""
 
+# NOTE(ergm) added this on 30/8/2017
+class ThreeStateEquilibrium (core.FitModel):
+	""" Three state equilbrium denaturation curve.
+
+	i.e.  N = I = D
+
+	Y_obs = Y_N*F_N + Y_I*F_I + Y_D*F_D
+
+	where:
+	F_N = 1/(1 + Kni + Kni*Kid)
+	F_I = Kni / (1 + Kni + Kni*Kid)
+	F_D = Kni*Kid/(1 + Kni + Kni*Kid)
+	Kni = exp((-DGni - m_ni * x)/RT)
+	Kid = exp((-DGid - m_id * x)/RT)
+
+	expanded:
+
+	Y_obs = Y_N + Y_I*exp((DGni_H20 + m_ni*x)/RT) + Y_D*exp((DGni_H20 + m_ni*x)/RT) * exp((DGid_H20 + m_id*x)/RT) /
+			1 + exp((DGni_H20 + m_ni*x)/RT) + exp((DGni_H20 + m_ni*x)/RT) * exp((DGid_H20 + m_id*x)/RT)
+
+	Notes:
+		Hecky J, Muller KM Structural Perturbation and Compensation by Directed
+		Evolution at Physiological Temperature Leads to Thermostabilization of
+		beta-Lactamase. (2005) Biochemistry 44. pp. 12640 –12654
+
+	Comments:
+		Y_obs = The spectroscopic signal maximum as a function of denaturant concentration
+		YN and YD are the spectroscopic signals for native and denatured states
+		K = Equilibrium Constants
+		F_D = fraction of denatured
+
+	"""
+	def __init__(self):
+		core.FitModel.__init__(self)
+		fit_args = self.fit_func_args
+		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+		self.default_params = np.array([1., 0.5, 0.0, 5., 1.5, 5., 1])
+
+
+
+	def fit_func(self, x, Y_N, Y_I, Y_D, DGni, m_ni, DGid, m_id):
+		F = (Y_N + Y_I*np.exp((-DGni + m_ni*x)/core.temperature.RT) + Y_D*np.exp((-DGni + m_ni*x)/core.temperature.RT) * np.exp((-DGid + m_id*x)/core.temperature.RT)) \
+		/ (1 + np.exp((-DGni + m_ni*x)/core.temperature.RT) + np.exp((-DGni + m_ni*x)/core.temperature.RT) * np.exp((-DGid + m_id*x)/core.temperature.RT))
+		return F
+
+	@property
+	def equation(self):
+		return r'\Upsilon_{obs} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
+				\text{expanded} \\ \
+				\Upsilon_{obs} = \frac{ \Upsilon_N + \Upsilon_I \exp \frac {\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} + \
+				\Upsilon_D \exp \frac{\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} \cdot \exp \frac{\Delta G_{ID}^{H_2O} + m_{ID} x} {RT}} {1 + \exp \
+				\frac{\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} + \exp \frac{\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} \cdot  \
+ 			    \exp \frac{\Delta G_{ID}^{H_2O} + m_{ID} x} {RT}}'
+
 
 
 class ThreeStateMonoIEquilibrium(core.FitModel):
@@ -422,7 +476,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		k_ui = kui*np.exp(-mui*x)
 		k_if = kif*np.exp(-mif*x)
 		k_fi = kfi*np.exp(mfi*x)
-		K_iu = k_ui / (k_ui+k_iu)
+		K_iu = k_iu / (k_iu+k_ui)
 		k_obs = k_fi + k_if / (1.+1./K_iu)
 		return k_obs
 
@@ -438,10 +492,14 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		k_obs_N = k_fi + k_if
 		return {'kobs_I':k_obs_I} #, 'kobs_N':k_obs_N}
 
+	# NOTE (ergm) EDIT 23/8/2017
 	@property
 	def equation(self):
-		return r'k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) / (1 + 1 /K_{iu}^{H_2O}\exp((m_u-m_i)x))'
-
+		return r'k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) / (1 + 1 /K_{iu}^{H_2O}\exp((m_u-m_i)x))  \\ \
+        where  \\ \
+        k_{ui} = k_{ui}^{H2O}  exp(-m_{ui}x) \\ \
+        k_{iu} = k_{iu}^{H2O}  exp(m_{iu}x) \\ \
+        K_{iu} = k_{iu}/(k_{iu} + k_{ui})'
 
 
 class ThreeStateSequentialChevron(core.FitModel):
