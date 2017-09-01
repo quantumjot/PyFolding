@@ -924,7 +924,9 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 
 	eq_y_range = (np.min(equilibrium.y)-.1, np.max(equilibrium.y)+.1)
 	kin_x_range = (-.1, np.max(chevron.x)+.1)
-	#kin_y_range = (np.min(chevron.y)-.1, np.max(chevron.y)+.1)
+	# NOTE (ergm) changed limits of the dfifity to make a prettier picture 1/9/2017
+	kin_y_range = (np.min(chevron.y_raw), np.max(chevron.y_raw))
+
 
 	# PLOT THE EQUILIBRIUM DATA
 	plt.figure(figsize=(14,8))
@@ -943,19 +945,30 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	plt.subplot2grid((4,2),(1,0), rowspan=2)
 	plt.semilogy()
 	if equilibrium.two_state:
-		plt.plot([dfifty,dfifty],[0.001,100.],'b-',[dfive,dfive],[0.001,100.],
-				'b:', [dninetyfive,dninetyfive],[0.001,100.],'b:')
+		# NOTE (ergm) changed limits of the dfifity to make a prettier picture 1/9/2017
+		plt.plot([dfifty,dfifty],kin_y_range,'b-',[dfive,dfive],kin_y_range,
+				'b:', [dninetyfive,dninetyfive],kin_y_range,'b:')
+		if 'k2' in chevron.phases:
+			plt.plot([dfifty,dfifty],[1e-2, 1.5e3],'b-',[dfive,dfive],[1e-2, 1.5e3],
+					'b:', [dninetyfive,dninetyfive],[1e-2, 1.5e3],'b:')
+
 	if chevron.components:
 		for c in chevron.components:
 			plt.plot(chevron.results.x, chevron.components[c], 'r--', linewidth=constants.LINE_WIDTH)
 
 	if 'k2' in chevron.phases:
 		plt.plot(chevron.denaturant['k2'], chevron.rates['k2'], 'b^', markersize=constants.MARKER_SIZE)
+
 	plt.plot(chevron.x, chevron.y_raw, 'ko' , markersize=constants.MARKER_SIZE)
 	plt.plot(chevron.results.x, fity, 'r-', linewidth=constants.LINE_WIDTH)
 	plt.ylabel(r'$k_{obs} (s^{-1})$', fontsize=constants.FONT_SIZE)
 	plt.xlim(kin_x_range)
-	#plt.ylim(kin_y_range)
+	# NOTE (ergm) changed to make a prettier picture 1/9/2017
+	plt.ylim(np.min(chevron.y_raw-0.5e-2), np.max(chevron.y_raw+5))
+
+	# NOTE (ergm) changed to make a prettier picture 1/9/2017
+	if 'k2' in chevron.phases:
+		plt.ylim(np.min(chevron.y_raw-10), np.max(chevron.y_raw+1.5e3))
 
 	# PLOT THE RESIDUALS
 	plt.subplot2grid((4,2),(3,0))

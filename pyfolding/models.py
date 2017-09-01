@@ -159,7 +159,7 @@ class ThreeStateEquilibrium (core.FitModel):
 			1 + exp((DGni_H20 + m_ni*x)/RT) + exp((DGni_H20 + m_ni*x)/RT) * exp((DGid_H20 + m_id*x)/RT)
 
 	Notes:
-		Hecky J, Muller KM Structural Perturbation and Compensation by Directed
+		Hecky J, Muller K.M. Structural Perturbation and Compensation by Directed
 		Evolution at Physiological Temperature Leads to Thermostabilization of
 		beta-Lactamase. (2005) Biochemistry 44. pp. 12640 –12654
 
@@ -193,7 +193,7 @@ class ThreeStateEquilibrium (core.FitModel):
  			    \exp \frac{\Delta G_{ID}^{H_2O} + m_{ID} x} {RT}}'
 
 
-
+# NOTE (ergm) added on 1/8/2017
 class TwoStateDimerEquilibrium(core.FitModel):
 	""" Two State model for a dimer denaturation Equilibrium.
 	i.e.  N2 = 2D
@@ -233,7 +233,7 @@ class TwoStateDimerEquilibrium(core.FitModel):
 		Y_0 = ((alpha_N + beta_N*x)*(1-F_D)) +  ((alpha_D + beta_D*x)*(F_D))
 		return Y_0
 
-	# NOTE (ergm) added on 23/8/2017
+
 	@property
 	def equation(self):
 		return r'\Upsilon_0 = (\alpha_N+\beta_N x) \cdot (1-F_D)  + \Upsilon_D \cdot F_D \\ \
@@ -242,7 +242,7 @@ class TwoStateDimerEquilibrium(core.FitModel):
 		K_U = \exp \frac{(RT \ln(Pt - m(d_{50} - x))} {RT}'
 
 
-
+# NOTE (ergm) added on 1/8/2017
 class ThreeStateMonoIEquilibrium(core.FitModel):
 	""" Three State model for a dimer denaturation Equilibrium.
 	i.e.  N2 = I2 = 2D
@@ -293,7 +293,7 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
 				K_1 = \exp \frac{-\Delta G_{H_20}^1 + m_1 x} {RT} \\ \
 				K_2 = \exp \frac{-\Delta G_{H_20}^2 + m_2 x} {RT}'
 
-
+# NOTE (ergm) added on 1/8/2017
 class ThreeStateDimericIEquilibrium(core.FitModel):
 	""" Three State model for a dimer denaturation Equilibrium.
 	i.e.  N2 = 2I = 2D
@@ -380,7 +380,6 @@ class HomozipperIsingEquilibrium(core.FitModel):
 		return 1.-theta
 
 	# NOTE (ergm) added on 23/8/2017
-
 	@property
 	def equation(self):
 		return r'\text{the partition function } (Z) \text{ and thus fraction of folded protein } (f) \text{ of n arrayed repeats are given by:}  \\ \
@@ -425,11 +424,11 @@ class TwoStateChevron(core.FitModel):
 		return np.log(y)
 
 	# NOTE (ergm) added on 24/8/2017
-	def components(self, x, kf, mf, ku, mu):
-		k_f = kf*np.exp(-mf*x)
-		k_u = ku*np.exp(mu*x)
-		k_obs = k_f + k_u
-		return {'k_f':k_f, 'k_u':k_u}
+	# def components(self, x, kf, mf, ku, mu):
+	# 	k_f = kf*np.exp(-mf*x)
+	# 	k_u = ku*np.exp(mu*x)
+	# 	k_obs = k_f + k_u
+	# 	return {'k_f':k_f, 'k_u':k_u}
 
 	@property
 	def equation(self):
@@ -490,8 +489,6 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 				k_{if}^{H_2O} * exp((m_i - m_{if})*x) /
 				(1 + 1 / K_{iu})
 
-
-
 	where:
 
     kui = kui{H2O} * exp(-mui*x)
@@ -504,6 +501,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		reactions.
 		Journal of molecular biology (1995) vol. 253 (5) pp. 771-86
 	"""
+
 	def __init__(self):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
@@ -720,11 +718,11 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 
-		# NOTE (ergm) added on 23/8/2017
+		# NOTE (ergm) changed on 23/8/2017
 		self.default_params = np.array([5e-5, 0.2, 10., 0.2, -1.])
 		self.verified = False
 
-	# NOTE (ergm) added on 23/8/2017
+	# NOTE (ergm) changed on 23/8/2017
 	def fit_func(self, x, ku, mu, kf, mf, m_prime):
 		k_obs = ku*(np.exp(mu*x))*(np.exp(m_prime*x*x)) + kf*(np.exp(mf*x))*(np.exp(m_prime*x*x))
 		return k_obs
@@ -741,7 +739,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 
 
 
-# NOTE (ergm) added on 24/8/217
+# NOTE (ergm) added on 24/8/2017
 class CurvedChevronPolynomialFit(core.FitModel):
 	""" Chevron fit with 2 different second order polynomials for kf & ku.
 
@@ -758,12 +756,9 @@ class CurvedChevronPolynomialFit(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-
-		# NOTE (ergm) added on 23/8/2017
 		self.default_params = np.array([5e-5, 1., -0.5, 100., 1., -0.5])
 		self.verified = False
 
-	# NOTE (ergm) added on 26/8/217
 	def fit_func(self, x, ku, mu, mu_prime, kf, mf, mf_prime):
 		k_obs = ku*(np.exp(mu*x))*(np.exp(mu_prime*x*x)) + kf*(np.exp(mf*x))*(np.exp(mf_prime*x*x))
 		return k_obs
@@ -771,7 +766,6 @@ class CurvedChevronPolynomialFit(core.FitModel):
 	def error_func(self, y):
 		return np.log(y)
 
-	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
 		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku} x) \cdot \exp(m_{ku}^{*} x^2) \\ \
