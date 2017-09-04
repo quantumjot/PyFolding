@@ -379,14 +379,14 @@ class HomozipperIsingEquilibrium(core.FitModel):
 		theta = pre_factor * (numerator / denominator)
 		return 1.-theta
 
-	# NOTE (ergm) added on 23/8/2017
+	# NOTE (ergm) changed on 4/9/2017
 	@property
 	def equation(self):
-		return r'\text{the partition function } (Z) \text{ and thus fraction of folded protein } (f) \text{ of n arrayed repeats are given by:}  \\ \
-			Z = 1 + \frac{\kappa([\kappa \tau]^{n+1} - [n+1]\kappa \tau - n)} {(\kappa \tau - 1)^2}  \\ \
-			f = \frac{1} {n} \sum^{n}_{i=0}i\frac{(n-i+1)\kappa^i\tau^{i-1}} {Z} \\ \
-			\text{where:  } \kappa = \exp\frac{-G_i + m_i x} {RT}  \
-			\text{  &  } \tau = \exp\frac{-G_{ij}} {RT} '
+		return r'\text{the partition function } (q) \text{ and thus fraction of folded protein } (f) \text{ of n arrayed repeats are given by:}  \\ \
+			q = 1 + \frac{\kappa([\kappa \tau]^{n+1} - [n+1]\kappa \tau - n)} {(\kappa \tau + 1)^2}  \\ \
+			f = \frac{1} {n} \sum^{n}_{i=0}i\frac{(n-i+1)\kappa^i\tau^{i-1}} {q} \\ \
+			\text{where:  } \kappa (x) = \exp\frac{-G_i} {RT} = \exp\frac{-G_{i,H_20} + m_i x} {RT}  \\ \
+			\text{  &  } \tau (x) = \exp\frac{-G_{i,i+1}} {RT}'
 
 
 

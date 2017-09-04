@@ -922,6 +922,7 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	res = chevron.results.residuals
 	fiteq = equilibrium.results.y
 
+	#
 	eq_y_range = (np.min(equilibrium.y)-.1, np.max(equilibrium.y)+.1)
 	kin_x_range = (-.1, np.max(chevron.x)+.1)
 	# NOTE (ergm) changed limits of the dfifity to make a prettier picture 1/9/2017
@@ -980,8 +981,8 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	plt.xlabel(chevron.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel(r'$k_{fit}-k_{obs} (s^{-1})$', fontsize=constants.FONT_SIZE)
 	plt.xlim(kin_x_range)
-	plt.ylim((-0.5,0.5))
-
+	# NOTE (ergm) editted out to make a prettier picture 4/9/2017
+	# plt.ylim((-0.5,0.5))
 
 	# now plot some output
 	t = u"Data-set: {0:s} \n".format(equilibrium.ID)
