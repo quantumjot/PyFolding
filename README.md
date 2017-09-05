@@ -1,7 +1,7 @@
 # PyFolding
 
 
-PyFolding is a simple Python based framework for fitting kinetic and thermodynamic models to 
+PyFolding is a simple Python based framework for fitting kinetic and thermodynamic models to
 protein folding data.  It includes several basic models and is extensible to enable fitting
 of more interesting models.
 
@@ -17,9 +17,13 @@ Pyfolding has been tested on Python 2.7, and requires the following additional p
 + Matplotlib
 + (Optional) Jupyter
 
+The easiest way to get these packages on a Mac or PC is to install Anaconda:
+https://www.anaconda.com/download/
+
+
 ### Installation
 
-You can install Pyfolding by cloning the repo and running the setup script:
+You can install PyFolding by cloning the repo and running the setup script:
 ```sh
 $ git clone https://github.com/quantumjot/PyFolding.git
 $ cd PyFolding
@@ -42,22 +46,22 @@ Upon executing the script, the following output should be generated:
 
 ```sh
 ==================================================
- Fitting results 
+ Fitting results
 ==================================================
 ID: Simulated protein
 Model: TwoStateEquilibrium
-Method: scipy.optimize.curve_fit 
+Method: scipy.optimize.curve_fit
 
 m: 1.49978 ± 0.00000
 d50: 5.00013 ± 0.00000
 --------------------------------------------------
 ==================================================
 ==================================================
- Fitting results 
+ Fitting results
 ==================================================
 ID: Simulated protein
 Model: TwoStateChevron
-Method: scipy.optimize.curve_fit 
+Method: scipy.optimize.curve_fit
 
 kf: 100.00017 ± 0.00008
 mf: 1.00002 ± 0.00000
@@ -97,7 +101,7 @@ A 'TemplateModel' is provided for adding additional models.
 ### Example scripts
 
 There are numerous example scripts in the examples folder. A simple script to
-fit the equilbrium denaturation and kinetic chevron to two-state models is 
+fit the equilbrium denaturation and kinetic chevron to two-state models is
 shown below:
 
 ```python
@@ -131,4 +135,5 @@ folding.plot_figure(equilibrium, chevron)
 ---
 ### IPython Notebooks
 
-PyFolding can be used within IPython Notebooks. Several example notebooks are provided in the notebooks folder.
+PyFolding can be used within IPython Notebooks (Jupyter). Several example notebooks are provided in the notebooks folder.
+To install Jupyter notebooks please read the accompanying file "Mac&PCSetup.md"
