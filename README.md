@@ -21,7 +21,7 @@ The easiest way to get these packages on a Mac or PC is to install Anaconda:
 https://www.anaconda.com/download/
 
 
-### Installation
+### Installation on Mac/Linux
 
 You can install PyFolding by cloning the repo and running the setup script:
 ```sh
