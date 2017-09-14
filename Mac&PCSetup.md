@@ -19,10 +19,13 @@ Once you have installed Anaconda you can then install PyFolding as follows:
 ```
 
 #### Setup PyFolding on a PC
-+ Open the command line prompt (CMD.exe) and use the following commands:
++ Go to https://github.com/quantumjot/PyFolding
++ Download PyFolding as a zip file
++ unzip where you want the PyFolding to reside
++ Open the command line prompt (CMD.exe) and navigate to where you put PyFolding
++ Then Use the following commands:
 
 ```
-  git clone https://github.com/quantumjot/PyFolding.git
   cd PyFolding
   python setup.py install
 ```
@@ -39,23 +42,30 @@ for their proteins and re-run the jupyter notebook to obtain their analyse.
 
 #### Opening Up Jupyter Notebooks with Anaconda
 
-+ Once Anaconda and PyFolding are installed, launch the Anaconda Navigator application from the Applications folder.
-Then click on the "launch Jupyter Notebook" tab to start jupyter notebooks. This will open Jupyter notebooks
-in your default internet browser.
++ Once Anaconda and PyFolding are installed, there are a number of ways to start and
+use PyFolding as part of the jupyter notebooks.
 
-+ You can then navigate to where you installed PyFolding (the notebooks folder) and open the jupyter notebooks
-we have provided.
++ One of the easiest is: On a PC open the command line prompt (CMD.exe) and on a
+Mac open a Terminal (Terminal.app) then type "jupyter notebook". This will open your
+default web browser with the jupyter interface.
+
++ You can then navigate from the jupyter interface on your web browser to where you installed PyFolding
+(the notebooks folder) and open the jupyter notebooks we have provided by simply double
+clicking on them.
+
++ You can also open a new notebook and start from scratch too!
 
 + All scripts were written on a Mac,  therefore on a PC you will need to change the path of your data
 to include "C:\" at the beginning.
 
-+ To run the notebook select kernel from the menu and use the "Restart and run all" command.
-Once you have done this you can re-run individual cells by selecting the cell and pressing SHIFT + RETURN keys together.
++ To run the notebook select "kernel" from the menu and use the "Restart and run all" command.
+Once you have done this you can re-run individual cells by selecting the cell and
+pressing SHIFT + RETURN keys together at the bottom of the cell.
 
 
 ### Testing Jupyter Notebook & Pyfolding installation
 
-+ Open the jupyter notebook script PyFolding-Test.ipynb from the notebook folder.
++ Open the jupyter notebook script named "PyFolding-Test.ipynb" from the notebook folder.
 + Select kernel from the menu and use the "Restart and run all" command
 
 Upon executing the script, the output generated should be the same as in the README.md file

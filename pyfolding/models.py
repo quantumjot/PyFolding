@@ -137,7 +137,7 @@ class TwoStateEquilibriumSloping(core.FitModel):
 	def equation(self):
 		return r'F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}'
 
-# NOTE (ergm) added on 30/8/2017
+# NOTE (ergm) added on 30/8/2017 and corrected incorrect asscii for running on PC 8/9/2017
 
 class ThreeStateEquilibrium (core.FitModel):
 	""" Three state equilbrium denaturation curve.
@@ -161,7 +161,7 @@ class ThreeStateEquilibrium (core.FitModel):
 	Notes:
 		Hecky J, Muller K.M. Structural Perturbation and Compensation by Directed
 		Evolution at Physiological Temperature Leads to Thermostabilization of
-		beta-Lactamase. (2005) Biochemistry 44. pp. 12640 –12654
+		beta-Lactamase. (2005) Biochemistry 44. pp. 12640-12654
 
 	Comments:
 		Y_obs = The spectroscopic signal maximum as a function of denaturant concentration
