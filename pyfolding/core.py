@@ -98,16 +98,13 @@ def set_temperature(value=constants.TEMPERATURE_CELSIUS):
 	""" Set the temperature.
 
 	Args:
-		temperature:	set the temperature in celsius
+		temperature: set the temperature in celsius
 
 	Returns:
 		None
 
 	Usage:
-
 		>> pyfolding.set_temperature( 10.2 )
-
-
 	"""
 	temperature.temperature = value
 	print u"Set temperature to {0:2.2f}\u00B0C".format(value)
@@ -336,6 +333,30 @@ class Protein(object):
 
 class FitResult(object):
 	""" Fitting result object.
+
+	This is an internal class that collates fit results and enables calculation
+	of errors, residuals and other fun things.
+
+	Args:
+		name: a name for the fit result (e.g. TwoStateChevron)
+		fit_args: the fit function arguments
+		ID: The identifier of the protein
+
+	Properties:
+		method: the name of the optimisation algorithm used
+		errors: the calculated errors (SEM) for the fit arguments
+		details: return a zipped list of argument, value, error tuples
+		standard_error: the standard_error of the overall fit
+		covar: covariance matrix following optimisation
+		residuals: residuals of fit to data
+		r_squared: r^2 value for the fit
+
+	Members:
+		display: return a formatted output of the fitting statistics
+
+	Notes:
+		TODO(arl): implement an export function
+
 	"""
 
 	def __init__(self, fit_name=None, fit_args=None):
@@ -478,9 +499,11 @@ class FoldingData(object):
 
 			# perform the actual fitting
 			try:
-				out = optimize.curve_fit(self.__fit_func, self.x, self.y, p0=p0, maxfev=20000)
+				out = optimize.curve_fit(self.__fit_func, self.x, self.y, p0=p0,
+					maxfev=20000)
 			except RuntimeWarning:
-				raise Exception("Optimisation could not complete. Try adjusting your fitting parameters (p0)")
+				raise Exception("Optimisation could not complete. Try adjusting"
+				 		" your fitting parameters (p0)")
 
 			# create a results structure
 			self.__fit = FitResult(fit_name=self.fit_func, fit_args=self.fit_func_args)
@@ -496,7 +519,7 @@ class FoldingData(object):
 			self.__fit.residuals = self.y_raw - fit_y_data_x
 			self.__fit.r_squared = r_squared(y_data=self.y_raw, y_fit=fit_y_data_x)
 
-
+			# TODO(arl): this is obsolete now - we should be storing the FitResult
 			# store locally ?
 			self.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
 			self.fit_covar = out[1]
@@ -737,7 +760,23 @@ def FIT_ERROR(x):
 
 
 class GlobalFit(object):
-	""" Wrapper function to perform global fitting
+	""" Wrapper function to perform global fitting.  This acts as a wrapper for
+	multiple FitModels, enabling the user to pair datasets and models and share
+	data or arguments.
+
+	Args:
+		x: concatenated x data
+		y: concatenated y data
+
+	Properties:
+		fit_funcs: the fit functions
+		constants: constants for the fitting
+
+	Members:
+		__call__: evaluates the fit functions
+
+	Notes:
+
 	"""
 	def __init__(self):
 		self.x = []
@@ -764,8 +803,6 @@ class GlobalFit(object):
 		for constant, fit_func in zip(constants, self.__fit_funcs):
 			fit_func.constants = constant
 
-
-
 	def __call__(self, *args):
 		""" Dummy call for all fit functions """
 		x = args[0]
@@ -785,8 +822,7 @@ class GlobalFit(object):
 
 
 class FitModel(object):
-	"""
-	FitModel class
+	""" FitModel class
 
 	A generic fit model to enable a common core set of functions
 	but specific new member functions to be enabled in derived
@@ -797,9 +833,23 @@ class FitModel(object):
 	in global fitting. By default the model just gets the params
 	in the order they are defined in the function defininition
 
+	Note: this must be subclassed to work.
+
 	Args:
+		constants: constants for fitting
+
+	Properties:
+		params: the parameters of the fit model
+		name: the name of the fit model
+		default_params: the default starting parameters for the fit
+		fit_func_args: the names of the fit function arguments
+		equation: a LaTeX formatted string of the model
 
 	Methods:
+		__call__: evaluates the fit function with the given args
+		print_equation: (static) prints the equation to the stdout
+		fit_func: (not defined) the actual fit function
+		error_func: (not defined) the error function
 
 	Notes:
 
@@ -881,6 +931,7 @@ class FitModel(object):
 	def equation(self):
 		raise NotImplementedError
 
+	@staticmethod
 	def print_equation(self):
 		from IPython.display import display, Math, Latex
 		display(Math(self.equation))

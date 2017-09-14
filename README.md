@@ -30,7 +30,7 @@ $ cd PyFolding
 $ python setup.py install
 ```
 
-+ For more detailed installation for setup on a Mac or PC please read the accompanying Setup.md.
++ For more detailed installation for setup on a Mac or PC please read the accompanying SETUP.md.
 
 ### Testing the installation
 
@@ -138,4 +138,4 @@ folding.plot_figure(equilibrium, chevron)
 ### IPython Notebooks
 
 PyFolding can be used within IPython Notebooks (Jupyter). Several example notebooks are provided in the notebooks folder.
-To install Jupyter notebooks please read the accompanying file "Mac&PCSetup.md"
+To install Jupyter notebooks please read the accompanying file "SETUP.md"
