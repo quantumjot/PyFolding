@@ -931,7 +931,7 @@ class FitModel(object):
 	def equation(self):
 		raise NotImplementedError
 
-	@staticmethod
+	# @staticmethod
 	def print_equation(self):
 		from IPython.display import display, Math, Latex
 		display(Math(self.equation))
