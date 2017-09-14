@@ -21,7 +21,7 @@ The easiest way to get these packages on a Mac or PC is to install Anaconda:
 https://www.anaconda.com/download/
 
 
-### Installation on Mac/Linux
+### Installation
 
 You can install PyFolding by cloning the repo and running the setup script:
 ```sh
@@ -29,6 +29,8 @@ $ git clone https://github.com/quantumjot/PyFolding.git
 $ cd PyFolding
 $ python setup.py install
 ```
+
++ For more detailed installation for setup on a Mac or PC please read the accompanying Setup.md.
 
 ### Testing the installation
 
