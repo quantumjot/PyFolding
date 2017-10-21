@@ -32,6 +32,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 
 from scipy import optimize
+from scipy.stats import t as t_distrb
 from collections import OrderedDict
 
 import constants
@@ -84,7 +85,8 @@ class __Temperature(object):
 		if not isinstance(value, numbers.Real):
 			return TypeError("Temperature must be specified as a number")
 		if value < 0 or value > 100:
-			raise ValueError("Temperature ({0:2.2f}) is not in valid range (0-100 degrees C)".format(value))
+			raise ValueError("Temperature ({0:2.2f}) is not in valid range "
+				"(0-100 degrees C)".format(value))
 		self.__temperature = value
 
 	@property
@@ -414,8 +416,18 @@ class FitResult(object):
 			raise ValueError("FitResult: Residuals are not defined")
 
 		num_params = len(self.fit_args)
-		errors = [np.sqrt(float(self.covar[p,p]) * np.var(self.residuals)) / np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
+		errors = [np.sqrt(float(self.covar[p,p]) * np.var(self.residuals)) /
+				np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
 		return errors
+
+	@property
+	def confidence(self):
+		""" Return the 95 per cent confidence interval for a fitted parameter
+
+		[BestFit(Pi) +/- t(95%,DF)*SE(Pi)
+		"""
+
+		raise NotImplementedError
 
 	@property
 	def details(self):
