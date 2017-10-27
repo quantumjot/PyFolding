@@ -429,7 +429,11 @@ class FitResult(object):
 		""" Return the 95 per cent confidence interval for a fitted parameter
 		https://stats.stackexchange.com/questions/72047/when-fitting-a-curve-how-do-i-calculate-the-95-confidence-interval-for-my-fitt
 		[BestFit(Pi) +/- t(95%,DF)*SE(Pi)
+
+		NOTES:
+			TODO(arl): make this a user defined interval
 		"""
+		ci = constants.CONFIDENCE_INTERVAL / 100.0
 		conf = t_distrb.pdf(0.95, self.DoF) * self.SE(i)
 		return (self.fit_params[i]-conf, self.fit_params[i]+conf)
 
@@ -877,8 +881,24 @@ class GlobalFit(object):
 
 
 
-
-
+#
+# class FitParameter
+# 	""" FitParameter
+#
+# 	A class to deal with parameter sharing.
+# 	"""
+# 	def __init__(self, name, value, constant):
+# 		pass
+# 		self.DoF = None
+# 		self.SE = None
+# 		self.CI = None
+# 		self.covar = None
+# 		self.r_squared = None
+#
+# 		@property
+# 		def CI_low(self): return self.CI[0]
+# 		@property
+# 		def CI_high(self): return self.CI[1]
 
 
 

@@ -16,6 +16,9 @@ MARKER_SIZE = 8
 LABEL_SIZE = 18
 LINE_WIDTH = 3
 
+# error options
+CONFIDENCE_INTERVAL = 95
+
 
 if __name__ == "__main__":
 	pass

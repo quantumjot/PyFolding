@@ -31,6 +31,7 @@ $ python setup.py install
 ```
 
 + For more detailed installation for setup on a Mac or PC please read the accompanying SETUP.md.
++ Watch the YouTube video demonstrating how to install and run PyFolding.
 
 ### Testing the installation
 
@@ -47,36 +48,55 @@ pyfolding.test()
 Upon executing the script, the following output should be generated:
 
 ```sh
-==================================================
- Fitting results
-==================================================
+========================================================
+Fitting results
+========================================================
 ID: Simulated protein
 Model: TwoStateEquilibrium
 Method: scipy.optimize.curve_fit
 
-m: 1.49978 ± 0.00000
-d50: 5.00013 ± 0.00000
---------------------------------------------------
-==================================================
-==================================================
- Fitting results
-==================================================
+m:   1.48602 ± 0.00016   95% CI[1.48598, 1.48606]
+d50: 4.99714 ± 0.00005   95% CI[4.99713, 4.99715]
+--------------------------------------------------------
+R^2: 0.99955
+========================================================
+
+========================================================
+Fitting results
+========================================================
 ID: Simulated protein
 Model: TwoStateChevron
 Method: scipy.optimize.curve_fit
 
-kf: 100.00017 ± 0.00008
-mf: 1.00002 ± 0.00000
-ku: 0.00500 ± 0.00000
-mu: 0.99992 ± 0.00000
---------------------------------------------------
-==================================================
+kf: 100.03261 ± 0.00112    95% CI[100.03232, 100.03289]
+mf:   1.00006 ± 0.00000    95% CI[1.00006, 1.00006]
+ku:   0.00499 ± 0.00000    95% CI[0.00499, 0.00499]
+mu:   1.00015 ± 0.00000    95% CI[1.00015, 1.00015]
+--------------------------------------------------------
+R^2: 1.00000
+========================================================
 Test completed!
 ```
 
 ### Data format
 
-Raw data for PyFolding should be provided in .csv files.
+Raw data for PyFolding should be provided in .csv files. Sample data for all of the notebooks is provided in the /examples folder.
+
+```sh
+GuHCL    CTPR2A MOPS
+0        0.016262019
+0.1068  -0.004045731
+0.2136   0.005769455
+0.3204   0.000484273
+0.4272   0.001788867
+0.534   -0.001676449
+0.6408   0.005704187
+0.7476   0.013683238
+0.8544   0.018731417
+0.9612   0.052727921
+1.068    0.078283591
+...
+```
 
 ---
 
