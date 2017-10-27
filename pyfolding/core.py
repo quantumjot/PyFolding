@@ -1019,6 +1019,12 @@ class FitModel(object):
 		display(Math(self.equation))
 		return None
 
+	def info(self):
+		self.print_equation()
+		print self.__doc__
+
+
+
 
 
 

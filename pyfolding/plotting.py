@@ -21,6 +21,7 @@ Lowe, A.R. 2015-2016
 
 """
 
+import os
 import sys
 import time
 import inspect
@@ -116,7 +117,7 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	plt.setp(baseline, 'color', 'k')
 	plt.plot([0.,10.],[0.,0.],'k-', linewidth=constants.LINE_WIDTH)
 	plt.xlabel(chevron.denaturant_label, fontsize=constants.FONT_SIZE)
-	plt.ylabel(r'$k_{fit}-k_{obs} (s^{-1})$', fontsize=constants.FONT_SIZE)
+	plt.ylabel(r'$k_{obs}-k_{fit} (s^{-1})$', fontsize=constants.FONT_SIZE)
 	plt.xlim(kin_x_range)
 	# NOTE (ergm) editted out to make a prettier picture 4/9/2017
 	# plt.ylim((-0.5,0.5))
@@ -160,7 +161,7 @@ def plot_chevron(protein, components=False,  **kwargs):
 	Plots a chevron.
 	"""
 
-	if not isinstance(protein, Chevron):
+	if not isinstance(protein, core.Chevron):
 		raise TypeError("protein is not of type Chevron")
 
 	plt.figure(figsize=(8,5))
@@ -197,7 +198,7 @@ def plot_equilibrium(protein, **kwargs):
 	Plots an equilibrium curve.
 	"""
 
-	if not isinstance(protein, EquilibriumDenaturationCurve):
+	if not isinstance(protein, core.EquilibriumDenaturationCurve):
 		raise TypeError("protein is not of type EquilibriumDenaturationCurve")
 
 	plt.figure(figsize=(8,5))

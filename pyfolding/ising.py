@@ -376,7 +376,7 @@ class IsingPartitionFunction(object):
 	Subpartition functions can also be calculated as well as the
 	fraction of folded molecules (theta).
 
-	In the futute, it would be nice to consider other topologies,
+	In the future, it would be nice to consider other topologies,
 	perhaps as graphs.
 
 	Args:

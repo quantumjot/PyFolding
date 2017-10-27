@@ -72,7 +72,7 @@ class TemplateModel(core.FitModel):
 
 
 
-
+# F = \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
 """
 ==========================================================
 EQUILIBRIUM FOLDING models
@@ -82,9 +82,15 @@ EQUILIBRIUM FOLDING models
 class TwoStateEquilibrium(core.FitModel):
 	""" Two state equilbrium denaturation curve.
 
-	F = \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
+	Params:
+		F = Fraction unfolded
+		m = m-value
+		x = denaturant concentration (M)
+		d50 = denaturant midpoint (M)
+		R = Universal Gas Constant (kcal.mol-1)
+		T = Temperature (Kelvin)
 
-	Notes:
+	Reference:
 		Clarke and Fersht. Engineered disulfide bonds as probes of
 		the folding pathway of barnase: Increasing the stability
 		of proteins against the rate of denaturation.
@@ -213,9 +219,9 @@ class TwoStateDimerEquilibrium(core.FitModel):
 		YN and YD are the spectroscopic signals for native and denatured monomeric subunits at a concentration of Pt
 		K_U = Equilibrium Constant
 		F_D = fraction of unfolded monomers
-		Pt = total protein concentration. This variableneeds to be set per denaturation curve,
-		so it like the homozipper Ising model when you need to define a specific value to a curve.
-		also needs to fit to multiple datasets
+		Pt = total protein concentration. This variable needs to be set per
+		denaturation curve, so it like the homozipper Ising model when you need
+		to define a specific value to a curve. Also needs to fit to multiple datasets.
 
 	"""
 
@@ -387,6 +393,46 @@ class HomozipperIsingEquilibrium(core.FitModel):
 			f = \frac{1} {n} \sum^{n}_{i=0}i\frac{(n-i+1)\kappa^i\tau^{i-1}} {q} \\ \
 			\text{where:  } \kappa (x) = \exp\frac{-G_i} {RT} = \exp\frac{-G_{i,H_20} + m_i x} {RT}  \\ \
 			\text{  &  } \tau (x) = \exp\frac{-G_{i,i+1}} {RT}'
+
+
+
+
+
+class HeteropolymerIsingEquilibrium(core.FitModel):
+	""" Homopolymer Zipper Ising model
+
+	Notes:
+		Aksel and Barrick. Analysis of repeat-protein folding using
+		nearest-neighbor statistical mechanical models.
+		Methods in enzymology (2009) vol. 455 pp. 95-125
+	"""
+	def __init__(self):
+		core.FitModel.__init__(self)
+
+	def fit_func(self, x):
+		raise NotImplementedError('This is a dummy model.')
+
+	# NOTE (ergm) changed on 4/9/2017
+	@property
+	def equation(self):
+		return r'\text{the partition function } (q) \text{ and thus fraction of folded protein } (f) \text{ of n arrayed repeats are given by:}  \\ \
+			\begin{equation} \\ \
+			\begin{aligned} \\ \
+			\kappa(x) &= \exp(-(\Delta G_{intrinsic} - m_{intrinsic}x) / RT) \\ \
+			\tau(x) &= \exp(-\Delta G_{interface}) / RT) \\ \
+			q(i) &=  \
+			\begin{bmatrix} 0 & 1\end{bmatrix}  \
+			\begin{bmatrix} \kappa_1\tau_{-1} & 1\\ \kappa & 1 \end{bmatrix} \
+			\ldots  \
+			\begin{bmatrix} \kappa_n\tau_{n-1} & 1\\ \kappa & 1 \end{bmatrix} \
+			\begin{bmatrix} 1 \\ 1 \end{bmatrix} \\ \
+			\theta &=  \frac{1}{nq(n)} \sum_{i=0}^{n}{q(i)} \
+			\end{aligned} \
+			\end{equation}'
+
+
+
+
 
 
 
