@@ -1,3 +1,6 @@
+# version
+VERSION = '0.2.1'
+
 # constants
 IDEAL_GAS_CONSTANT_KCAL = 1.987204118E-3
 TEMPERATURE_CELSIUS = 25.
@@ -18,7 +21,6 @@ LINE_WIDTH = 3
 
 # error options
 CONFIDENCE_INTERVAL = 95
-
 
 if __name__ == "__main__":
 	pass

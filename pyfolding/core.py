@@ -41,7 +41,6 @@ from plotting import *
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
-__version__ = 0.03
 
 
 
