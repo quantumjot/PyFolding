@@ -596,13 +596,16 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **
 
 	x = np.linspace(0.,10.,100)
 
+	# cat all of the residuals for the global vars
+	global_residuals = y - global_fit(x, *out)
+
 	# calculate errors
 	for i, protein in enumerate(equilibrium_curves):
 
 		# calculate the fit
 		n = topologies[i]
 		fit_args = [n] + out[1:].tolist()
-		fit_y = global_fit.fit_funcs[i](global_fit.x[i], *fit_args)
+		y_fit = global_fit.fit_funcs[i](global_fit.x[i], *fit_args)
 
 		result = core.FitResult(fit_name="Homopolymer Ising Model", fit_args=global_fit.fit_funcs[0].fit_func_args[1:])
 		result.ID = protein.ID
@@ -611,14 +614,21 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **
 		#result.y = protein['partition'].theta( result.x )
 		result.y = global_fit.fit_funcs[i](x, *fit_args)
 		result.covar = covar
-		result.residuals = protein.y - fit_y
-		#result.r_squared = r_squared[i]
+		result.residuals = global_residuals #protein.y - y_fit
+		result.r_squared = core.r_squared(y_data=protein.y, y_fit=y_fit)
+
+
 
 		results.append( result )
 
-	print '\nFitting results: '
-	for r_arg, r_val, r_err in results[0].details:
-	 	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
+	# print '\nFitting results: '
+	# for r_arg, r_val, r_err in results[0].details:
+	#  	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
+
+	# print out the results of the fit
+	for result in results:
+		result.display()
+	# results[0].display()
 
 
 	# plot some of the results
