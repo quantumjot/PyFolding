@@ -8,6 +8,14 @@ of more interesting models.
 NOTE: This project is still under construction and is constantly changing.
 
 ---
+### Reference
+
+PyFolding: An open-source software package for graphing, analysis and simulation of thermodynamic and kinetic models of protein folding  
+Lowe AR*, Perez-Riba A, Itzhaki L, Main E
+(2017) BioRXiv
+http://dx.doi.org/10.1101/191593
+
+---
 
 ### Requirements
 
@@ -36,7 +44,7 @@ $ python setup.py install
 ### Testing the installation
 
 Once installed, a simple script will execute the test function. This tests
-whether the package has installed correctly.  The following script is found in ./notebooks/
+whether the package has installed correctly.  The following script is found in /notebooks.
 
 ```python
 # import the pyfolding package
