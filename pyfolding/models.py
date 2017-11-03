@@ -80,14 +80,17 @@ EQUILIBRIUM FOLDING models
 """
 
 class TwoStateEquilibrium(core.FitModel):
-	""" Two state equilbrium denaturation curve.
+	""" Two state equilibrium denaturation curve - No sloping baseline.
+
+	Folding Scheme:
+		N <-> D
 
 	Params:
 		F = Fraction unfolded
 		m = m-value
 		x = denaturant concentration (M)
 		d50 = denaturant midpoint (M)
-		R = Universal Gas Constant (kcal.mol-1)
+		R = Universal Gas Constant (kcal.mol-1.K-1)
 		T = Temperature (Kelvin)
 
 	Reference:
@@ -116,11 +119,24 @@ class TwoStateEquilibrium(core.FitModel):
 
 
 class TwoStateEquilibriumSloping(core.FitModel):
-	""" Two state equilbrium denaturation curve.
+	""" Two state equilibrium denaturation curve - Sloping baseline.
 
-	F = (\alpha_f+\beta_f x) + (\alpha_u+\beta_u x) \cdot \frac{\exp( m(x-d_{50})) / RT} { 1+\exp(m(x-d_{50}))/RT}
+	Folding Scheme:
+		N <-> D
 
-	Notes:
+	Params:
+		F = Fraction unfolded
+		alpha f = intercept of the native baseline at low denaturation concentrations
+		beta f = slope/gradient of the native baseline at low denaturation concentrations
+		alpha u = intercept of the denatured baseline at high denaturation concentrations
+		beta u = slope/gradient of the denatured baseline at high denaturation concentrations
+		m = m-value
+		x = denaturant concentration (M)
+		d50 = denaturant midpoint (M)
+		R = Universal Gas Constant (kcal.mol-1.K-1)
+		T = Temperature (Kelvin)
+
+	Reference:
 		Clarke and Fersht. Engineered disulfide bonds as probes of
 		the folding pathway of barnase: Increasing the stability
 		of proteins against the rate of denaturation.
@@ -148,40 +164,38 @@ class TwoStateEquilibriumSloping(core.FitModel):
 class ThreeStateEquilibrium (core.FitModel):
 	""" Three state equilbrium denaturation curve.
 
-	i.e.  N = I = D
+	Folding Scheme:
+		N <-> I <-> D
 
-	Y_obs = Y_N*F_N + Y_I*F_I + Y_D*F_D
+	Params:
+		Y_obs = The spectroscopic signal maximum as a function of denaturant concentration
+		Y_N = spectroscopic signals of the  native state
+		Y_D = spectroscopic signals of the denatured state
+		F_D = fraction denatured
+		F_N = fraction native
+		F_I = fraction intermediate
+		Kni = equilibrium contstant of unfolding native to intermediate state
+		Kid = equilibrium contstant of unfolding intermediate to denatured state
+		DGni = stability of native state relative to intermediate state
+		m_ni = m-value of native to intermediate transition
+		DGid = stability of intermediate state relative to denatured state
+		m_id = m-value of intermediate to denatured transition
+		x = denaturant concentration (M)
+		R = Universal Gas Constant (kcal.mol-1.K-1)
+		T = Temperature (Kelvin)
 
-	where:
-	F_N = 1/(1 + Kni + Kni*Kid)
-	F_I = Kni / (1 + Kni + Kni*Kid)
-	F_D = Kni*Kid/(1 + Kni + Kni*Kid)
-	Kni = exp((-DGni - m_ni * x)/RT)
-	Kid = exp((-DGid - m_id * x)/RT)
-
-	expanded:
-
-	Y_obs = Y_N + Y_I*exp((DGni_H20 + m_ni*x)/RT) + Y_D*exp((DGni_H20 + m_ni*x)/RT) * exp((DGid_H20 + m_id*x)/RT) /
-			1 + exp((DGni_H20 + m_ni*x)/RT) + exp((DGni_H20 + m_ni*x)/RT) * exp((DGid_H20 + m_id*x)/RT)
-
-	Notes:
+	Reference:
 		Hecky J, Muller K.M. Structural Perturbation and Compensation by Directed
 		Evolution at Physiological Temperature Leads to Thermostabilization of
 		beta-Lactamase. (2005) Biochemistry 44. pp. 12640-12654
-
-	Comments:
-		Y_obs = The spectroscopic signal maximum as a function of denaturant concentration
-		YN and YD are the spectroscopic signals for native and denatured states
-		K = Equilibrium Constants
-		F_D = fraction of denatured
-
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1., 0.5, 0.0, 5., 1.5, 5., 1])
-
+		# NOTE (ergm) added on 3/11/2017
+		self.verified = True
 
 
 	def fit_func(self, x, Y_N, Y_I, Y_D, DGni, m_ni, DGid, m_id):
@@ -191,38 +205,52 @@ class ThreeStateEquilibrium (core.FitModel):
 
 	@property
 	def equation(self):
-		return r'\Upsilon_{obs} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
-				\text{expanded} \\ \
-				\Upsilon_{obs} = \frac{ \Upsilon_N + \Upsilon_I \exp \frac {\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} + \
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& \Upsilon_{obs} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \ \\ \
+				\text{where:}  \\ \
+				& F_N = \frac{1} {1 + K_{NI} + K_{NI} K_{ID}}\\ \
+				& F_I = \frac{K_{NI}} {1 + K_{NI} + K_{NI} K_{ID}}\\ \
+				& F_D = \frac{K_{NI} K_{ID}} {1 + K_{NI} + K_{NI} K_{ID}}\\ \
+				\text{and:}  \\ \
+				& K_{NI} = \exp \frac{\Delta G_{NI}^{H_2O} + m_{NI} x} {RT}\\ \
+				& K_{ID} = \exp \frac{\Delta G_{ID}^{H_2O} + m_{ID} x} {RT}\\ \
+				\\ \
+				\text{thus:} \\ \
+				& \Upsilon_{obs} = \frac{ \Upsilon_N + \Upsilon_I \exp \frac {\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} + \
 				\Upsilon_D \exp \frac{\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} \cdot \exp \frac{\Delta G_{ID}^{H_2O} + m_{ID} x} {RT}} {1 + \exp \
 				\frac{\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} + \exp \frac{\Delta G_{NI}^{H_2O} + m_{NI} x} {RT} \cdot  \
- 			    \exp \frac{\Delta G_{ID}^{H_2O} + m_{ID} x} {RT}}'
-
+ 			    \exp \frac{\Delta G_{ID}^{H_2O} + m_{ID} x} {RT}}\
+				\end{aligned}\
+				\end{equation}'
 
 # NOTE (ergm) added on 1/8/2017
 class TwoStateDimerEquilibrium(core.FitModel):
-	""" Two State model for a dimer denaturation Equilibrium.
-	i.e.  N2 = 2D
+	""" Two State model for a dimer denaturation Equilibrium - No Intermediate.
 
-	Y_0 = Y_N * (1 - F_D) + Y_D * F_D
-	Y_N = alpha_N + beta_N * x
-	Y_D = alpha_D + beta_D * x
-	F_D = (((K_U)^2 + (8 * K_U * P_t - K_U))^0.5)/(4 * P_t)
-	K_U = exp((RT * ln(P_t)-m(d_{50}-x))/RT)
+	Folding Scheme:
+		N2 <-> 2D
 
-	Notes:
+	Params:
+		Y_obs = spectroscopic signal at a given concentration of urea
+		Y_N = spectroscopic signal for native monomeric subunits at a concentration of Pt
+		Y_D = spectroscopic signal for denatured monomeric subunits at a concentration of Pt
+		alpha_N = intercept of the native baseline at low denaturation concentrations
+		beta_N = slope/gradient of the native baseline at low denaturation concentrations
+		alpha_D = intercept of the denatured baseline at high denaturation concentrations
+		beta_D = slope/gradient of the denatured baseline at high denaturation concentrations
+		F_D = fraction of unfolded monomers
+		K_U = Equilibrium Constant for Unfolding of dimer.
+		Pt = total protein concentration. This variable needs to be set per denaturation curve.
+		m = m-value
+		x = denaturant concentration (M)
+		d50 = denaturant midpoint (M)
+		R = Universal Gas Constant (kcal.mol-1.K-1)
+		T = Temperature (Kelvin)
+
+	Reference:
 		Mallam and Jackson. Folding studies on a knotted protein.
 		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
-
-	Comments:
-		Y_0 = The spectroscopic signal at a given concentration of urea
-		YN and YD are the spectroscopic signals for native and denatured monomeric subunits at a concentration of Pt
-		K_U = Equilibrium Constant
-		F_D = fraction of unfolded monomers
-		Pt = total protein concentration. This variable needs to be set per
-		denaturation curve, so it like the homozipper Ising model when you need
-		to define a specific value to a curve. Also needs to fit to multiple datasets.
-
 	"""
 
 	def __init__(self):
@@ -231,6 +259,9 @@ class TwoStateDimerEquilibrium(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 1e-6])
 		self.constants = (('Pt',1e-6),)
+		# NOTE (ergm) added on 3/11/2017
+		self.verified = True
+
 
  	# NOTE (ergm) added on 25/8/2017
 	def fit_func(self, x, alpha_N, beta_N, alpha_D, beta_D, m, d50, Pt):
@@ -242,37 +273,47 @@ class TwoStateDimerEquilibrium(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'\Upsilon_0 = (\alpha_N+\beta_N x) \cdot (1-F_D)  + \Upsilon_D \cdot F_D \\ \
-		\text{where} \\ \
-		F_D = \frac{\sqrt((K_U^2 + (8 K_U Pt)) - K_U}  {4 Pt} \\ \
-		K_U = \exp \frac{(RT \ln(Pt - m(d_{50} - x))} {RT}'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& \Upsilon_{obs} = \Upsilon_N \cdot (1-F_D)  + \Upsilon_D \cdot F_D \\ \
+				\text{where} \\ \
+				& \Upsilon_N = \alpha_N+\beta_N x \\ \
+				& \Upsilon_D = \alpha_D+\beta_D x \\ \
+				& F_D = \frac{\sqrt{((K_U^2 + (8 K_U Pt)) - K_U}}  {4 Pt} \\ \
+				& K_U = \exp \frac{(RT \ln(Pt - m(d_{50} - x))} {RT}\
+				\end{aligned}\
+				\end{equation}'
 
 
 # NOTE (ergm) added on 1/8/2017
 class ThreeStateMonoIEquilibrium(core.FitModel):
-	""" Three State model for a dimer denaturation Equilibrium.
-	i.e.  N2 = I2 = 2D
+	""" Three State model for a dimer denaturation Equilibrium - Monomeric intermediate.
 
-	Y_rel = Y_N*F_N + Y_I*F_I + Y_D*F_D
-	Expanded:
-	Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
-	F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
-	K1 = exp((DG1 + m1*x)/RT)
-	K2 = exp((DG2 + m2*x)/RT)
+	Folding Scheme:
+		N2 <-> I2 <-> 2D
 
-	Notes:
+	Params:
+		Y_rel = spectroscopic signal at a given concentration of urea
+		Y_N = spectroscopic signal for native state
+		Y_D = spectroscopic signal for denatured state
+		Y_I = spectroscopic signal for intermediate state
+		F_D = fraction denatured monomers
+		F_N = fraction native dimers
+		F_I = fraction intermediate dimers
+		Pt = total protein concentration. This variable needs to be set per denaturation curve.
+		K1 = equilibrium constant of unfolding for native to intermediate state
+		K2 = equilibrium constant of unfolding for intermediate to denatured state
+		DG1 = stability of native state relative to intermediate state
+		m1 = m-value of native to intermediate transition
+		DG2 = stability of intermediate state relative to denatured state
+		m2 = m-value of intermediate to denatured transition
+		x = denaturant concentration (M)
+		R = Universal Gas Constant (kcal.mol-1.K-1)
+		T = Temperature (Kelvin)
+
+	Reference:
 		Mallam and Jackson. Folding studies on a knotted protein.
 		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
-
-	Comments:
-		Y_0 = The spectroscopic signal at a given concentration of urea
-		YN and YD are the spectroscopic signals for native and denatured states
-		K_U = Equilibrium Constant
-		F_D = fraction of unfolded monomers
-		Pt = total protein concentration. This variableneeds to be set per denaturation curve,
-		so it like the homozipper Ising model when you need to define a specific value to a curve.
-		also needs to fit to multiple datasets
-
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
@@ -280,6 +321,8 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 3., 1e-6])
 		self.constants = (('Pt',1e-6),)
+		# NOTE (ergm) added on 3/11/2017
+		self.verified = True
 
 	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
 		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
@@ -291,39 +334,48 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'\Upsilon_{rel} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& \Upsilon_{rel} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
 				\text{expanded:} \\ \
-				\Upsilon_{rel} = \Upsilon_N \cdot \frac{2PtF_I^2} {K_1} + \Upsilon_I F_I + \Upsilon_D * K_2F_I \\ \
-				\text{where} \\ \
-				F_I = \frac {- K_1 (1+K_2) + \sqrt(K_1^2 (1+K_2)^2 + (8 Pt K_1))} {4Pt} \\ \
-				K_1 = \exp \frac{-\Delta G_{H_20}^1 + m_1 x} {RT} \\ \
-				K_2 = \exp \frac{-\Delta G_{H_20}^2 + m_2 x} {RT}'
+				& \Upsilon_{rel} = \Upsilon_N \cdot \frac{2PtF_I^2} {K_1} + \Upsilon_I F_I + \Upsilon_D * K_2F_I \\ \
+				\\ \
+				\text{where:} \\ \
+				& F_I = \frac {- K_1 (1+K_2) + \sqrt{(K_1^2 (1+K_2)^2 + (8 Pt K_1))}} {4Pt} \\ \
+				& K_1 = \exp \frac{-\Delta G_{H_20}^1 + m_1 x} {RT} \\ \
+				& K_2 = \exp \frac{-\Delta G_{H_20}^2 + m_2 x} {RT}\
+				\end{aligned}\
+				\end{equation}'
 
 # NOTE (ergm) added on 1/8/2017
 class ThreeStateDimericIEquilibrium(core.FitModel):
-	""" Three State model for a dimer denaturation Equilibrium.
-	i.e.  N2 = 2I = 2D
+	""" Three State model for a dimer denaturation Equilibrium - Dimeric Intermediate.
 
-	Y_rel = Y_N*F_N + Y_I*F_I + Y_D*F_D
-	Expanded:
-	Y_rel = (Y_N * ((2*Pt*F_D^2)/(K1*K2))) + (Y_I * ((2*Pt*F_D^2)/K2)) + (Y_D * F_D)
-	F_D = -((K1*K2) + ((K1*K2)^2 + (8*(1+K1)*(K1*K2)*Pt))^0.5) / (4*Pt*(1+K1))
-	K1 = F_I/F_N = exp((DG1 + m1*x)/RT)
-	K2 = (2*P_t*F_D^2) / F_I = exp((DG2 + m2*x)/RT)
+	Folding Scheme:
+		N2 <-> 2I <-> 2D
 
-	Notes:
+	Params:
+		Y_rel = spectroscopic signal at a given concentration of urea
+		Y_N = spectroscopic signal for native state
+		Y_D = spectroscopic signal for denatured state
+		Y_I = spectroscopic signal for intermediate state
+		F_D = fraction denatured monomers
+		F_N = fraction native dimers
+		F_I = fraction intermediate dimers
+		Pt = total protein concentration. This variable needs to be set per denaturation curve.
+		K1 = equilibrium contstant of unfolding native to intermediate state
+		K2 = equilibrium contstant of unfolding intermediate to denatured state
+		DG1 = stability of native state relative to intermediate state
+		m1 = m-value of native to intermediate transition
+		DG2 = stability of intermediate state relative to denatured state
+		m2 = m-value of intermediate to denatured transition
+		x = denaturant concentration (M)
+		R = Universal Gas Constant (kcal.mol-1.K-1)
+		T = Temperature (Kelvin)
+
+	Reference:
 		Mallam and Jackson. Folding studies on a knotted protein.
 		Journal of Molecular Biology (2005) vol. 346 (5) pp. 1409-1421
-
-	Comments:
-		Y_rel = The spectroscopic signal at a given concentration of urea
-		Y_N, Y_I and Y_D are the spectroscopic signals for native, intermediate and denatured states
-		K1 & K2 = Equilibrium Constants
-		F_D = fraction of unfolded monomers
-		Pt = total protein concentration. This variableneeds to be set per denaturation curve,
-		so it like the homozipper Ising model when you need to define a specific value to a curve.
-		also needs to fit to multiple datasets
-
 	"""
 
 	def __init__(self):
@@ -332,6 +384,8 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 2., 1e-6])
 		self.constants = (('Pt',1e-6),)
+		# NOTE (ergm) added on 3/11/2017
+		self.verified = True
 
 	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
 		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
@@ -344,19 +398,37 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'\Upsilon_{rel} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
-			\text{expanded:} \\ \
-			\Upsilon_{rel} = \Upsilon_N \cdot \frac{2PtF_D^2} {K_1 K_2} + \Upsilon_I \frac{2PtF_D^2} {K_2} + \Upsilon_D * (F_D) \\ \
-			\text{where:} \\ \
-			F_D = \frac {- K_1 K_2 + \sqrt((K_1 K_2)^2 + 8(1+K_1)(K_1 K_2)Pt)} {4Pt (1 + K_1)} \\ \
-			K_1 = \exp \frac{-\Delta G_{H_20}^1 + m_1 x} {RT} \\ \
-			K_2 = \exp \frac{-\Delta G_{H_20}^2 + m_2 x} {RT}'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& \Upsilon_{rel} = \Upsilon_N F_N + \Upsilon_I F_I + \Upsilon_D F_D \\ \
+				\text{expanded:} \\ \
+				& \Upsilon_{rel} = \Upsilon_N \cdot \frac{2PtF_D^2} {K_1 K_2} + \Upsilon_I \frac{2PtF_D^2} {K_2} + \Upsilon_D * (F_D) \\ \
+				\\ \
+				\text{where:} \\ \
+				& F_D = \frac {- K_1 K_2 + \sqrt{((K_1 K_2)^2 + 8(1+K_1)(K_1 K_2)Pt)}} {4Pt (1 + K_1)} \\ \
+				& K_1 = \exp \frac{-\Delta G_{H_20}^1 + m_1 x} {RT} \\ \
+				& K_2 = \exp \frac{-\Delta G_{H_20}^2 + m_2 x} {RT}\
+				\end{aligned}\
+				\end{equation}'
 
 
 class HomozipperIsingEquilibrium(core.FitModel):
 	""" Homopolymer Zipper Ising model
 
-	Notes:
+	Params:
+		q = partition function
+		f = fraction of folded protein
+		Kappa = equilibrium constant of folding for a given repeating unit
+		Tau = equilibrium constant of association between 2 repeating units
+		n = number of repeating units
+		x = denaturant concentration (M)
+		Gi = intrinsic stability (folding energy) of a repeating unit i
+		mi = denaturant sensitivity of the intrinsic stability of a repeating unit i
+		Gi,i+1 = interface interaction energy between 2 repeating units
+		R = Universal Gas Constant (kcal.mol-1.K-1)
+		T = Temperature (Kelvin)
+
+	Reference:
 		Aksel and Barrick. Analysis of repeat-protein folding using
 		nearest-neighbor statistical mechanical models.
 		Methods in enzymology (2009) vol. 455 pp. 95-125
@@ -388,18 +460,36 @@ class HomozipperIsingEquilibrium(core.FitModel):
 	# NOTE (ergm) changed on 4/9/2017
 	@property
 	def equation(self):
-		return r'\text{the partition function } (q) \text{ and thus fraction of folded protein } (f) \text{ of n arrayed repeats are given by:}  \\ \
-			q = 1 + \frac{\kappa([\kappa \tau]^{n+1} - [n+1]\kappa \tau - n)} {(\kappa \tau + 1)^2}  \\ \
-			f = \frac{1} {n} \sum^{n}_{i=0}i\frac{(n-i+1)\kappa^i\tau^{i-1}} {q} \\ \
-			\text{where:  } \kappa (x) = \exp\frac{-G_i} {RT} = \exp\frac{-G_{i,H_20} + m_i x} {RT}  \\ \
-			\text{  &  } \tau (x) = \exp\frac{-G_{i,i+1}} {RT}'
-
-
-
+		return r'\text{the partition function } (q) \text{ and thus fraction of folded protein } (f) \text{ of n arrayed repeats are given by:}\\ \
+				\begin{equation} \\ \
+				\begin{aligned} \
+				& q = 1 + \frac{\kappa([\kappa \tau]^{n+1} - [n+1]\kappa \tau - n)} {(\kappa \tau + 1)^2}  \\ \
+				\\ \
+				& f = \frac{1} {n} \sum^{n}_{i=0}i\frac{(n-i+1)\kappa^i\tau^{i-1}} {q} \\ \
+				\\ \
+				\text{where:} \\ \
+				& \kappa (x) = \exp\frac{-G_i} {RT} = \exp\frac{-G_{i,H_20} + m_i x} {RT}  \\ \
+				\\ \
+				& \tau (x) = \exp\frac{-G_{i,i+1}} {RT} \
+				\end{aligned}\
+				\end{equation}'
 
 
 class HeteropolymerIsingEquilibrium(core.FitModel):
-	""" Homopolymer Zipper Ising model
+	""" Heteropolymer Ising model
+
+	Params:
+		q = partition function
+		f = fraction of folded protein
+		Kappa = equilibrium constant of folding for a given repeating unit
+		Tau = equilibrium constant of association between 2 repeating units
+		n = number of repeating units
+		x = denaturant concentration (M)
+		DG_intrinsic = intrinsic stability (folding energy) of a repeating unit i
+		m_intrinsic = denaturant sensitivity of the intrinsic stability of a repeating unit i
+		DG_interface = interface interaction energy between 2 repeating units
+		R = Universal Gas Constant (kcal.mol-1.K-1)
+		T = Temperature (Kelvin)
 
 	Notes:
 		Aksel and Barrick. Analysis of repeat-protein folding using
@@ -446,7 +536,16 @@ KINETIC FOLDING models
 class TwoStateChevron(core.FitModel):
 	""" Two state chevron plot.
 
-	k_{obs} = k_u^{H_2O}\exp(m_{ku}x) + k_f^{H_2O}\exp(m_{kf}x)
+	Folding Scheme:
+		N <-> D
+
+	Params:
+		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		kf = rate constant of refolding at a particular denaturant concentration
+		mf = the gradient of refolding arm of the chevron
+		ku = rate constant of unfolding at a a particular denaturant concentration
+		mu = the gradient of unfolding arm of the chevron
+		x = denaturant concentration (M)
 
 	Notes:
 		Jackson SE and Fersht AR.  Folding of chymotrypsin inhibitor 2.
@@ -478,24 +577,40 @@ class TwoStateChevron(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'k_{obs} = k_f^{H_2O}\exp(-m_{kf}x) + k_u^{H_2O}\exp(m_{ku}x)'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = k_f + k_u \\ \
+				\\ \
+				\text{where:} \\ \
+				& k_f = k_f^{H_2O}\exp(-m_{kf}x)\\ \
+				& k_u = k_u^{H_2O}\exp(m_{ku}x) \\ \
+				\text{thus:} \\ \
+				& k_{obs} = k_f^{H_2O}\exp(-m_{kf}x) + k_u^{H_2O}\exp(m_{ku}x)\\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 class ThreeStateChevron(core.FitModel):
 	""" Three state chevron with single intermediate.
 
-	k_{obs} = k_{fi}^{H_2O} * exp(-m_{if}*x) +
-				k_{if}^{H_2O} * exp((m_i - m_{if})*x) /
-				(1 + 1 / K_{iu})
+	Folding Scheme:
+		N <-> I <-> D
 
-	where:
+	Params:
+		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		kfi = microscopic rate constant for the conversion of folded to intermediate
+		kif = microscopic rate constant for the conversion of intermediate to folded
+		i.e. k_if = kif(H20) * exp((mi - mif)*x)
+		Kiu = equilibrium constant for the rapid equilibration between intermediate & unfolded
+		i.e. Kiu = Kiu(H2O) * exp((mu-mi)*x)
+		mif = m-value associated with the kinetic transition between intermediate & folded
+		mi = m-value associated with the equilibrium transition between intermediate & folded
+		mu = m-value associated with the equilibrium transition between unfolded & folded
+		x = denaturant concentration (M)
 
-	K_{iu} = K_{iu}^{H_2O} * exp((m_u-m_i)*x)
-
-	Notes:
+	Reference:
 		Parker et al. An integrated kinetic analysis of
-		intermediates and transition states in protein folding
-		reactions.
+		intermediates and transition states in protein folding reactions.
 		Journal of molecular biology (1995) vol. 253 (5) pp. 771-86
 	"""
 	def __init__(self):
@@ -524,27 +639,42 @@ class ThreeStateChevron(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) /(1 + 1 / (K_{iu}^{H_2O}\exp((m_u-m_i)x)))'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = \frac{k_{fi} + k_{if}} {(1+1/K_{iu})} \\ \
+				\\ \
+				\text{where:} \\ \
+				& k_{fi} = k_{fi}^{H_2O}\exp(-m_{fi}x)\\ \
+				& k_{if} = k_{if}^{H_2O}\exp((m_i - m_{if})x)\\ \
+				& K_{iu} = K_{iu}^{H_2O}\exp((m_u - m_i)x)\\ \
+				\text{thus:} \\ \
+				& k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) /(1 + 1 / (K_{iu}^{H_2O}\exp((m_u-m_i)x)))\\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 
 class ThreeStateFastPhaseChevron(core.FitModel):
 	""" Three state chevron with single intermediate.
 
-	k_{obs} = k_{fi}^{H_2O} * exp(-m_{if}*x) +
-				k_{if}^{H_2O} * exp((m_i - m_{if})*x) /
-				(1 + 1 / K_{iu})
+	Folding Scheme: N <-> I <-> D
 
-	where:
+	Params:
+		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		kfi = microscopic rate constant for the conversion of folded to intermediate
+		kif = microscopic rate constant for the conversion of intermediate to folded
+		kiu = microscopic rate constant for the conversion of intermediate to unfolded
+		kui = microscopic rate constant for the conversion of unfolded to intermediate
+		Kiu = equilibrium constant for the rapid equilibration between intermediate & unfolded
+		mfi = m-value associated with the kinetic transition between folded & intermediate
+		mif = m-value associated with the kinetic transition between intermediate & folded
+		miu = m-value associated with the kinetic transition between intermediate & unfolded
+		mui = m-value associated with the kinetic transition between unfolded & intermediate
+		x = denaturant concentration (M)
 
-    kui = kui{H2O} * exp(-mui*x)
-    kiu = kiu{H2O} * exp(miu*x)
-    Kiu = kiu/(kiu + kui)
-
-	Notes:
+	Reference:
 		Parker et al. An integrated kinetic analysis of
-		intermediates and transition states in protein folding
-		reactions.
+		intermediates and transition states in protein folding reactions.
 		Journal of molecular biology (1995) vol. 253 (5) pp. 771-86
 	"""
 
@@ -580,37 +710,53 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
-		return r'k_{obs} = k_{fi}^{H_2O}\exp(-m_{if}x) + k_{if}^{H_2O}\exp((m_i - m_{if})x) / (1 + 1 /K_{iu}^{H_2O}\exp((m_u-m_i)x))  \\ \
-        where  \\ \
-        k_{ui} = k_{ui}^{H2O}  exp(-m_{ui}x) \\ \
-        k_{iu} = k_{iu}^{H2O}  exp(m_{iu}x) \\ \
-        K_{iu} = k_{iu}/(k_{iu} + k_{ui})'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = \frac{k_{fi} + k_{if}} {(1+1/K_{iu})} \\ \
+				\\ \
+				\text{where:} \\ \
+				& k_{fi} = k_{fi}^{H_2O}\exp(m_{fi}x)\\ \
+				& k_{if} = k_{if}^{H_2O}\exp(-m_{if}x)\\ \
+				& k_{iu} = k_{iu}^{H_2O}\exp(m_{iu}x)\\ \
+				& k_{ui} = k_{ui}^{H_2O}\exp(-m_{ui}x)\\ \
+				& K_{iu} = \frac{k_{iu}} {k_{iu} + k_{ui}}\\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 class ThreeStateSequentialChevron(core.FitModel):
 	""" Three state metastable intermediate chevron plot.
 
-	A_1 = -(k_{ui}+k_{iu}+k_{if}+k_{fi})
-	A_2 = k_{ui}*(k_{if}+k_{fi}) + k_{iu}*k_{uf}
+	Folding Scheme: N <-> I <-> D
 
-	k_{obs} = 0.5 * (-A_2 - sqrt(A_2^2 - 4*A_1))
+	Params:
+		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		kfi = microscopic rate constant for the conversion of folded to intermediate
+		kif = microscopic rate constant for the conversion of intermediate to folded
+		kiu = microscopic rate constant for the conversion of intermediate to unfolded
+		kui = microscopic rate constant for the conversion of unfolded to intermediate
+		mfi = m-value associated with the kinetic transition between folded & intermediate
+		mif = m-value associated with the kinetic transition between intermediate & folded
+		miu = m-value associated with the kinetic transition between intermediate & unfolded
+		mui = m-value associated with the kinetic transition between unfolded & intermediate
+		x = denaturant concentration (M)
 
-	Notes:
+	Reference:
 		Bachmann and Kiefhaber. Apparent two-state tendamistat
 		folding is a sequential process along a defined route.
 		J Mol Biol (2001) vol. 306 (2) pp. 375-386
 	"""
+
 	def __init__(self):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([2e4, 0.3480, 20.163, 1.327, 0.3033, 0.2431])
-		# self.constants = (('mui',4.34965),('mif',0.68348),('mfi',0.97966))
+		# NOTE (ergm) changed constants on 3/10/2017
+		self.constants = (('kiu', 1.e4),('miu',0.))
 		self.verified = True
 
 	def fit_func(self, x, kui, mui, kif, mif, kfi, mfi):
-		kiu = 1.e4
-		miu = 0.
 		k_ui = kui*np.exp(-mui*x)
 		k_iu = kiu*np.exp(miu*x)
 		k_if = kif*np.exp(-mif*x)
@@ -624,8 +770,6 @@ class ThreeStateSequentialChevron(core.FitModel):
 		return np.log(y)
 
 	def components(self, x, kui, mui, kif, mif, kfi, mfi):
-		kiu = 1.e4
-		miu = 0.
 		k_ui = kui*np.exp(-mui*x)
 		k_iu = kiu*np.exp(miu*x)
 		k_if = kif*np.exp(-mif*x)
@@ -636,21 +780,35 @@ class ThreeStateSequentialChevron(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'k_{obs} = 0.5(-A_2 \pm \sqrt{A_2^2 - 4A_1}) \\ \
-		\text{where}\\ A_1 = -(k_{ui} + k_{iu} + k_{if} + k_{fi}) \\ \
-		A_2 = k_{ui}(k_{if} + k_{fi}) + k_{iu}k_{if} \\ \
-		\text{and} \\k_{ui} = k_{ui}^{H_2O}\exp(-m_{ui}x) \\ \
-		k_{iu} = k_{iu}^{H_2O}\exp(-m_{iu}x) \\ etc...'
-
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = 0.5(-A_2 \pm \sqrt{A_2^2 - 4A_1}) \\ \
+				\\ \
+				\text{where:}\\ \
+				& A_1 = -(k_{ui} + k_{iu} + k_{if} + k_{fi}) \\ \
+				& A_2 = k_{ui}(k_{if} + k_{fi}) + k_{iu}k_{if} \\ \
+				\text{and:} \\ \
+				& k_{fi} = k_{fi}^{H_2O}\exp(m_{fi}x)\\ \
+				& k_{if} = k_{if}^{H_2O}\exp(-m_{if}x)\\ \
+				& k_{iu} = k_{iu}^{H_2O}\exp(m_{iu}x)\\ \
+				& k_{ui} = k_{ui}^{H_2O}\exp(-m_{ui}x)\\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 class ParallelTwoStateChevron(core.FitModel):
-	""" Two state chevron plot.
+	""" Parallel Two state chevron plot.
 
-	k_{obs} = k_u^{H_2O}\exp(m_ku*x) + k_u^{H_2O}\exp(m_kf*x)
+	Folding Scheme:
+		N <-> D
+		^     ^
+		|_____|
 
-	Notes:
-		[Reference]
+	Params:
+
+
+	Reference:
+		[Alan PNAS 2007]
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
@@ -690,23 +848,34 @@ class ParallelTwoStateChevron(core.FitModel):
 	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
-		return r'\Delta G^A = k_f^A / k_u^A \\ \
-					k_u^B = k_f^B / \Delta G^A \\ \
-					m_u^B = (m_f^A + m_u^A) - (m_f^B) \\ \
-					k_{obs}^A = k_f^A exp(-m_f^A x) + k_u^A exp(m_u^A x) \\ \
-					k_{obs}^B = k_f^B exp(-m_f^B x) + k_u^B exp(m_u^B x) \\ \
-					k_{obs} = k_obs^A + k_obs^B'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = k_{obs}^A + k_{obs}^B \\ \
+				\\ \
+				\text{where:}\\ \
+				& \Delta G^A = k_f^A / k_u^A \\ \
+				& k_u^B = k_f^B / \Delta G^A \\ \
+				& m_u^B = (m_f^A + m_u^A) - (m_f^B) \\ \
+				& k_{obs}^A = k_f^A exp(-m_f^A x) + k_u^A exp(m_u^A x) \\ \
+				& k_{obs}^B = k_f^B exp(-m_f^B x) + k_u^B exp(m_u^B x) \\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 
 
 class ParallelTwoStateUnfoldingChevron(core.FitModel):
-	""" Two state chevron plot.
+	""" Parallel Two state unfolding chevron plot.
 
-	k_{obs} = k_u^{H_2O}\exp(m_ku*x) + k_u^{H_2O}\exp(m_kf*x)
+	Folding Scheme:
+		N -> D
+		|____|
 
-	Notes:
-		[Reference]
+	Params:
+
+
+	Reference:
+		[HUTTON, JACS, 2015]
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
@@ -737,36 +906,47 @@ class ParallelTwoStateUnfoldingChevron(core.FitModel):
 	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
-		return r'k_obs^A = k_u^A exp(m_u^A x) \\ \
-		k_obs^B = k_u^B exp(m_u^B x) \\ \
-				k_{obs} = k_obs^A + k_obs^B'
-
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = k_obs^A + k_obs^B \\ \
+				\\ \
+				\text{where:}\\ \
+				& k_obs^A = k_u^A exp(m_u^A x) \\ \
+				& k_obs^B = k_u^B exp(m_u^B x) \\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 
 class TwoStateChevronMovingTransition(core.FitModel):
 	""" Two state chevron with moving transition state.
-	Second order polynomial.
 
-	k_u = k_u^{H_2O} * \exp(m_{ku}*x) * \exp(m_{prime}^' * x^2)
-	k_f = k_f^{H_2O} * \exp(m_{kf}*x) * \exp(m_{prime}^' * x^2)
+	Folding Scheme:
+		N <-> D
 
-	k_{obs} = k_u + k_f
+	Params:
+		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		kf = rate constant of refolding at a particular denaturant concentration
+		mf = refolding coefficient for the first order [D] term.
+		ku = rate constant of unfolding at a particular denaturant concentration
+		mu = unfolding coefficient for the first order [D] term.
+		m' = coefficient for the second-order [D] term (both unfolding and refolding).
+		x = denaturant concentration (M)
 
-	Notes:
+		Reference:
 		Ternstrom et al. From snapshot to movie: phi analysis
 		of protein folding transition states taken one step
-		further.
-		PNAS (1999) vol. 96 (26) pp. 14854-9
-	"""
+		further. PNAS (1999) vol. 96 (26) pp. 14854-9
+
+"""
 	def __init__(self):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-
 		# NOTE (ergm) changed on 23/8/2017
 		self.default_params = np.array([5e-5, 0.2, 10., 0.2, -1.])
-		self.verified = False
+		# NOTE (ergm) added on 3/11/2017
+		self.verified = True
 
 	# NOTE (ergm) changed on 23/8/2017
 	def fit_func(self, x, ku, mu, kf, mf, m_prime):
@@ -779,9 +959,15 @@ class TwoStateChevronMovingTransition(core.FitModel):
 	# NOTE (ergm) added on 23/8/2017
 	@property
 	def equation(self):
-		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku} x) \cdot \exp(m^{*} x^2) \\ \
-		k_f = k_f^{H_2O} \cdot \exp(m_{kf} x) \cdot \exp(m^{*} x^2) \\ \
-				k_{obs} = k_u + k_f'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = k_u + k_f \\ \
+				\\ \
+				\text{where:}\\ \
+				& k_u = k_u^{H_2O} \cdot \exp(m_{u} x) \cdot \exp(m^{*} x^2) \\ \
+				& k_f = k_f^{H_2O} \cdot \exp(m_{f} x) \cdot \exp(m^{*} x^2) \\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 
@@ -789,12 +975,18 @@ class TwoStateChevronMovingTransition(core.FitModel):
 class CurvedChevronPolynomialFit(core.FitModel):
 	""" Chevron fit with 2 different second order polynomials for kf & ku.
 
-	k_u = k_u^{H_2O} * \exp(mu_{ku}*x) * \exp(m_{ku}^' * x^2)
-	k_f = k_f^{H_2O} * \exp(mf_{kf}*x) * \exp(m_{kf}^' * x^2)
+	Folding Scheme:
+		N <-> D
 
-	k_{obs} = k_u + k_f
+	Params:
+		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		kf = rate constant of refolding at a particular denaturant concentration
+		mf & mf* = are the refolding coefficients for the first and second-order [D] terms, respectively.
+		ku = rate constant of unfolding at a particular denaturant concentration
+		mu & mu* = are the unfolding coefficients for the first and second-order [D] terms, respectively.
+		x = denaturant concentration (M)
 
-	Notes:
+	Reference:
 
 
 	"""
@@ -803,7 +995,8 @@ class CurvedChevronPolynomialFit(core.FitModel):
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
 		self.default_params = np.array([5e-5, 1., -0.5, 100., 1., -0.5])
-		self.verified = False
+		# NOTE (ergm) changed on 3/11/2017
+		self.verified = True
 
 	def fit_func(self, x, ku, mu, mu_prime, kf, mf, mf_prime):
 		k_obs = ku*(np.exp(mu*x))*(np.exp(mu_prime*x*x)) + kf*(np.exp(mf*x))*(np.exp(mf_prime*x*x))
@@ -814,9 +1007,15 @@ class CurvedChevronPolynomialFit(core.FitModel):
 
 	@property
 	def equation(self):
-		return r'k_u = k_u^{H_2O} \cdot \exp(m_{ku} x) \cdot \exp(m_{ku}^{*} x^2) \\ \
-		k_f = k_f^{H_2O} \cdot \exp(m_{kf} x) \cdot \exp(m_{kf}^{*} x^2) \\ \
-				k_{obs} = k_u + k_f'
+		return r'\begin{equation} \
+				\begin{aligned} \
+				& k_{obs} = k_u + k_f\\ \
+				\\ \
+				\text{where:}\\ \
+				& k_u = k_u^{H_2O} \cdot \exp(m_{u} x) \cdot \exp(m_{u}^{*} x^2) \\ \
+				& k_f = k_f^{H_2O} \cdot \exp(m_{f} x) \cdot \exp(m_{f}^{*} x^2) \\ \
+				\end{aligned} \
+				\end{equation}'
 
 
 if __name__ == "__main__":
