@@ -37,6 +37,7 @@ import matplotlib.pyplot as plt
 import constants
 # import models
 import core
+from ising import IsingDomain
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"

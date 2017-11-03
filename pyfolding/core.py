@@ -500,6 +500,21 @@ class ParameterError(object):
 
 
 
+class ProxyModel(object):
+	""" ProxyModel
+
+	This is a model dynamically constructed to fit a dataset.
+
+	"""
+	def __init__(self):
+		self.params = []
+
+	def create(self, func, args):
+		pass
+
+
+
+
 
 
 
