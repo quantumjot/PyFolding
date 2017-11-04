@@ -751,12 +751,12 @@ class ThreeStateSequentialChevron(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([2e4, 0.3480, 20.163, 1.327, 0.3033, 0.2431])
+		self.default_params = np.array([2e4, 0.3480, 1e4, 0, 20.163, 1.327, 0.3033, 0.2431])
 		# NOTE (ergm) changed constants on 3/10/2017
 		self.constants = (('kiu', 1.e4),('miu',0.))
 		self.verified = True
 
-	def fit_func(self, x, kui, mui, kif, mif, kfi, mfi):
+	def fit_func(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_ui = kui*np.exp(-mui*x)
 		k_iu = kiu*np.exp(miu*x)
 		k_if = kif*np.exp(-mif*x)
@@ -769,7 +769,7 @@ class ThreeStateSequentialChevron(core.FitModel):
 	def error_func(self, y):
 		return np.log(y)
 
-	def components(self, x, kui, mui, kif, mif, kfi, mfi):
+	def components(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_ui = kui*np.exp(-mui*x)
 		k_iu = kiu*np.exp(miu*x)
 		k_if = kif*np.exp(-mif*x)

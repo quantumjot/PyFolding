@@ -391,7 +391,7 @@ class FitResult(object):
 		table_width = max([len("Model: "+self.name), len(" Fitting results "), 75])
 
 		print u"="*table_width
-		print u" Fitting results "
+		print u"Fitting results "
 		print u"="*table_width
 		if self.ID: print u"ID: {0:s}".format(self.ID)
 		print u"Model: {0:s}".format(self.name)
@@ -485,13 +485,32 @@ class FitResult(object):
 class ParameterError(object):
 	""" Object to store parameter error information """
 	def __init__(self):
-		self.name = None
+		self.__name = None
 		self.value = None
+		self.__type = None
 		self.DoF = None
 		self.SE = None
 		self.CI = None
 		self.covar = None
 		self.r_squared = None
+
+	@property
+	def name(self): return self.__name
+	@name.setter
+	def name(self, arg_name):
+		if not isinstance(arg_name, basestring):
+			raise TypeError('Arg name must be of type string')
+		self.__name = arg_name
+
+	@property
+	def type(self): return self.__type
+	@type.setter
+	def type(self, arg_type):
+		if not isinstance(arg_type, basestring):
+			raise TypeError('Arg type must be of type string')
+		if arg_type not in ['free', 'shared', 'constant']:
+			raise ValueError('Arg type must be either free, shared or constant')
+		self.__type = arg_type
 
 	@property
 	def CI_low(self): return self.CI[0]

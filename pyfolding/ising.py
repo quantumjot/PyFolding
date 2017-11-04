@@ -1005,6 +1005,8 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 	plt.figure(figsize=(14, len(tmp_topologies)*1.5))
 	ax = plt.subplot(111)
 
+	x_lim = -1
+
 	for y, (protein, topology) in enumerate(compact):
 		for x, (domain, d_cnt) in enumerate(topology):
 
@@ -1012,6 +1014,9 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 			c = plt.Circle((x*1.5, y), 0.45, edgecolor=d_color(name),
 						facecolor='w', label=name)
 	 		ax.add_artist(c)
+
+
+			x_lim = max(x_lim, x*1.5+1.)
 
 
 	 		# if we're folding, then plot braces to show that
@@ -1052,7 +1057,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 	l = [ Patch(edgecolor=d_color(d), facecolor='w', label=d) for d in domain_types ]
 
 
-	ax.set_xlim([-1.,11.])
+	ax.set_xlim([-1., x_lim ])
 	ax.set_ylim([-1., len(tmp_topologies)])
 	ax.set_aspect('equal', adjustable='box')
 	plt.legend(handles=l, loc='lower right')
