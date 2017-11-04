@@ -570,7 +570,7 @@ class FitProgress(object):
 
 
 
-def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **kwargs):
+def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[3.3,.1,-5.], **kwargs):
 	"""
 	Fit a homopolymer model to a dataset.
 
@@ -581,62 +581,76 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[5, 3.3,.1,-5.], **
 	global_fit = core.GlobalFit()
 	global_fit.fit_funcs = [models.HomozipperIsingEquilibrium for i in xrange(len(equilibrium_curves))]
 	global_fit.constants = [(('n',n),) for n in topologies]
-
+	global_fit.shared = ['DG_intrinsic','m_intrinsic','DG_interface'] #
 	global_fit.x = [p.x for p in equilibrium_curves]
+	global_fit.y = [p.y for p in equilibrium_curves]
+	global_fit.ID = [p.ID for p in equilibrium_curves]
 
-	x = np.concatenate([p.x for p in equilibrium_curves])
-	y = np.concatenate([p.y for p in equilibrium_curves])
+	# x = np.concatenate([p.x for p in equilibrium_curves])
+	# y = np.concatenate([p.y for p in equilibrium_curves])
 
-	# fit the curve
-	out, covar = curve_fit(global_fit, x, y, p0=p0, bounds=((0,0,-1.,-10.),(21,10.,1.,0)) )
+	# # fit the curve
+	# out, covar = curve_fit(global_fit, x, y, p0=p0, bounds=((0,-1.,-10.),(10.,1.,0)) )
+	#
+	# # finalise, following the fitting
+	# global_fit.finalise(out, covar)
+
+	out, covar = global_fit.fit( p0=p0, bounds=((0,-1.,-10.),(10.,1.,0)) )
 
 	# somewhere to store the results
-	results = []
-	covar = covar[1:,1:]
+	# results = []
+	# covar = covar[1:,1:]
 
-	x = np.linspace(0.,10.,100)
+	# x = np.linspace(0.,10.,100)
 
 	# cat all of the residuals for the global vars
-	global_residuals = y - global_fit(x, *out)
+	# global_residuals = y - global_fit(x, *out)
 
-	# calculate errors
-	for i, protein in enumerate(equilibrium_curves):
+	# # calculate errors
+	# for i, protein in enumerate(equilibrium_curves):
+	#
+	# 	# calculate the fit
+	# 	n = topologies[i]
+	# 	fit_args = [n] + out.tolist()
+	# 	y_fit = global_fit.fit_funcs[i](global_fit.x[i], *fit_args)
+	#
+	# 	result = core.FitResult(fit_name="Homopolymer Ising Model", fit_args=global_fit.fit_funcs[0].fit_func_args[1:])
+	# 	result.ID = protein.ID
+	# 	result.fit_params = out.tolist()
+	# 	result.method = "scipy.optimize.curve_fit"
+	# 	#result.y = protein['partition'].theta( result.x )
+	# 	result.y = global_fit.fit_funcs[i](x, *fit_args)
+	# 	result.covar = covar
+	# 	result.residuals = global_residuals #protein.y - y_fit
+	# 	result.r_squared = core.r_squared(y_data=protein.y, y_fit=y_fit)
+	#
+	#
+	#
+	# 	results.append( result )
 
-		# calculate the fit
-		n = topologies[i]
-		fit_args = [n] + out[1:].tolist()
-		y_fit = global_fit.fit_funcs[i](global_fit.x[i], *fit_args)
+	# print out the results of the fit
+	for result in global_fit.results:
+		result.display()
 
-		result = core.FitResult(fit_name="Homopolymer Ising Model", fit_args=global_fit.fit_funcs[0].fit_func_args[1:])
-		result.ID = protein.ID
-		result.fit_params = out[1:].tolist()
-		result.method = "scipy.optimize.curve_fit"
-		#result.y = protein['partition'].theta( result.x )
-		result.y = global_fit.fit_funcs[i](x, *fit_args)
-		result.covar = covar
-		result.residuals = global_residuals #protein.y - y_fit
-		result.r_squared = core.r_squared(y_data=protein.y, y_fit=y_fit)
-
-
-
-		results.append( result )
+	results = global_fit.results
 
 	# print '\nFitting results: '
 	# for r_arg, r_val, r_err in results[0].details:
 	#  	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
 
-	# print out the results of the fit
-	for result in results:
-		result.display()
+
 	# results[0].display()
 
 
 	# plot some of the results
 	plt.figure(figsize=(14,8))
 	for i, p in enumerate(equilibrium_curves):
-		plt.plot(p.x, p.y, 'o', x, results[i].y, '-')
+		plt.plot(p.x, p.y, 'ko')
+		plt.plot(results[i].x_fit, results[i].y_fit, '-', label=p.ID)
+	plt.legend()
 	plt.xlabel(p.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel('Fraction unfolded', fontsize=constants.FONT_SIZE)
+	plt.title('Homozipper Ising model global fit')
 	plt.show()
 
 

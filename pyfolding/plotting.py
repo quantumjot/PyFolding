@@ -57,9 +57,9 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 		dfive = equilibrium.point(0.05)
 		dninetyfive = equilibrium.point(0.95)
 
-	fity = chevron.results.y
+	fity = np.exp(chevron.results.y_fit)
 	res = chevron.results.residuals
-	fiteq = equilibrium.results.y
+	fiteq = equilibrium.results.y_fit
 
 	#
 	eq_y_range = (np.min(equilibrium.y)-.1, np.max(equilibrium.y)+.1)
@@ -75,7 +75,7 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 		plt.plot([dfifty,dfifty],eq_y_range,'b-',[dfive,dfive],eq_y_range,'b:',
 				[dninetyfive,dninetyfive],eq_y_range,'b:')
 	plt.plot(equilibrium.x, equilibrium.y,'ko' , markersize=constants.MARKER_SIZE)
-	plt.plot(equilibrium.results.x, fiteq, 'r-', linewidth=constants.LINE_WIDTH)
+	plt.plot(equilibrium.results.x_fit, fiteq, 'r-', linewidth=constants.LINE_WIDTH)
 	plt.ylabel('Signal (A.U.)', fontsize=constants.FONT_SIZE)
 	plt.title(chevron.ID, fontsize=constants.FONT_SIZE)
 	plt.xlim(kin_x_range)
@@ -94,13 +94,13 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 
 	if chevron.components:
 		for c in chevron.components:
-			plt.plot(chevron.results.x, chevron.components[c], 'r--', linewidth=constants.LINE_WIDTH)
+			plt.plot(chevron.results.x_fit, chevron.components[c], 'r--', linewidth=constants.LINE_WIDTH)
 
 	if 'k2' in chevron.phases:
 		plt.plot(chevron.denaturant['k2'], chevron.rates['k2'], 'b^', markersize=constants.MARKER_SIZE)
 
 	plt.plot(chevron.x, chevron.y_raw, 'ko' , markersize=constants.MARKER_SIZE)
-	plt.plot(chevron.results.x, fity, 'r-', linewidth=constants.LINE_WIDTH)
+	plt.plot(chevron.results.x_fit, fity, 'r-', linewidth=constants.LINE_WIDTH)
 	plt.ylabel(r'$k_{obs} (s^{-1})$', fontsize=constants.FONT_SIZE)
 	plt.xlim(kin_x_range)
 	# NOTE (ergm) changed to make a prettier picture 1/9/2017
@@ -174,7 +174,7 @@ def plot_chevron(protein, components=False,  **kwargs):
 		plt.semilogy(k_x, k_y, 'ko', markersize=constants.MARKER_SIZE)
 
 	if protein.results:
-		plt.semilogy(protein.results.x, protein.results.y, 'r-', linewidth=constants.LINE_WIDTH)
+		plt.semilogy(protein.results.x_fit, np.exp(protein.results.y_fit), 'r-', linewidth=constants.LINE_WIDTH)
 
 	if protein.components and components:
 		x = np.linspace(0., 10., 100)
@@ -205,7 +205,7 @@ def plot_equilibrium(protein, **kwargs):
 	plt.figure(figsize=(8,5))
 	plt.plot(protein.x, protein.y,'ko', markersize=constants.MARKER_SIZE)
 	if protein.results:
-		plt.plot(protein.results.x, protein.results.y, 'r-', linewidth=constants.LINE_WIDTH)
+		plt.plot(protein.results.x_fit, protein.results.y_fit, 'r-', linewidth=constants.LINE_WIDTH)
 	plt.title('{0:s} Denaturation'.format(protein.ID), fontsize=constants.FONT_SIZE)
 	plt.xlim([-0.1, 9])
 	plt.grid(False)

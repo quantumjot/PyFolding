@@ -352,6 +352,8 @@ class FitResult(object):
 		standard_error: the standard_error of the overall fit
 		covar: covariance matrix following optimisation
 		residuals: residuals of fit to data
+		all_residuals: all residuals for a global fit (same as residuals if an
+						individual fit)
 		r_squared: r^2 value for the fit
 
 	Members:
@@ -362,18 +364,19 @@ class FitResult(object):
 
 	"""
 
-	def __init__(self, fit_name=None, fit_args=None):
+	def __init__(self, fit_name=None, fit_params=None):
 		self.ID = None
-		self.fit_args = fit_args
+		self.fit_params = fit_params
 		self.name = fit_name
-		self.x = np.linspace(0., 10., 100)
-		self.y = None
+		# self.x = np.linspace(0., 10., 100)
+		# self.y = None
 		self.covar = None
 		self.residuals = None
+		self.all_residuals = None
 		self.r_squared = None
 
-		self.fit_errors = None
-		self.fit_params = None
+		# self.fit_errors = None
+		# self.fit_params = None
 
 		self.__method = "scipy.optimize.curve_fit"
 
@@ -390,38 +393,45 @@ class FitResult(object):
 
 		table_width = max([len("Model: "+self.name), len(" Fitting results "), 75])
 
+		pad_name = lambda name: name.rjust(12)
+
 		print u"="*table_width
-		print u"Fitting results "
+		print u"Fitting results"
 		print u"="*table_width
 		if self.ID: print u"ID: {0:s}".format(self.ID)
 		print u"Model: {0:s}".format(self.name)
-		print u"Method: {0:s} \n".format(self.method)
-		# for fit_arg, fit_val, fit_err in self.details:
-		# 	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f}, 95\u0025 CI[{3:2.5f},{4:2.5f}]".format(fit_arg, fit_val, fit_err, fit_conf.low, fit_conf.high)
+		print u"Optimiser: {0:s}".format(self.__method)
+		print u"Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature)
 
 		for p in self.details:
-			print u"{0:s}: \t {1:2.5f} \u00B1 {2:2.5f} \t 95\u0025 CI[{3:2.5f}, {4:2.5f}]".format(p.name, p.value, p.SE, p.CI_low, p.CI_high)
+			if p.type is 'constant':
+				print u"({0:s}) {1:s}: \t {2:2.5f}".format(p.type[0], pad_name(p.name), p.value)
+			else:
+				print u"({0:s}) {1:s}: \t {2:2.5f} \u00B1 {3:2.5f}" \
+					u" \t 95\u0025 CI[{4:2.5f}, {5:2.5f}]".format(p.type[0], pad_name(p.name), p.value, p.SE, p.CI_low, p.CI_high)
+
 
 		print u"-"*table_width
 		print u"R^2: {0:2.5f}".format(self.r_squared)
 		print u"="*table_width
+		print "\n"
 
-	@property
-	def errors(self):
-		""" Calculates the SEM of the fitted parameters, using the (hopefully
-			well formed) covariance matrix from the curve fitting algorithm.
-		"""
-
-		if not isinstance(self.covar, np.ndarray):
-			raise ValueError("FitResult: Covariance matrix is not defined")
-
-		if not isinstance(self.residuals, np.ndarray):
-			raise ValueError("FitResult: Residuals are not defined")
-
-		num_params = len(self.fit_args)
-		errors = [np.sqrt(float(self.covar[p,p]) * np.var(self.residuals)) /
-				np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
-		return errors
+	# @property
+	# def errors(self):
+	# 	""" Calculates the SEM of the fitted parameters, using the (hopefully
+	# 		well formed) covariance matrix from the curve fitting algorithm.
+	# 	"""
+	#
+	# 	if not isinstance(self.covar, np.ndarray):
+	# 		raise ValueError("FitResult: Covariance matrix is not defined")
+	#
+	# 	if not isinstance(self.residuals, np.ndarray):
+	# 		raise ValueError("FitResult: Residuals are not defined")
+	#
+	# 	num_params = len(self.fit_params)
+	# 	errors = [np.sqrt(float(self.covar[p,p]) * np.var(self.residuals)) /
+	# 			np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
+	# 	return errors
 
 
 	def confidence(self, i):
@@ -434,14 +444,14 @@ class FitResult(object):
 		"""
 		ci = constants.CONFIDENCE_INTERVAL / 100.0
 		conf = t_distrb.pdf(0.95, self.DoF) * self.SE(i)
-		return (self.fit_params[i]-conf, self.fit_params[i]+conf)
+		return (self.fit_params[i].value-conf, self.fit_params[i].value+conf)
 
 
 	def SE(self, i):
 		""" Return the SE for parameter i
 		SE(Pi) = sqrt[ (SS/DF) * Cov(i,i) ]
 		"""
-		SE = np.sqrt( (np.sum(self.residuals**2) / self.DoF) * self.covar[i,i] )
+		SE = np.sqrt( (np.sum(self.all_residuals**2) / self.DoF) * self.fit_params[i].covar )
 		return SE
 
 	@property
@@ -449,7 +459,7 @@ class FitResult(object):
 		""" Return the number of degrees of freedom, essentially the difference
 		between the number of data points and the number of fit parameters
 		"""
-		return len(self.residuals) - len(self.fit_args)
+		return len(self.all_residuals) - len(self.fit_params)
 
 	# @property
 	# def details(self):
@@ -460,15 +470,15 @@ class FitResult(object):
 	def details(self):
 		""" Return a zipped list of the fit arguments, values and errors """
 		details = []
-		for i, fit_arg in enumerate(self.fit_args):
-			p_err = ParameterError()
-			p_err.name = fit_arg
-			p_err.value = self.fit_params[i]
-			p_err.DoF = self.DoF
-			p_err.SE = self.SE(i)
-			p_err.CI = self.confidence(i)
-			p_err.covar = self.covar[i,i]
-			details.append(p_err)
+		for i, f in enumerate(self.fit_params):
+			if f.type is 'constant':
+				details.append(f)
+				continue
+			f.DoF = self.DoF
+			f.SE = self.SE(i)
+			f.CI = self.confidence(i)
+			# f.covar = self.covar[i,i]
+			details.append(f)
 		return details
 
 	@property
@@ -482,54 +492,34 @@ class FitResult(object):
 
 
 
-class ParameterError(object):
-	""" Object to store parameter error information """
-	def __init__(self):
-		self.__name = None
-		self.value = None
-		self.__type = None
-		self.DoF = None
-		self.SE = None
-		self.CI = None
-		self.covar = None
-		self.r_squared = None
-
-	@property
-	def name(self): return self.__name
-	@name.setter
-	def name(self, arg_name):
-		if not isinstance(arg_name, basestring):
-			raise TypeError('Arg name must be of type string')
-		self.__name = arg_name
-
-	@property
-	def type(self): return self.__type
-	@type.setter
-	def type(self, arg_type):
-		if not isinstance(arg_type, basestring):
-			raise TypeError('Arg type must be of type string')
-		if arg_type not in ['free', 'shared', 'constant']:
-			raise ValueError('Arg type must be either free, shared or constant')
-		self.__type = arg_type
-
-	@property
-	def CI_low(self): return self.CI[0]
-	@property
-	def CI_high(self): return self.CI[1]
+# class ParameterError(object):
+# 	""" Object to store parameter error information """
+# 	def __init__(self):
+# 		self.__name = None
+# 		self.value = None
+# 		self.__type = None
+# 		self.DoF = None
+# 		self.SE = None
+# 		self.CI = None
+# 		self.covar = None
+# 		self.r_squared = None
+#
+# 	@property
+# 	def name(self): return self.__name
+# 	@name.setter
+# 	def name(self, arg_name):
+# 		if not isinstance(arg_name, basestring):
+# 			raise TypeError('Arg name must be of type string')
+# 		self.__name = arg_name
+#
+# 	@property
+# 	def CI_low(self): return self.CI[0]
+# 	@property
+# 	def CI_high(self): return self.CI[1]
 
 
 
-class ProxyModel(object):
-	""" ProxyModel
 
-	This is a model dynamically constructed to fit a dataset.
-
-	"""
-	def __init__(self):
-		self.params = []
-
-	def create(self, func, args):
-		pass
 
 
 
@@ -545,11 +535,12 @@ class FoldingData(object):
 	"""
 	def __init__(self):
 		self.__fit_func = None
-		self.fit_params = None
-		self.fit_covar = None
+		# self.fit_params = None
+		# self.fit_covar = None
 		self.__fit = None
 		self.__fit_residuals = None
 		self.components = None
+
 
 	@property
 	def fit_func(self): return self.__fit_func.name
@@ -564,6 +555,10 @@ class FoldingData(object):
 	def fit_func_args(self):
 		if self.__fit_func:
 			return self.__fit_func.fit_func_args
+
+	@property
+	def fit_params(self):
+		return [p.value for p in self.__fit.fit_params]
 
 	@property
 	def results(self):
@@ -591,40 +586,62 @@ class FoldingData(object):
 			# set the default fitting parameters
 			if not p0: p0 = self.__fit_func.default_params
 
-			# set any constants
-			if constants:
-				# TODO: error checking/parsing here
-				self.__fit_func.constants = constants
+			# # set any constants
+			# if constants:
+			# 	# TODO: error checking/parsing here
+			# 	self.__fit_func.constants = constants
+			#
+			# # perform the actual fitting
+			# try:
+			# 	out = optimize.curve_fit(self.__fit_func, self.x, self.y, p0=p0,
+			# 		maxfev=20000)
+			# except RuntimeWarning:
+			# 	raise Exception("Optimisation could not complete. Try adjusting"
+			# 	 		" your fitting parameters (p0)")
+			#
+			# # create a results structure
+			# self.__fit = FitResult(fit_name=self.fit_func, fit_args=self.fit_func_args)
+			# self.__fit.ID = self.ID
+			# self.__fit.method = "scipy.optimize.curve_fit"
+			#
+			# # use get_fit_params in case we have any constants defined
+			# self.__fit.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
+			# self.__fit.y = self.__fit_func.fit_func(self.__fit.x, *list(self.__fit.fit_params))
+			# self.__fit.covar = out[1]
+			#
+			# fit_y_data_x = self.__fit_func.fit_func(self.x, *list(self.__fit.fit_params))
+			# self.__fit.residuals = self.y_raw - fit_y_data_x
+			# self.__fit.r_squared = r_squared(y_data=self.y_raw, y_fit=fit_y_data_x)
+			#
+			# # TODO(arl): this is obsolete now - we should be storing the FitResult
+			# # store locally ?
+			# self.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
+			# self.fit_covar = out[1]
 
-			# perform the actual fitting
-			try:
-				out = optimize.curve_fit(self.__fit_func, self.x, self.y, p0=p0,
-					maxfev=20000)
-			except RuntimeWarning:
-				raise Exception("Optimisation could not complete. Try adjusting"
-				 		" your fitting parameters (p0)")
+			f = GlobalFit()
+			f.fit_funcs = [self.__fit_func]
+			if constants: f.constants = [constants]
+			f.shared = [] #
+			f.x = [self.x]
+			f.y = [self.y]
+			f.ID = [self.ID]
 
-			# create a results structure
-			self.__fit = FitResult(fit_name=self.fit_func, fit_args=self.fit_func_args)
-			self.__fit.ID = self.ID
-			self.__fit.method = "scipy.optimize.curve_fit"
+			# x = np.concatenate([p.x for p in equilibrium_curves])
+			# y = np.concatenate([p.y for p in equilibrium_curves])
 
-			# use get_fit_params in case we have any constants defined
-			self.__fit.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
-			self.__fit.y = self.__fit_func.fit_func(self.__fit.x, *list(self.__fit.fit_params))
-			self.__fit.covar = out[1]
+			# # fit the curve
+			# out, covar = curve_fit(global_fit, x, y, p0=p0, bounds=((0,-1.,-10.),(10.,1.,0)) )
+			#
+			# # finalise, following the fitting
+			# global_fit.finalise(out, covar)
 
-			fit_y_data_x = self.__fit_func.fit_func(self.x, *list(self.__fit.fit_params))
-			self.__fit.residuals = self.y_raw - fit_y_data_x
-			self.__fit.r_squared = r_squared(y_data=self.y_raw, y_fit=fit_y_data_x)
+			out, covar = f.fit( p0=p0 )
 
-			# TODO(arl): this is obsolete now - we should be storing the FitResult
-			# store locally ?
-			self.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
-			self.fit_covar = out[1]
+			self.__fit = f.results[0]
 
 			if hasattr(self.__fit_func, "components"):
-				self.components = self.__fit_func.components(np.linspace(0.,10.,100), *list(self.fit_params))
+				# self.components = self.__fit_func.components(np.linspace(0.,10.,100), *list(self.fit_params))
+				self.components = self.__fit_func.components(np.linspace(0.,10.,100), *out.tolist())
 
 		else:
 			raise AttributeError("Fit function must be defined")
@@ -802,16 +819,18 @@ class EquilibriumDenaturationCurve(FoldingData):
 
 	@property
 	def m_value(self):
-		if isinstance(self.fit_params, np.ndarray):
+		if isinstance(self.fit_params, list):
 			return self.fit_params[ self.fit_func_args.index('m') ]
 		return None
 
+
 	@property
 	def midpoint(self):
-		if isinstance(self.fit_params, np.ndarray):
+		if isinstance(self.fit_params, list):
 			return self.fit_params[ self.fit_func_args.index('d50') ]
 		else:
 			return None
+
 
 	@property
 	def two_state(self):
@@ -858,10 +877,56 @@ def FIT_ERROR(x):
 
 
 
+class FitParameter(object):
+	""" Object to store parameter error information """
+	def __init__(self, name, value, param_type='free'):
+		self.name = name
+		self.value = value
+		self.type = param_type
+		self.DoF = None
+		self.SE = 0
+		self.CI = [-np.inf, np.inf]
+		self.covar = None
+		self.r_squared = None
+
+	@property
+	def name(self): return self.__name
+	@name.setter
+	def name(self, arg_name):
+		if not isinstance(arg_name, basestring):
+			raise TypeError('Arg name must be of type string')
+		self.__name = arg_name
+
+	@property
+	def type(self): return self.__type
+	@type.setter
+	def type(self, arg_type):
+		if not isinstance(arg_type, basestring):
+			raise TypeError('Arg type must be of type string')
+		if arg_type not in ['free', 'shared', 'constant']:
+			raise ValueError('Arg type must be either free, shared or constant')
+		self.__type = arg_type
+
+	@property
+	def CI_low(self): return self.CI[0]
+	@property
+	def CI_high(self): return self.CI[1]
+
+
+
 class GlobalFit(object):
-	""" Wrapper function to perform global fitting.  This acts as a wrapper for
+	""" GlobalFit
+
+	Wrapper function to perform global fitting.  This acts as a wrapper for
 	multiple FitModels, enabling the user to pair datasets and models and share
 	data or arguments.
+
+	For each fit function, a list of arguments is compiled. Those belonging to
+	the shared or constant type are set respectively.
+
+	Note that a single or individual fit is just a special case of a global fit
+	where there are no shared values and only one dataset. This wrapped can be
+	used for that purpose too...
 
 	Args:
 		x: concatenated x data
@@ -878,9 +943,16 @@ class GlobalFit(object):
 
 	"""
 	def __init__(self):
+		self.ID = []
 		self.x = []
 		self.y = []
 		self.__fit_funcs = []
+		self.__shared = []
+		self.__initialised = False
+		self.__params = None
+		self.__results = None
+
+		self.covar = None
 
 	@property
 	def fit_funcs(self): return self.__fit_funcs
@@ -889,7 +961,10 @@ class GlobalFit(object):
 		for fit_func in fit_funcs:
 			if not hasattr(fit_func, "__call__"): continue
 			# append it and instantiate it
-			self.__fit_funcs.append( fit_func() )
+			if isinstance(fit_func, FitModel):
+				self.__fit_funcs.append(fit_func)
+			else:
+				self.__fit_funcs.append( fit_func() )
 
 	@property
 	def constants(self):
@@ -902,15 +977,216 @@ class GlobalFit(object):
 		for constant, fit_func in zip(constants, self.__fit_funcs):
 			fit_func.constants = constant
 
+
+	@property
+	def shared(self):
+		return self.__shared
+	@shared.setter
+	def shared(self, shared_args=[]):
+		""" Set the shared arguments for the global fit """
+		if not isinstance(shared_args, (list, tuple)):
+			raise TypeError('Shared args must be of type list or tuple')
+		if not all([isinstance(a, basestring) for a in shared_args]):
+			raise TypeError('Shared args must be a list of strings.')
+		self.__shared = list(set(shared_args))
+
+
+	@property
+	def params(self): return self.__params
+
+
 	def __call__(self, *args):
 		""" Dummy call for all fit functions """
+		if not self.__initialised: self.initialise()
+
 		x = args[0]
 		fit_args = args[1:]
+
+		# now set the values of the objects
+		for p, p_val in zip(self.params, fit_args):
+			self.__params[p].value = p_val
+
 		ret = np.array(())
 		for i, fit_func in enumerate(self.fit_funcs):
-			x_this = np.array( self.x[i] )
-			ret = np.append( ret, fit_func(x_this, *fit_args) )
+			ret = np.append( ret, self.eval_func(i) )
 		return ret
+
+	def initialise(self):
+		""" Set up all of the shared, constant and free parameters """
+
+		if len(self.ID) != len(self.x):
+			self.ID = ['protein_{0:d}'.format(i) for i in xrange(len(self.x))]
+
+		shared = {s:FitParameter(s, 0.0, param_type='shared') for s in self.shared}
+
+		# set up an ordered dictionary of the parameter objects
+		all_params = OrderedDict(shared)
+
+		for f in self.fit_funcs:
+			fit_func_params = []
+			const = [c[0] for c in f.constants]
+			for arg in f.fit_func_args:
+				if arg in shared:
+					fit_func_params.append(shared[arg])
+				elif arg in const:
+					c_val = f.constants[const.index(arg)][1]
+					fit_func_params.append(FitParameter(arg, c_val, param_type='constant'))
+				else:
+					fit_func_params.append(FitParameter(arg, 0.0, param_type='free'))
+
+			f.rick_and_morty = fit_func_params
+			# print f.name, [(g.name, g.type) for g in f.rick_and_morty]
+
+		# now make the master list of params
+		for i, f in enumerate(self.fit_funcs):
+			for p in f.rick_and_morty:
+				if p.type=='shared' and p.name not in all_params:
+					all_params[p.name] = p
+				elif p.type not in ('shared','constant'):
+					all_params[p.name+'_'+str(i)] = p
+
+		# save this ordered dict for later
+		self.__params = all_params
+
+		# set the flag so that we don't do this again
+		self.__initialised = True
+
+
+	def eval_func(self, i):
+		""" Evaluate the fit function """
+		if i<0 or i>len(self.fit_funcs):
+			raise ValueError('Cannot evaluate fit function {0:d}'.format(i))
+		fit_func = self.fit_funcs[i]
+		x_this = np.array( self.x[i] )
+		args_this = [a.value for a in fit_func.rick_and_morty]
+		return fit_func(x_this, *args_this)
+
+	def fit(self, p0=[], bounds=None):
+		""" Run the fit. """
+		x = np.concatenate([x for x in self.x])
+		y = np.concatenate([y for y in self.y])
+
+		# fit the data
+		if bounds:
+			out, covar = optimize.curve_fit(self, x, y, p0=p0, bounds=bounds, max_nfev=20000)
+		else:
+			out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000)
+
+
+		# now finalise and set up the results
+		self.all_residuals = self(x, *out)
+		self.finalise(out, covar)
+
+		return out, covar
+
+
+	def finalise(self, out, covar):
+		""" Take the results of the fitting, set the parameter values and
+		calculate errors.
+		"""
+
+		# put the parameter values in
+		for i, p in enumerate(self.params):
+			self.params[p].value = out[i]
+			self.params[p].covar = covar[i,i]
+
+		self.covar = covar
+		self.__results = []
+		x_sim = np.linspace(0,10,100)
+
+		# set up the fit result objects
+		for i,f in enumerate(self.fit_funcs):
+			result = FitResult(fit_name=f.name, fit_params=f.rick_and_morty)
+			result.ID = self.ID[i]
+			result.method = "pyfolding.GlobalFit and scipy.optimize.curve_fit"
+			result.y = self.eval_func(i)
+			result.x_fit = x_sim
+			result.y_fit = f(x_sim, *[a.value for a in f.rick_and_morty])
+			result.covar = covar
+			result.residuals = residuals(y_data=self.y[i], y_fit=result.y)
+			result.r_squared = r_squared(y_data=self.y[i], y_fit=result.y)
+			result.all_residuals = self.all_residuals
+
+			self.__results.append(result)
+
+
+	@property
+	def results(self):
+		return self.__results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# class GlobalFit(object):
+# 	""" Wrapper function to perform global fitting.  This acts as a wrapper for
+# 	multiple FitModels, enabling the user to pair datasets and models and share
+# 	data or arguments.
+#
+# 	Args:
+# 		x: concatenated x data
+# 		y: concatenated y data
+#
+# 	Properties:
+# 		fit_funcs: the fit functions
+# 		constants: constants for the fitting
+#
+# 	Members:
+# 		__call__: evaluates the fit functions
+#
+# 	Notes:
+#
+# 	"""
+# 	def __init__(self):
+# 		self.x = []
+# 		self.y = []
+# 		self.__fit_funcs = []
+#
+# 	@property
+# 	def fit_funcs(self): return self.__fit_funcs
+# 	@fit_funcs.setter
+# 	def fit_funcs(self, fit_funcs):
+# 		for fit_func in fit_funcs:
+# 			if not hasattr(fit_func, "__call__"): continue
+# 			# append it and instantiate it
+# 			self.__fit_funcs.append( fit_func() )
+#
+# 	@property
+# 	def constants(self):
+# 		return [f.constants for f in self.__fit_funcs]
+# 	@constants.setter
+# 	def constants(self, constants=None):
+# 		if len(constants) != len(self.__fit_funcs):
+# 			raise ValueError("Number of constants should be the same as number of fit functions")
+#
+# 		for constant, fit_func in zip(constants, self.__fit_funcs):
+# 			fit_func.constants = constant
+#
+# 	def __call__(self, *args):
+# 		""" Dummy call for all fit functions """
+# 		x = args[0]
+# 		fit_args = args[1:]
+# 		ret = np.array(())
+# 		for i, fit_func in enumerate(self.fit_funcs):
+# 			x_this = np.array( self.x[i] )
+# 			ret = np.append( ret, fit_func(x_this, *fit_args) )
+# 		return ret
 
 
 
@@ -976,7 +1252,7 @@ class FitModel(object):
 
 		self.fit_params = None
 		self.fit_covar = None
-		self.constants = None
+		self.constants = []
 
 		# has this model been verified
 		self.verified = False
@@ -1001,8 +1277,9 @@ class FitModel(object):
 		""" Parse the fit arguments and pass onto the
 		fitting function
 		"""
-		fit_args = self.get_fit_params(x, *args)
-		return self.error_func( self.fit_func(x, *fit_args) )
+		# fit_args = self.get_fit_params(x, *args)
+		# return self.error_func( self.fit_func(x, *fit_args) )
+		return self.error_func( self.fit_func(x, *args) )
 
 
 	def fit_func(self, x, *args):
@@ -1068,6 +1345,9 @@ class FitModel(object):
 
 def r_squared(y_data=None, y_fit=None):
 	return 1. - np.sum((y_data - y_fit)**2) / np.sum((y_data - np.mean(y_data))**2)
+
+def residuals(y_data=None, y_fit=None):
+	return y_data - y_fit
 
 
 def phi(ref_protein, mut_protein):

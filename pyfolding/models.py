@@ -442,7 +442,6 @@ class HomozipperIsingEquilibrium(core.FitModel):
 		self.verified = True
 
 	def fit_func(self, x, n, DG_intrinsic, m_intrinsic, DG_interface):
-		# , m_interface , -0.6
 
 		# clamp to prevent instability
 		if DG_intrinsic<0. or DG_interface>0.:
