@@ -5,11 +5,13 @@ TODO
 Optimisation
 ------------
 - Export fit parameters as a CSV file
+- Supress warnings from optimiser
 
 General
 -------
 - Make a generic save/load system
 - Video to show installation
+- Mode stdout to logging?
 
 Updates
 =======

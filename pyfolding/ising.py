@@ -510,7 +510,7 @@ def calculate_error_from_jacobian(jac):
 	num_params = len(np.ravel(jac))
 
 	if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
-		print "Warning: Determinant of zero indicates that this is a non-unique, poor solution!"
+		print "\nWarning: Determinant of zero indicates that this is a non-unique, poor solution!\n"
 		return np.zeros((num_params,num_params))+np.inf
 
 	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
@@ -771,23 +771,54 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	r_res, r_squared = calculate_fit_residuals(fit_func)
 	r_cov = calculate_error_from_jacobian(jac)
 
+	# make the fit parameter objects
+	out = r.x.tolist()
+	fit_params = []
+	for i, p in enumerate(fit_func.domain_params):
+		p_ = core.FitParameter(p, 0.0, param_type='shared')
+		p_.value = out[i]
+		p_.covar = r_cov[i,i]
+
+		fit_params.append(p_)
+
+
+	# for i, protein in enumerate(fit_func.proteins):
+	# 	result = core.FitResult(fit_name="Heteropolymer Ising Model", fit_args=fit_func.domain_params)
+	# 	result.ID = protein['curve'].ID
+	# 	result.fit_params = r.x.tolist()
+	# 	result.method = "scipy.optimize.differential_evolution"
+	# 	result.y = protein['partition'].theta( result.x )
+	# 	result.covar = r_cov
+	# 	result.residuals = r_res		# NOTE: these are the total residuals as opposed to the per curve residuals
+	# 	result.r_squared = r_squared[i]
+	#
+	# 	results.append( result )
+
 	for i, protein in enumerate(fit_func.proteins):
-		result = core.FitResult(fit_name="Heteropolymer Ising Model", fit_args=fit_func.domain_params)
+		result = core.FitResult(fit_name="Heteropolymer Ising Model", fit_params=fit_params)
 		result.ID = protein['curve'].ID
-		result.fit_params = r.x.tolist()
+		# result.fit_params = r.x.tolist()
 		result.method = "scipy.optimize.differential_evolution"
-		result.y = protein['partition'].theta( result.x )
+		result.y = protein['partition'].theta( protein['curve'].x )
+
+		result.x_fit = np.linspace(0.,10.,100)
+		result.y_fit = protein['partition'].theta( result.x_fit)
+
 		result.covar = r_cov
-		result.residuals = r_res		# NOTE: these are the total residuals as opposed to the per curve residuals
+		result.residuals = protein['curve'].y - result.y
+		result.all_residuals = r_res
 		result.r_squared = r_squared[i]
 
 		results.append( result )
 
-	print '\nFitting results (NOTE: Careful with the errors here): '
-	for r_arg, r_val, r_err in results[0].details:
-	 	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
+	print '\nFitting results (NOTE: Careful with the errors here): \n'
+	# for r_arg, r_val, r_err in results[0].details:
+	#  	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
+	# for result in results:
+	# 	print u"{0:s} R^2: {1:2.5f}".format(result.ID, result.r_squared)
+
 	for result in results:
-		print u"{0:s} R^2: {1:2.5f}".format(result.ID, result.r_squared)
+		result.display()
 
 	# now plot the output
 	plot_domains(topologies, labels=[protein.ID for protein in equilibrium_curves])
@@ -830,7 +861,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		print "Written out .csv file of fits..."
 
 
-	return results
+	# return results
 
 """
 ISING PLOTTING FUNCTIONS

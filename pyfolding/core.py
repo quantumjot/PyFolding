@@ -391,9 +391,12 @@ class FitResult(object):
 	def display(self):
 		""" Print the errors and fit values """
 
-		table_width = max([len("Model: "+self.name), len(" Fitting results "), 75])
+		table_width = max([len("Model: "+self.name), len(" Fitting results "), 80])
 
-		pad_name = lambda name: name.rjust(12)
+		nl = 0
+		for p in self.details:
+			nl = max(nl, len(p.name))
+
 
 		print u"="*table_width
 		print u"Fitting results"
@@ -404,17 +407,25 @@ class FitResult(object):
 		print u"Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature)
 
 		for p in self.details:
-			if p.type is 'constant':
-				print u"({0:s}) {1:s}: \t {2:2.5f}".format(p.type[0], pad_name(p.name), p.value)
-			else:
-				print u"({0:s}) {1:s}: \t {2:2.5f} \u00B1 {3:2.5f}" \
-					u" \t 95\u0025 CI[{4:2.5f}, {5:2.5f}]".format(p.type[0], pad_name(p.name), p.value, p.SE, p.CI_low, p.CI_high)
+			self.display_row(p, nl)
 
 
 		print u"-"*table_width
 		print u"R^2: {0:2.5f}".format(self.r_squared)
 		print u"="*table_width
 		print "\n"
+
+	def display_row(self, p, max_name_len):
+		""" Take a parameter and display a row of the table """
+
+		p_name = p.name.ljust(max_name_len)
+
+		if p.type is 'constant':
+			print u"({0:s}) {1:s} {2:>10.5f}".format(p.type[0], p_name, p.value)
+			return
+
+		print u"({0:s}) {1:s} {2:>10.5f} \u00B1 {3:<10.5f}" \
+			u" \t 95\u0025 CI[{4:>10.5f}, {5:>10.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high)
 
 	# @property
 	# def errors(self):
@@ -586,38 +597,7 @@ class FoldingData(object):
 			# set the default fitting parameters
 			if not p0: p0 = self.__fit_func.default_params
 
-			# # set any constants
-			# if constants:
-			# 	# TODO: error checking/parsing here
-			# 	self.__fit_func.constants = constants
-			#
-			# # perform the actual fitting
-			# try:
-			# 	out = optimize.curve_fit(self.__fit_func, self.x, self.y, p0=p0,
-			# 		maxfev=20000)
-			# except RuntimeWarning:
-			# 	raise Exception("Optimisation could not complete. Try adjusting"
-			# 	 		" your fitting parameters (p0)")
-			#
-			# # create a results structure
-			# self.__fit = FitResult(fit_name=self.fit_func, fit_args=self.fit_func_args)
-			# self.__fit.ID = self.ID
-			# self.__fit.method = "scipy.optimize.curve_fit"
-			#
-			# # use get_fit_params in case we have any constants defined
-			# self.__fit.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
-			# self.__fit.y = self.__fit_func.fit_func(self.__fit.x, *list(self.__fit.fit_params))
-			# self.__fit.covar = out[1]
-			#
-			# fit_y_data_x = self.__fit_func.fit_func(self.x, *list(self.__fit.fit_params))
-			# self.__fit.residuals = self.y_raw - fit_y_data_x
-			# self.__fit.r_squared = r_squared(y_data=self.y_raw, y_fit=fit_y_data_x)
-			#
-			# # TODO(arl): this is obsolete now - we should be storing the FitResult
-			# # store locally ?
-			# self.fit_params = np.array( self.__fit_func.get_fit_params(self.x, *list(out[0])) )
-			# self.fit_covar = out[1]
-
+			# set up the fit
 			f = GlobalFit()
 			f.fit_funcs = [self.__fit_func]
 			if constants: f.constants = [constants]
@@ -626,17 +606,7 @@ class FoldingData(object):
 			f.y = [self.y]
 			f.ID = [self.ID]
 
-			# x = np.concatenate([p.x for p in equilibrium_curves])
-			# y = np.concatenate([p.y for p in equilibrium_curves])
-
-			# # fit the curve
-			# out, covar = curve_fit(global_fit, x, y, p0=p0, bounds=((0,-1.,-10.),(10.,1.,0)) )
-			#
-			# # finalise, following the fitting
-			# global_fit.finalise(out, covar)
-
 			out, covar = f.fit( p0=p0 )
-
 			self.__fit = f.results[0]
 
 			if hasattr(self.__fit_func, "components"):
@@ -653,14 +623,11 @@ class FoldingData(object):
 	@property
 	def fitted_x(self):
 		raise DeprecationWarning("Warning, this feature will be deprecated soon. Use .results for the fit results")
-		return np.linspace(0., 10., 100)
 
 	@property
 	def fitted(self):
 		raise DeprecationWarning("Warning, this feature will be deprecated soon. Use .results for the fit results")
-		if isinstance(self.fit_params, np.ndarray):
-			x = self.fitted_x
-			return np.copy( self.__fit_func.fit_func(x, *list(self.fit_params)) )
+
 
 	def print_fit_params(self):
 		if isinstance(self.fit_params, np.ndarray):
