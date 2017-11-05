@@ -1,19 +1,48 @@
 # PyFolding
 
 
-PyFolding is a simple Python based framework for fitting kinetic and thermodynamic models to
-protein folding data.  It includes several basic models and is extensible to enable fitting
-of more interesting models.
+PyFolding is a simple Python based framework for fitting kinetic and
+thermodynamic models to protein folding data.  It includes several basic models
+and is extensible to enable fitting of more interesting models.
 
-NOTE: This project is still under construction and is constantly changing.
+05/11/2017 - The project is unstable at the moment as we are
+implementing numerous changes. Use with caution.
 
 ---
 ### Reference
 
-PyFolding: An open-source software package for graphing, analysis and simulation of thermodynamic and kinetic models of protein folding  
-Lowe AR*, Perez-Riba A, Itzhaki L, Main E
-(2017) BioRXiv
+**PyFolding: An open-source software package for graphing, analysis and simulation  
+of thermodynamic and kinetic models of protein folding**  
+Lowe AR, Perez-Riba A, Itzhaki L, Main E (2017) BioRXiv  
 http://dx.doi.org/10.1101/191593
+
+---
+
+### Current models supported
+
++ Homopolymer Ising equilibrium
++ Heteropolymer Ising equilibrium
++ Parallel Two-State chevron
++ Parallel Two-State Unfolding chevron
++ Three State chevron
++ Three State Dimeric Intermediate equilibrium
++ Three State Fast-Phase chevron
++ Three State Monomeric Intermediate equilibrium
++ Three State Sequential Barriers chevron
++ Two State chevron
++ Two State chevron Moving Transition State
++ Two State Dimer equilibrium
++ Two State equilibrium
++ Two State equilibrium with sloping baselines
+
+A 'TemplateModel' is provided for adding additional models. We encourage users
+to generate their own models and contribute.
+
+---
+### Example scripts and Jupyter notebooks
+PyFolding can be used within IPython Notebooks (Jupyter). Several example
+notebooks are provided in the notebooks folder. To install Jupyter notebooks
+please read the accompanying file "SETUP.md".
 
 ---
 
@@ -107,63 +136,3 @@ GuHCL    CTPR2A MOPS
 ```
 
 ---
-
-### Current models supported
-
-+ Homopolymer Ising equilibrium
-+ Heteropolymer Ising equilibrium
-+ Parallel Two-State chevron
-+ Parallel Two-State Unfolding chevron
-+ Three State chevron
-+ Three State Dimeric Intermediate equilibrium
-+ Three State Fast-Phase chevron
-+ Three State Monomeric Intermediate equilibrium
-+ Three State Sequential Barriers chevron
-+ Two State chevron
-+ Two State chevron Moving Transition State
-+ Two State Dimer equilibrium
-+ Two State equilibrium
-+ Two State equilibrium with sloping baselines
-
-A 'TemplateModel' is provided for adding additional models.
-
----
-### Example scripts
-
-There are numerous example scripts in the examples folder. A simple script to
-fit the equilbrium denaturation and kinetic chevron to two-state models is
-shown below:
-
-```python
-import pyfolding
-from pyfolding import models
-
-# load the kinetic and equilibrium folding data
-chevron = pyfolding.read_kinetic_data("WT_chevron.csv")
-equilibrium = pyfolding.read_equilibrium_data("WT_equilibrium.csv")
-
-# fit the equilibrium data to a two-state model
-equilibrium.fit_func = models.TwoStateEquilibrium
-equilibrium.fit()
-
-# print the m-value, transition midpoint and stability
-print equilibrium.m_value
-print equilibrium.midpoint
-print equilibrium.deltaG
-
-# use the midpoint (D_50) of the equilibrium curve as the kinetic midpoint
-chevron.midpoint = equilibrium.midpoint
-
-# now fit the chevron to a two-state model
-chevron.fit_func = models.TwoStateChevron
-chevron.fit()
-
-# plot the output
-folding.plot_figure(equilibrium, chevron)
-```
-
----
-### IPython Notebooks
-
-PyFolding can be used within IPython Notebooks (Jupyter). Several example notebooks are provided in the notebooks folder.
-To install Jupyter notebooks please read the accompanying file "SETUP.md"
