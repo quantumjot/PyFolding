@@ -955,6 +955,10 @@ class GlobalFit(object):
 			raise TypeError('Shared args must be of type list or tuple')
 		if not all([isinstance(a, basestring) for a in shared_args]):
 			raise TypeError('Shared args must be a list of strings.')
+
+		# TODO(arl): check that these shared params exist in the fit functions
+		# and report an error if incorrect...
+
 		self.__shared = list(set(shared_args))
 
 
@@ -1010,7 +1014,8 @@ class GlobalFit(object):
 				if p.type=='shared' and p.name not in all_params:
 					all_params[p.name] = p
 				elif p.type not in ('shared','constant'):
-					all_params[p.name+'_'+str(i)] = p
+					# all_params[p.name+'_'+str(i)] = p
+					all_params[p.name+'_{'+self.ID[i]+'}'] = p
 
 		# save this ordered dict for later
 		self.__params = all_params

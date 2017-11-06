@@ -319,7 +319,7 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
 		core.FitModel.__init__(self)
 		fit_args = self.fit_func_args
 		self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
-		self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 3., 1e-6])
+		self.default_params = np.array([1., 0.1, 1.0, 0.1, 1.5, 5., 3., 1e-6])
 		self.constants = (('Pt',1e-6),)
 		# NOTE (ergm) added on 3/11/2017
 		self.verified = True
@@ -390,7 +390,7 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
 	def fit_func(self, x, DG1, m1, DG2, m2, Y_N, Y_I, Y_D, Pt):
 		K1 = np.exp((-DG1 + (m1*x)) / core.temperature.RT)
 		K2 = np.exp((-DG2 + (m2*x)) / core.temperature.RT)
-		F_D = -((K1*K2) + np.sqrt(np.square(K1*K2) + (8*(1+K1)*(K1*K2)*Pt))) / (4*Pt*(1+K1))
+		F_D = (-(K1*K2) + np.sqrt(np.square(K1*K2) + 8*(1+K1)*(K1*K2)*Pt)) / (4*Pt*(1+K1))
 		Y_rel = (Y_N * ((2 * Pt * np.square(F_D))/(K1*K2))) + (Y_I * ((2 * Pt * np.square(F_D))/K2)) + (Y_D * F_D)
 		return Y_rel
 
