@@ -327,7 +327,7 @@ class Protein(object):
 	def deltaG(self): return self.equilibrium.deltaG
 
 	@property
-	def kf_H20(self): return self.chevron.results.y[0]
+	def kf_H20(self): return self.chevron.results.y_fit[0]
 
 
 
@@ -427,23 +427,6 @@ class FitResult(object):
 		print u"({0:s}) {1:s} {2:>10.5f} \u00B1 {3:<10.5f}" \
 			u" \t 95\u0025 CI[{4:>10.5f}, {5:>10.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high)
 
-	# @property
-	# def errors(self):
-	# 	""" Calculates the SEM of the fitted parameters, using the (hopefully
-	# 		well formed) covariance matrix from the curve fitting algorithm.
-	# 	"""
-	#
-	# 	if not isinstance(self.covar, np.ndarray):
-	# 		raise ValueError("FitResult: Covariance matrix is not defined")
-	#
-	# 	if not isinstance(self.residuals, np.ndarray):
-	# 		raise ValueError("FitResult: Residuals are not defined")
-	#
-	# 	num_params = len(self.fit_params)
-	# 	errors = [np.sqrt(float(self.covar[p,p]) * np.var(self.residuals)) /
-	# 			np.sqrt(1.*len(self.residuals)) for p in xrange(num_params)]
-	# 	return errors
-
 
 	def confidence(self, i):
 		""" Return the 95 per cent confidence interval for a fitted parameter
@@ -463,6 +446,7 @@ class FitResult(object):
 		SE(Pi) = sqrt[ (SS/DF) * Cov(i,i) ]
 		"""
 		SE = np.sqrt( (np.sum(self.all_residuals**2) / self.DoF) * self.fit_params[i].covar )
+		# print 'SS: {0:2.5f}, DoF: {1:2.5f}, covar: {2:2.5f}, SE: {3:2.5f}'.format(np.sum(self.all_residuals**2), self.DoF, self.fit_params[i].covar, SE)
 		return SE
 
 	@property
@@ -471,11 +455,6 @@ class FitResult(object):
 		between the number of data points and the number of fit parameters
 		"""
 		return len(self.all_residuals) - len(self.fit_params)
-
-	# @property
-	# def details(self):
-	# 	""" Return a zipped list of the fit arguments, values and errors """
-	# 	return zip(self.fit_args, self.fit_params, self.errors)
 
 	@property
 	def details(self):
@@ -1046,7 +1025,7 @@ class GlobalFit(object):
 
 
 		# now finalise and set up the results
-		self.all_residuals = self(x, *out)
+		self.all_residuals = residuals(y_data=y, y_fit=self(x, *out))
 		self.finalise(out, covar)
 
 		return out, covar
