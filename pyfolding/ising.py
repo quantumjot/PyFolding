@@ -37,6 +37,7 @@ import core
 import constants
 import models
 from plotting import *
+import utils
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
@@ -44,7 +45,6 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 # bounds (DG_i, DG_ij, m_i, m_ij)
 PARAMETER_LABELS = ('DG_i', 'DG_ij', 'm_i', 'm_ij')
-#ACCEPTABLE_BOUNDS = ((-2., 15.),(-15.,2.),(-3.,-.01),(-3.,-.01))
 ACCEPTABLE_BOUNDS = ((-10., 10.),(-10.,10.),(-3.,0.1),(-3.,0.1))
 
 
@@ -569,7 +569,9 @@ class FitProgress(object):
 
 			# average time per iteration
 			avg_time = sum_time / loop_iter
-			print " - Fitting in progress (Iteration: {0:d}, Convergence: {1:.5E}, Timing: {2:2.2f}s per iteration) ".format(self.__iter, convergence, avg_time)
+			print " - Fitting in progress (Iteration: {0:d}, Convergence: " \
+				"{1:.5E}, Timing: {2:2.2f}s per iteration) ".format(self.__iter,
+				convergence, avg_time)
 
 
 
@@ -616,43 +618,12 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[3.3,.1,-5.], **kwa
 	plt.title('Homozipper Ising model global fit')
 	plt.show()
 
-
+	# save out the results if we desire
 	if 'save' in kwargs:
+		filename=kwargs['save']
+		exporter = utils.FitExporter()
+		exporter.export(filename, results)
 
-		# import the CSV writer
-		import csv
-
-		save_filename = kwargs['save']
-		if not isinstance(save_filename, basestring):
-			raise TypeError("Save path must be a string")
-
-		if not save_filename.endswith(('.csv', '.CSV')):
-			save_filename = save_filename+".csv"
-
-		# make a list of the field names for the csv file
-		fnames = [equilibrium_curves[0].denaturant_label]
-		for result in results:
-			fnames.append(result.ID)
-
-		# now put iterators into a dictionary
-
-		csv_results = {fnames[0]: iter(x) }
-		for result in results:
-			# NOTE: we should update this to cover the entire x range
-			csv_results[result.ID] = iter(result.y)
-
-		# note to interested reader - this is a really weird way of doing this!
-		with open(save_filename, 'wb') as csvfile:
-			r = csv.DictWriter(csvfile, fieldnames=fnames, dialect=csv.excel_tab, delimiter=',')
-			r.writeheader()
-
-			for i in xrange(len(x)):
-				h = {k: csv_results[k].next() for k in csv_results.keys()}
-				r.writerow(h)
-
-		print "Written out .csv file of fits..."
-
-	return results
 
 
 
@@ -741,21 +712,9 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		p_ = core.FitParameter(p, 0.0, param_type='shared')
 		p_.value = out[i]
 		p_.covar = r_cov[i,i]
-
 		fit_params.append(p_)
 
 
-	# for i, protein in enumerate(fit_func.proteins):
-	# 	result = core.FitResult(fit_name="Heteropolymer Ising Model", fit_args=fit_func.domain_params)
-	# 	result.ID = protein['curve'].ID
-	# 	result.fit_params = r.x.tolist()
-	# 	result.method = "scipy.optimize.differential_evolution"
-	# 	result.y = protein['partition'].theta( result.x )
-	# 	result.covar = r_cov
-	# 	result.residuals = r_res		# NOTE: these are the total residuals as opposed to the per curve residuals
-	# 	result.r_squared = r_squared[i]
-	#
-	# 	results.append( result )
 
 	for i, protein in enumerate(fit_func.proteins):
 		result = core.FitResult(fit_name="Heteropolymer Ising Model", fit_params=fit_params)
@@ -775,11 +734,6 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		results.append( result )
 
 	print '\nFitting results (NOTE: Careful with the errors here): \n'
-	# for r_arg, r_val, r_err in results[0].details:
-	#  	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
-	# for result in results:
-	# 	print u"{0:s} R^2: {1:2.5f}".format(result.ID, result.r_squared)
-
 	for result in results:
 		result.display()
 
@@ -788,46 +742,17 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 	plot_Ising(fit_func)
 	plot_folded(fit_func.proteins[-1]['partition'])
 
-
+	# save out the results if we desire
 	if "save" in kwargs:
+		filename=kwargs['save']
+		exporter = utils.FitExporter()
+		exporter.export(filename, results)
 
-		# import the CSV writer
-		import csv
-
-		save_filename = kwargs['save']
-		if not isinstance(save_filename, basestring):
-			raise TypeError("Save path must be a string")
-
-		if not save_filename.endswith(('.csv', '.CSV')):
-			save_filename = save_filename+".csv"
-
-		# make a list of the field names for the csv file
-		fnames = [fit_func.proteins[0]['curve'].denaturant_label]
-		for p in equilibrium_curves:
-			fnames.append(p.ID)
-
-		# now put iterators into a dictionary
-		x = constants.XSIM
-		csv_results = {fnames[0]: iter(x) }
-		for protein in fit_func.proteins:
-			csv_results[protein['curve'].ID] = iter( protein['partition'].theta(x) )
-
-		# note to interested reader - this is a really weird way of doing this!
-		with open(save_filename, 'wb') as csvfile:
-			r = csv.DictWriter(csvfile, fieldnames=fnames, dialect=csv.excel_tab, delimiter=',')
-			r.writeheader()
-
-			for i in xrange(len(x)):
-				h = {k: csv_results[k].next() for k in csv_results.keys()}
-				r.writerow(h)
-
-		print "Written out .csv file of fits..."
-
-
-	# return results
 
 """
+================================================================================
 ISING PLOTTING FUNCTIONS
+================================================================================
 """
 
 def plot_Ising(fit_func):

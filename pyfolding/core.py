@@ -280,10 +280,12 @@ class DataTemplate(object):
 
 
 	def save_fit(self, filename):
-		d = [('x',self.results.x), ('y',self.results.y)]
-		# order this dictionary so that we have x first
-		data = OrderedDict( d )
-		utils.write_CSV(filename, data)
+		# d = [('x',self.results.x), ('y',self.results.y)]
+		# # order this dictionary so that we have x first
+		# data = OrderedDict( d )
+		# utils.write_CSV(filename, data)
+		exporter = utils.FitExporter()
+		exporter.export(filename, self.results)
 
 
 
@@ -822,8 +824,8 @@ class FitResult(object):
 		self.all_residuals = None
 		self.r_squared = None
 
-		# self.fit_errors = None
-		# self.fit_params = None
+		self.x_fit = None
+		self.y_fit = None
 
 		self.__method = "scipy.optimize.curve_fit"
 

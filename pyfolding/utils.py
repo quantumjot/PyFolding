@@ -30,6 +30,9 @@ import core
 import numpy as np
 import constants
 
+from collections import OrderedDict
+
+
 
 class __Temperature(object):
 	""" Maintain temperature information across all functions. Meant to be a
@@ -138,7 +141,8 @@ def write_CSV(filename, data, verbose=True):
 	n_entries = len(data.values()[0])
 
 	with open(filename, 'wb') as csvfile:
-		print "Writing .csv file ({0:s})...".format(filename)
+		if verbose:
+			print "Writing .csv file ({0:s})...".format(filename)
 		r = csv.DictWriter(csvfile, fieldnames=data.keys(), dialect=csv.excel_tab,
 				delimiter=',')
 		r.writeheader()
@@ -230,8 +234,37 @@ class DataImporter(object):
 
 class FitExporter(object):
 	""" A class to export Fit data from FitResult objects """
-	def __init__(self, filename):
-		pass
+	def __init__(self):
+		self.verbose = False
+
+	def export(self, filename, results):
+		""" Take a list of results or a single result and ouput files """
+		if isinstance(results, list):
+			for r in results:
+				self.export(filename, r)
+			return
+
+		if not isinstance(results, core.FitResult):
+			raise TypeError('FitExporter requires a FitResult object as input')
+
+		# save out the data
+		filepath, filename = os.path.split(filename)
+		filename, ext = os.path.splitext(filename)
+
+		# first save out the curves
+		save_filename = os.path.join(filepath, filename+'_'+results.ID+'_FITCURVE'+ext)
+		data = OrderedDict([('x', results.x_fit), ('y',results.y_fit)])
+		write_CSV(save_filename, data, verbose=self.verbose)
+
+		# now save out the fit parameters
+		save_filename = os.path.join(filepath, filename+'_'+results.ID+'_FITRESULT'+ext)
+		data = OrderedDict([('Parameter', [f.name for f in results.fit_params]),
+							('Type', [f.type for f in results.fit_params]),
+							('Value',[f.value for f in results.fit_params]),
+							('Error',[f.SE for f in results.fit_params])])
+		write_CSV(save_filename, data, verbose=self.verbose)
+
+
 
 
 if __name__ == "__main__":
