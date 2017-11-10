@@ -43,6 +43,11 @@ __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
 
 
+# set some global plotting params
+plt.rc('xtick', labelsize=constants.LABEL_SIZE)
+plt.rc('ytick', labelsize=constants.LABEL_SIZE)
+
+
 """
 CORE PLOTTING FUNCTIONS
 """
@@ -177,7 +182,7 @@ def plot_chevron(protein, components=False,  **kwargs):
 		plt.semilogy(protein.results.x_fit, np.exp(protein.results.y_fit), 'r-', linewidth=constants.LINE_WIDTH)
 
 	if protein.components and components:
-		x = np.linspace(0., 10., 100)
+		x = constants.XSIM
 		for c in protein.components:
 			plt.plot(x, protein.components[c], 'r--', linewidth=constants.LINE_WIDTH)
 

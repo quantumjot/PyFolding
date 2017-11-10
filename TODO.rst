@@ -16,6 +16,11 @@ General
 Updates
 =======
 
+0.2.3
+-----
+- Added generic data model
+- Added generic result saving methods
+
 0.2.2
 -----
 - Update to enable better parameter instantiation and sharing in optimisation

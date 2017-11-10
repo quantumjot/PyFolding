@@ -26,76 +26,82 @@ Lowe, A.R. 2015
 import os
 import csv
 import inspect
-
+from collections import OrderedDict
 import numpy as np
-import scipy as sp
-import matplotlib.pyplot as plt
-
 from scipy import optimize
 from scipy.stats import t as t_distrb
-from collections import OrderedDict
 
+# pyfolding imports
+import utils
 import constants
-
 from plotting import *
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
-
-
-
-# set some global plotting params
-plt.rc('xtick', labelsize=constants.LABEL_SIZE)
-plt.rc('ytick', labelsize=constants.LABEL_SIZE)
+__version__ = constants.VERSION
 
 # by default turn off autoscrolling if it exists
-import utils
 utils.disable_autoscroll()
 
+# set up a global temperature object
+temperature = utils.__Temperature()
 
 
 
 
+"""
+===========================================================
+FILE I/O OPERATIONS
+===========================================================
+"""
 
-class __Temperature(object):
-	""" Maintain temperature information across all functions. Meant to be a
-	wrapper for a global variable, temperature which is used across different
-	models.
+def read_kinetic_data(directory=None, filename=None):
+	""" Read in kinetic data in the form of an .csv worksheet. It
+	should be arranged such that each file is a different protein,
+	and columns represent the following:
 
-	Args:
-		temperature: set the temperature in celsius
+	[den] k1 k2 ...
 
-	Properties:
-		temperature: return the temperature in celsius
-		RT:	return the product of the ideal gas constant and the temperature
-
-	Notes:
-		This changes the temperature globally, so be careful when using it,
-		since all subsequent calculations will use this temperature.
-
-		This is also not to be used by USERS!
+	This function then returns a chevron object with the data
 	"""
-	def __init__(self):
-		self.__temperature = constants.TEMPERATURE_CELSIUS
+	reader = utils.DataImporter(datatype='Chevron')
+	return reader.load(os.path.join(directory,filename))
 
-	@property
-	def temperature(self): return self.__temperature
-	@temperature.setter
-	def temperature(self, value=constants.TEMPERATURE_CELSIUS):
-		import numbers
-		if not isinstance(value, numbers.Real):
-			return TypeError("Temperature must be specified as a number")
-		if value < 0 or value > 100:
-			raise ValueError("Temperature ({0:2.2f}) is not in valid range "
-				"(0-100 degrees C)".format(value))
-		self.__temperature = value
 
-	@property
-	def RT(self):
-		return constants.IDEAL_GAS_CONSTANT_KCAL * (constants.ZERO_KELVIN + self.temperature)
 
-temperature = __Temperature()
+def read_equilibrium_data(directory=None, filename=None):
+	""" Read in an equilbrium denaturation curve from a .csv
+	worksheet. It should be arranged such that each file is a
+	different protein, and columns represent the following:
 
+	[den] unfolding
+
+	This function then returns an equilbrium curve object.
+	"""
+	reader = utils.DataImporter(datatype='EquilibriumDenaturationCurve')
+	return reader.load(os.path.join(directory,filename))
+
+
+def read_generic_data(directory=None, filename=None):
+	""" Read in a generic dataset from a .csv
+	worksheet. It should be arranged such that each file is a
+	different protein, and columns represent the following:
+
+	x y_0 y_1 ....
+
+	This function then returns a generic data object.
+	"""
+	reader = utils.DataImporter()
+	return reader.load(os.path.join(directory,filename))
+
+
+
+
+"""
+===========================================================
+SETTING CALCULATION TEMPERATURE
+===========================================================
+"""
 
 def set_temperature(value=constants.TEMPERATURE_CELSIUS):
 	""" Set the temperature.
@@ -117,420 +123,73 @@ def set_temperature(value=constants.TEMPERATURE_CELSIUS):
 
 """
 ===========================================================
-TEST FUNCTION
-===========================================================
-"""
-
-
-def test(protein_ID='Simulated protein'):
-	"""
-	Test function to make sure that PyFolding is installed correctly
-	and functioning as it should. Generates a simulated data set
-	using known parameters and noise, and then fits and plots the
-	data comparing these to the ground truth.
-	"""
-
-	import models
-
-	# initialise the data structures
-	chevron = Chevron(ID=protein_ID)
-	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
-
-	acceptible_error = 1e-2
-	truth = {'eq':[1.5, 5.], 'kin': [100., 1., 0.005, 1.]}
-
-
-	# denaturant concentrations
-	den = np.linspace(0.,10.,100)
-
-	# generate a two-state equilibrium curve, with Gaussian noise
-	# alpha_f, beta_f, alpha_u, beta_u, m, d50
-	eq_model = models.TwoStateEquilibrium()
-	eq_raw = eq_model.fit_func(den, *truth['eq'])
-	eq_sim = eq_raw + np.random.randn(100,)*0.01
-
-	equilibrium.denaturant_label = "[Denaturant] (M)"
-	equilibrium.curves = ['e1']
-	equilibrium.denaturant = {'e1': den}
-	equilibrium.signal = {'e1': eq_sim}
-	equilibrium.fit_func = models.TwoStateEquilibrium
-
-
-	# generate a two-state chevron curve, with Gaussian noise
-	# kf, mf, ku, mu
-	kin_model = models.TwoStateChevron()
-	kin_raw = kin_model.fit_func(den, *truth['kin'])
-	kin_sim = np.exp( np.log(kin_raw) + np.random.randn(100,)*0.001 )
-
-
-	chevron.denaturant_label = "[denaturant] (M)"
-	chevron.phases = ['k1']
-	chevron.denaturant = {'k1': den}
-	chevron.rates = {'k1': kin_sim}
-	chevron.fit_func = models.TwoStateChevron
-
-	# fit the equilibrium data to a two-state model
-	equilibrium.fit()
-
-	# use the midpoint (D_50) of the equilibrium curve as the kinetic midpoint
-	chevron.midpoint = equilibrium.midpoint
-
-	# now fit the chevron to a two-state model
-	chevron.fit()
-
-	# get the parameters and check that they are the same as the
-	# ground truth set
-
-	for p_truth, p_fit in zip(truth['eq'], equilibrium.fit_params):
-		if (p_truth - p_fit)**2 > acceptible_error:
-			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds \
-				bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
-
-	for p_truth, p_fit in zip(truth['kin'], chevron.fit_params):
-		if (p_truth - p_fit)**2 > acceptible_error:
-			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds \
-				bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
-
-
-	print 'Test completed!'
-
-	# plot the output
-	plot_figure(equilibrium, chevron, display=True)
-
-
-
-
-"""
-===========================================================
-FILE I/O OPERATIONS
-===========================================================
-"""
-
-
-
-
-
-def check_filename(directory, filename):
-	""" Check the filename for consistency.
-	"""
-
-	if not isinstance(directory, basestring) or not isinstance(filename, basestring):
-		raise TypeError('Pyfolding expects a filename as a string')
-
-	if not filename.lower().endswith(('.csv', '.CSV')):
-		raise IOError('PyFolding expects a .CSV file as input: {0:s}'.format(filename))
-
-	if not os.path.exists(os.path.join(directory, filename)):
-		raise IOError('PyFolding could not find the file: {0:s}'.format(os.path.join(directory, filename)))
-
-
-
-
-def read_kinetic_data(directory=None, filename=None):
-	""" Read in kinetic data in the form of an .csv worksheet. It
-	should be arranged such that each file is a different protein,
-	and columns represent the following:
-
-	[den] k1 k2 ...
-
-	This function then returns a chevron object with the data
-	"""
-
-	# check the filename
-	check_filename(directory, filename)
-
-	protein_ID, ext = os.path.splitext(filename)
-	chevron = Chevron(ID=protein_ID)
-
-	with open(os.path.join(directory, filename), 'rU') as chevron_file:
-		kin_reader = csv.reader(chevron_file, delimiter=',', quotechar='|')
-		header = kin_reader.next()
-
-		# set up the chevron with the correct number of phases
-		chevron.denaturant_label = header[0]
-		chevron.phases = header[1:]
-		chevron.denaturant = {phase:[] for phase in chevron.phases}
-		chevron.rates = {phase:[] for phase in chevron.phases}
-
-		# now group all of the data and insert into object
-		for row in kin_reader:
-			den_conc = float( row.pop(0) )
-			for phase, rate in zip(chevron.phases, row):
-				if rate:
-					chevron.denaturant[phase].append(den_conc)
-					chevron.rates[phase].append(float(rate))
-
-	return chevron
-
-
-def read_equilibrium_data(directory=None, filename=None):
-	""" Read in an equilbrium denaturation curve from a .csv
-	worksheet. It should be arranged such that each file is a
-	different protein, and columns represent the following:
-
-	[den] unfolding
-
-	This function then returns an equilbrium curve object.
-	"""
-
-	# check the filename
-	check_filename(directory, filename)
-
-	protein_ID, ext = os.path.splitext(filename)
-	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
-
-	with open(os.path.join(directory, filename), 'rU') as equilbrium_file:
-		eq_reader = csv.reader(equilbrium_file, delimiter=',', quotechar='|')
-		header = eq_reader.next()
-
-		# set up the chevron with the correct number of phases
-		equilibrium.denaturant_label = header[0]
-		equilibrium.curves = header[1:]
-		equilibrium.denaturant = {curve:[] for curve in equilibrium.curves}
-		equilibrium.signal = {curve:[] for curve in equilibrium.curves}
-
-		# now group all of the data and insert into object
-		for row in eq_reader:
-			den_conc = float( row.pop(0) )
-			for curve, signal in zip(equilibrium.curves, row):
-				if signal:
-					equilibrium.denaturant[curve].append(den_conc)
-					equilibrium.signal[curve].append(float(signal))
-
-	return equilibrium
-
-
-
-
-
-
-
-
-
-"""
-===========================================================
 BASE CLASSES
 ===========================================================
 """
 
+class DataTemplate(object):
+	""" DataTemplate
+
+	Base class fo chevrons, equilibrium denaturation curves and generic data.
+	Takes care of common functions such as fitting of models.
 
 
-class Protein(object):
-	""" Protein wrapper object
-	"""
-	def __init__(self, ID=None):
-		self.ID = ID
-		self.chevron = None
-		self.equilibrium = None
+	Data is stored internally as a dictionary and associated list, for example:
 
-	@property
-	def deltaG(self): return self.equilibrium.deltaG
+	labels = ['denaturant', 'k1', 'k2']
+	data = {'x': {'k1': [], 'k2': []}, 'y': {'k1':[], 'k2':[]}
 
-	@property
-	def kf_H20(self): return self.chevron.results.y_fit[0]
+	Subclassed objects may use these data in different ways, for example as
+	Chevron plots or Equilibrium denaturation curves.
 
 
+	Usage:
+
+		>> data['k1']
+
+		returns a tuple of x['k1'] and y['k1']
 
 
-
-
-class FitResult(object):
-	""" Fitting result object.
-
-	This is an internal class that collates fit results and enables calculation
-	of errors, residuals and other fun things.
-
-	Args:
-		name: a name for the fit result (e.g. TwoStateChevron)
-		fit_args: the fit function arguments
-		ID: The identifier of the protein
 
 	Properties:
-		method: the name of the optimisation algorithm used
-		errors: the calculated errors (SEM) for the fit arguments
-		details: return a zipped list of argument, value, error tuples
-		standard_error: the standard_error of the overall fit
-		covar: covariance matrix following optimisation
-		residuals: residuals of fit to data
-		all_residuals: all residuals for a global fit (same as residuals if an
-						individual fit)
-		r_squared: r^2 value for the fit
+		datasets - return a list of datasets in the model
+		fit_func - return/set the fit function for the dataset
+		fit_func_args - return the fit function arguments
+		fit_params - return the final parameters following the fit
+		results - a FitResult object following fitting
+
 
 	Members:
-		display: return a formatted output of the fitting statistics
 
 	Notes:
-		TODO(arl): implement an export function
 
-	"""
-
-	def __init__(self, fit_name=None, fit_params=None):
-		self.ID = None
-		self.fit_params = fit_params
-		self.name = fit_name
-		# self.x = np.linspace(0., 10., 100)
-		# self.y = None
-		self.covar = None
-		self.residuals = None
-		self.all_residuals = None
-		self.r_squared = None
-
-		# self.fit_errors = None
-		# self.fit_params = None
-
-		self.__method = "scipy.optimize.curve_fit"
-
-	@property
-	def method(self): return self.__method
-	@method.setter
-	def method(self, method=None):
-		if not isinstance(method, basestring):
-			raise TypeError("FitResult: Method must be a string")
-		self.__method = method
-
-	def display(self):
-		""" Print the errors and fit values """
-
-		table_width = max([len("Model: "+self.name), len(" Fitting results "), 80])
-
-		nl = 0
-		for p in self.details:
-			nl = max(nl, len(p.name))
-
-
-		print u"="*table_width
-		print u"Fitting results"
-		print u"="*table_width
-		if self.ID: print u"ID: {0:s}".format(self.ID)
-		print u"Model: {0:s}".format(self.name)
-		print u"Optimiser: {0:s}".format(self.__method)
-		print u"Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature)
-
-		for p in self.details:
-			self.display_row(p, nl)
-
-
-		print u"-"*table_width
-		print u"R^2: {0:2.5f}".format(self.r_squared)
-		print u"="*table_width
-		print "\n"
-
-	def display_row(self, p, max_name_len):
-		""" Take a parameter and display a row of the table """
-
-		p_name = p.name.ljust(max_name_len)
-
-		if p.type is 'constant':
-			print u"({0:s}) {1:s} {2:>10.5f}".format(p.type[0], p_name, p.value)
-			return
-
-		print u"({0:s}) {1:s} {2:>10.5f} \u00B1 {3:<10.5f}" \
-			u" \t 95\u0025 CI[{4:>10.5f}, {5:>10.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high)
-
-
-	def confidence(self, i):
-		""" Return the 95 per cent confidence interval for a fitted parameter
-		https://stats.stackexchange.com/questions/72047/when-fitting-a-curve-how-do-i-calculate-the-95-confidence-interval-for-my-fitt
-		[BestFit(Pi) +/- t(95%,DF)*SE(Pi)
-
-		NOTES:
-			TODO(arl): make this a user defined interval
-		"""
-		ci = constants.CONFIDENCE_INTERVAL / 100.0
-		conf = t_distrb.pdf(0.95, self.DoF) * self.SE(i)
-		return (self.fit_params[i].value-conf, self.fit_params[i].value+conf)
-
-
-	def SE(self, i):
-		""" Return the SE for parameter i
-		SE(Pi) = sqrt[ (SS/DF) * Cov(i,i) ]
-		"""
-		SE = np.sqrt( (np.sum(self.all_residuals**2) / self.DoF) * self.fit_params[i].covar )
-		# print 'SS: {0:2.5f}, DoF: {1:2.5f}, covar: {2:2.5f}, SE: {3:2.5f}'.format(np.sum(self.all_residuals**2), self.DoF, self.fit_params[i].covar, SE)
-		return SE
-
-	@property
-	def DoF(self):
-		""" Return the number of degrees of freedom, essentially the difference
-		between the number of data points and the number of fit parameters
-		"""
-		return len(self.all_residuals) - len(self.fit_params)
-
-	@property
-	def details(self):
-		""" Return a zipped list of the fit arguments, values and errors """
-		details = []
-		for i, f in enumerate(self.fit_params):
-			if f.type is 'constant':
-				details.append(f)
-				continue
-			f.DoF = self.DoF
-			f.SE = self.SE(i)
-			f.CI = self.confidence(i)
-			# f.covar = self.covar[i,i]
-			details.append(f)
-		return details
-
-	@property
-	def standard_error(self):
-		""" Return the standard error of the fit """
-		return np.std(self.residuals) / np.sqrt(1.*len(self.residuals))
-
-	def export(self, filename):
-		raise NotImplementedError
-
-
-
-
-# class ParameterError(object):
-# 	""" Object to store parameter error information """
-# 	def __init__(self):
-# 		self.__name = None
-# 		self.value = None
-# 		self.__type = None
-# 		self.DoF = None
-# 		self.SE = None
-# 		self.CI = None
-# 		self.covar = None
-# 		self.r_squared = None
-#
-# 	@property
-# 	def name(self): return self.__name
-# 	@name.setter
-# 	def name(self, arg_name):
-# 		if not isinstance(arg_name, basestring):
-# 			raise TypeError('Arg name must be of type string')
-# 		self.__name = arg_name
-#
-# 	@property
-# 	def CI_low(self): return self.CI[0]
-# 	@property
-# 	def CI_high(self): return self.CI[1]
-
-
-
-
-
-
-
-
-
-
-
-
-class FoldingData(object):
-	""" Base class fo chevrons and equilibrium denaturation
-	curves. Takes care of common functions such as fitting
-	of models.
 	"""
 	def __init__(self):
+		# store the raw data in a dictionary
+		self.labels = []
+		self.data = {}
+
+		# store associated fit functions
 		self.__fit_func = None
-		# self.fit_params = None
-		# self.fit_covar = None
 		self.__fit = None
 		self.__fit_residuals = None
 		self.components = None
 
+	def initialise(self):
+		raise NotImplementedError
+
+	def __getitem__(self, dataset):
+		""" Return an XY pair from the dataset, based on the label """
+		if not isinstance(dataset, basestring):
+			raise TypeError('Dataset must be specified as as string')
+		if dataset not in self.datasets:
+			raise ValueError('Dataset {0:s} not found'.format(dataset))
+
+		return ( np.array(self.data['x'][dataset], dtype='float'),
+				np.array(self.data['y'][dataset], dtype='float') )
+
+	@property
+	def datasets(self): return self.labels[1:]
 
 	@property
 	def fit_func(self): return self.__fit_func.name
@@ -561,12 +220,9 @@ class FoldingData(object):
 		print "Warning: overwriting fit result for {0:s}".format(self)
 		self.__fit = result
 
-	def fit(self, p0=None, constants=None):
+	def fit(self, p0=None, const=None):
 		""" Fit the data to the defined model. Use p0 to introduce the estimated
 		 start values.
-
-		 TODO(arl): Should sort out how constants are passed to curve fit,
-		 since they will affect errors in current form.
 		"""
 		if self.__fit_func:
 
@@ -579,8 +235,8 @@ class FoldingData(object):
 			# set up the fit
 			f = GlobalFit()
 			f.fit_funcs = [self.__fit_func]
-			if constants: f.constants = [constants]
-			f.shared = [] #
+			if const: f.constants = [const]
+			f.shared = [] # no shared parameters by default
 			f.x = [self.x]
 			f.y = [self.y]
 			f.ID = [self.ID]
@@ -589,11 +245,10 @@ class FoldingData(object):
 			self.__fit = f.results[0]
 
 			if hasattr(self.__fit_func, "components"):
-				# self.components = self.__fit_func.components(np.linspace(0.,10.,100), *list(self.fit_params))
-				self.components = self.__fit_func.components(np.linspace(0.,10.,100), *out.tolist())
+				self.components = self.__fit_func.components(constants.XSIM, *out.tolist())
 
 		else:
-			raise AttributeError("Fit function must be defined")
+			raise AttributeError("Fit function must be defined first.")
 
 
 		self.__fit.display()
@@ -601,14 +256,14 @@ class FoldingData(object):
 
 	@property
 	def fitted_x(self):
-		raise DeprecationWarning("Warning, this feature will be deprecated soon. Use .results for the fit results")
+		raise DeprecationWarning("This feature will be deprecated soon.")
 
 	@property
 	def fitted(self):
-		raise DeprecationWarning("Warning, this feature will be deprecated soon. Use .results for the fit results")
-
+		raise DeprecationWarning("This feature will be deprecated soon.")
 
 	def print_fit_params(self):
+		raise DeprecationWarning("This feature will be deprecated soon.")
 		if isinstance(self.fit_params, np.ndarray):
 			print self.fit_params
 
@@ -616,7 +271,6 @@ class FoldingData(object):
 		""" Plot a simple figure of the data, this is context dependent
 		title='', marker='wo', display_fit=True
 		"""
-
 		# make this cleaner by calling an independent function. User can also
 		# call these functions
 		if isinstance(self, Chevron):
@@ -634,10 +288,57 @@ class FoldingData(object):
 
 
 
+class Protein(object):
+	""" Protein wrapper object.
+
+	This class wraps different types of data and acts as a container object for
+	a single protein.  It can contain equilbrium, kinetic and other types of
+	data. The object can be passed to higher-order functions, such as 'phi' that
+	use multiple datasets for calculations.
+
+	Properties:
+		deltaG - the equilbrium deltaG value from equilbrium data
+		kf_H20 - the observed folding rate in water
+
+	Notes:
+		None
+	"""
+	def __init__(self, ID=None):
+		self.ID = ID
+		self.chevron = None
+		self.equilibrium = None
+		self.other = None
+
+	@property
+	def deltaG(self): return self.equilibrium.deltaG
+
+	@property
+	def kf_H20(self): return self.chevron.results.y_fit[0]
 
 
 
-class Chevron(FoldingData):
+
+class GenericData(DataTemplate):
+	""" A generic data model.
+	"""
+	def __init__(self, ID=None):
+		DataTemplate.__init__(self)
+		self.ID = ID
+
+	@property
+	def x(self): return self[self.datasets[0]][0]
+	@property
+	def y(self): return self[self.datasets[0]][1]
+
+	@property
+	def y_raw(self): return self.y
+
+	def initialise(self):
+		pass
+
+
+
+class Chevron(DataTemplate):
 	""" Chevron plot for protein folding kinetics.
 
 	Args:
@@ -648,13 +349,21 @@ class Chevron(FoldingData):
 
 	"""
 	def __init__(self, ID=None):
-		FoldingData.__init__(self)
+		DataTemplate.__init__(self)
 		self.ID = ID
-		self.denaturant_label = None
-		self.denaturant = None
-		self.rates = None
-		self.phases = None
 		self.__midpoint = None
+
+
+	@property
+	def denaturant_label(self): return self.labels[0]
+	@property
+	def phases(self): return self.datasets
+	@property
+	def rates(self): return {k:self[k][1] for k in self.phases}
+	@property
+	def denaturant(self): return {k:self[k][0] for k in self.phases}
+
+
 
 
 	@property
@@ -731,7 +440,7 @@ class Chevron(FoldingData):
 
 
 
-class EquilibriumDenaturationCurve(FoldingData):
+class EquilibriumDenaturationCurve(DataTemplate):
 	""" Equilibrium Denaturation curve
 	Args:
 
@@ -741,12 +450,17 @@ class EquilibriumDenaturationCurve(FoldingData):
 
 	"""
 	def __init__(self, ID=None):
-		FoldingData.__init__(self)
+		DataTemplate.__init__(self)
 		self.ID = ID
-		self.curves = None
-		self.denaturant_label = None
-		self.denaturant = None
-		self.signal = None
+
+	@property
+	def denaturant_label(self): return self.labels[0]
+	@property
+	def curves(self): return self.datasets
+	@property
+	def signal(self): return {k:self[k][1] for k in self.curves}
+	@property
+	def denaturant(self): return {k:self[k][0] for k in self.curves}
 
 
 	@property
@@ -808,6 +522,12 @@ class EquilibriumDenaturationCurve(FoldingData):
 
 
 
+"""
+===========================================================
+MODEL FITTING FUNCTIONS
+===========================================================
+"""
+
 
 def FIT_ERROR(x):
 	""" Return a generic fit error """
@@ -815,11 +535,6 @@ def FIT_ERROR(x):
 		return np.ones(x.shape)*constants.FITTING_PENALTY
 	else:
 		return None
-
-
-
-
-
 
 
 
@@ -916,11 +631,11 @@ class GlobalFit(object):
 	def constants(self):
 		return [f.constants for f in self.__fit_funcs]
 	@constants.setter
-	def constants(self, constants=None):
-		if len(constants) != len(self.__fit_funcs):
+	def constants(self, const=None):
+		if len(const) != len(self.__fit_funcs):
 			raise ValueError("Number of constants should be the same as number of fit functions")
 
-		for constant, fit_func in zip(constants, self.__fit_funcs):
+		for constant, fit_func in zip(const, self.__fit_funcs):
 			fit_func.constants = constant
 
 
@@ -1043,7 +758,6 @@ class GlobalFit(object):
 
 		self.covar = covar
 		self.__results = []
-		x_sim = np.linspace(0,10,100)
 
 		# set up the fit result objects
 		for i,f in enumerate(self.fit_funcs):
@@ -1051,8 +765,8 @@ class GlobalFit(object):
 			result.ID = self.ID[i]
 			result.method = "pyfolding.GlobalFit and scipy.optimize.curve_fit"
 			result.y = self.eval_func(i)
-			result.x_fit = x_sim
-			result.y_fit = f(x_sim, *[a.value for a in f.rick_and_morty])
+			result.x_fit = constants.XSIM
+			result.y_fit = f(constants.XSIM, *[a.value for a in f.rick_and_morty])
 			result.covar = covar
 			result.residuals = residuals(y_data=self.y[i], y_fit=result.y)
 			result.r_squared = r_squared(y_data=self.y[i], y_fit=result.y)
@@ -1068,6 +782,149 @@ class GlobalFit(object):
 
 
 
+class FitResult(object):
+	""" Fitting result object.
+
+	This is an internal class that collates fit results and enables calculation
+	of errors, residuals and other fun things.
+
+	Args:
+		name: a name for the fit result (e.g. TwoStateChevron)
+		fit_args: the fit function arguments
+		ID: The identifier of the protein
+
+	Properties:
+		method: the name of the optimisation algorithm used
+		errors: the calculated errors (SEM) for the fit arguments
+		details: return a zipped list of argument, value, error tuples
+		standard_error: the standard_error of the overall fit
+		covar: covariance matrix following optimisation
+		residuals: residuals of fit to data
+		all_residuals: all residuals for a global fit (same as residuals if an
+						individual fit)
+		r_squared: r^2 value for the fit
+
+	Members:
+		display: return a formatted output of the fitting statistics
+
+	Notes:
+		TODO(arl): implement an export function
+
+	"""
+
+	def __init__(self, fit_name=None, fit_params=None):
+		self.ID = None
+		self.fit_params = fit_params
+		self.name = fit_name
+
+		self.covar = None
+		self.residuals = None
+		self.all_residuals = None
+		self.r_squared = None
+
+		# self.fit_errors = None
+		# self.fit_params = None
+
+		self.__method = "scipy.optimize.curve_fit"
+
+	@property
+	def method(self): return self.__method
+	@method.setter
+	def method(self, method=None):
+		if not isinstance(method, basestring):
+			raise TypeError("FitResult: Method must be a string")
+		self.__method = method
+
+	def display(self):
+		""" Print the errors and fit values """
+
+		table_width = max([len("Model: "+self.name), len(" Fitting results "), 80])
+
+		nl = 0
+		for p in self.details:
+			nl = max(nl, len(p.name))
+
+
+		print u"="*table_width
+		print u"Fitting results"
+		print u"="*table_width
+		if self.ID: print u"ID: {0:s}".format(self.ID)
+		print u"Model: {0:s}".format(self.name)
+		print u"Optimiser: {0:s}".format(self.__method)
+		print u"Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature)
+
+		for p in self.details:
+			self.display_row(p, nl)
+
+
+		print u"-"*table_width
+		print u"R^2: {0:2.5f}".format(self.r_squared)
+		print u"="*table_width
+		print "\n"
+
+	def display_row(self, p, max_name_len):
+		""" Take a parameter and display a row of the table """
+
+		p_name = p.name.ljust(max_name_len)
+
+		if p.type is 'constant':
+			print u"({0:s}) {1:s} {2:>10.5f}".format(p.type[0], p_name, p.value)
+			return
+
+		print u"({0:s}) {1:s} {2:>10.5f} \u00B1 {3:<10.5f}" \
+			u" \t 95\u0025 CI[{4:>10.5f}, {5:>10.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high)
+
+
+	def confidence(self, i):
+		""" Return the 95 per cent confidence interval for a fitted parameter
+		https://stats.stackexchange.com/questions/72047/when-fitting-a-curve-how-do-i-calculate-the-95-confidence-interval-for-my-fitt
+		[BestFit(Pi) +/- t(95%,DF)*SE(Pi)
+
+		NOTES:
+			TODO(arl): make this a user defined interval
+		"""
+		ci = constants.CONFIDENCE_INTERVAL / 100.0
+		conf = t_distrb.pdf(0.95, self.DoF) * self.SE(i)
+		return (self.fit_params[i].value-conf, self.fit_params[i].value+conf)
+
+
+	def SE(self, i):
+		""" Return the SE for parameter i
+		SE(Pi) = sqrt[ (SS/DF) * Cov(i,i) ]
+		"""
+		SE = np.sqrt( (np.sum(self.all_residuals**2) / self.DoF) * self.fit_params[i].covar )
+		# print 'SS: {0:2.5f}, DoF: {1:2.5f}, covar: {2:2.5f}, SE: {3:2.5f}'.format(np.sum(self.all_residuals**2), self.DoF, self.fit_params[i].covar, SE)
+		return SE
+
+	@property
+	def DoF(self):
+		""" Return the number of degrees of freedom, essentially the difference
+		between the number of data points and the number of fit parameters
+		"""
+		return len(self.all_residuals) - len(self.fit_params)
+
+	@property
+	def details(self):
+		""" Return a zipped list of the fit arguments, values and errors """
+		details = []
+		for i, f in enumerate(self.fit_params):
+			if f.type is 'constant':
+				details.append(f)
+				continue
+			f.DoF = self.DoF
+			f.SE = self.SE(i)
+			f.CI = self.confidence(i)
+			# f.covar = self.covar[i,i]
+			details.append(f)
+		return details
+
+	@property
+	def standard_error(self):
+		""" Return the standard error of the fit """
+		return np.std(self.residuals) / np.sqrt(1.*len(self.residuals))
+
+	def export(self, filename):
+		raise NotImplementedError
 
 
 
@@ -1085,80 +942,6 @@ class GlobalFit(object):
 
 
 
-# class GlobalFit(object):
-# 	""" Wrapper function to perform global fitting.  This acts as a wrapper for
-# 	multiple FitModels, enabling the user to pair datasets and models and share
-# 	data or arguments.
-#
-# 	Args:
-# 		x: concatenated x data
-# 		y: concatenated y data
-#
-# 	Properties:
-# 		fit_funcs: the fit functions
-# 		constants: constants for the fitting
-#
-# 	Members:
-# 		__call__: evaluates the fit functions
-#
-# 	Notes:
-#
-# 	"""
-# 	def __init__(self):
-# 		self.x = []
-# 		self.y = []
-# 		self.__fit_funcs = []
-#
-# 	@property
-# 	def fit_funcs(self): return self.__fit_funcs
-# 	@fit_funcs.setter
-# 	def fit_funcs(self, fit_funcs):
-# 		for fit_func in fit_funcs:
-# 			if not hasattr(fit_func, "__call__"): continue
-# 			# append it and instantiate it
-# 			self.__fit_funcs.append( fit_func() )
-#
-# 	@property
-# 	def constants(self):
-# 		return [f.constants for f in self.__fit_funcs]
-# 	@constants.setter
-# 	def constants(self, constants=None):
-# 		if len(constants) != len(self.__fit_funcs):
-# 			raise ValueError("Number of constants should be the same as number of fit functions")
-#
-# 		for constant, fit_func in zip(constants, self.__fit_funcs):
-# 			fit_func.constants = constant
-#
-# 	def __call__(self, *args):
-# 		""" Dummy call for all fit functions """
-# 		x = args[0]
-# 		fit_args = args[1:]
-# 		ret = np.array(())
-# 		for i, fit_func in enumerate(self.fit_funcs):
-# 			x_this = np.array( self.x[i] )
-# 			ret = np.append( ret, fit_func(x_this, *fit_args) )
-# 		return ret
-
-
-
-#
-# class FitParameter
-# 	""" FitParameter
-#
-# 	A class to deal with parameter sharing.
-# 	"""
-# 	def __init__(self, name, value, constant):
-# 		pass
-# 		self.DoF = None
-# 		self.SE = None
-# 		self.CI = None
-# 		self.covar = None
-# 		self.r_squared = None
-#
-# 		@property
-# 		def CI_low(self): return self.CI[0]
-# 		@property
-# 		def CI_high(self): return self.CI[1]
 
 
 
@@ -1305,6 +1088,85 @@ def phi(ref_protein, mut_protein):
 	""" Makes this easier to use! """
 	from phi import phi
 	return phi(ref_protein, cmp_protein)
+
+
+"""
+===========================================================
+TEST FUNCTION
+===========================================================
+"""
+
+
+def test(protein_ID='Simulated protein'):
+	"""
+	Test function to make sure that PyFolding is installed correctly
+	and functioning as it should. Generates a simulated data set
+	using known parameters and noise, and then fits and plots the
+	data comparing these to the ground truth.
+	"""
+
+	import models
+
+	# initialise the data structures
+	chevron = Chevron(ID=protein_ID)
+	equilibrium = EquilibriumDenaturationCurve(ID=protein_ID)
+
+	acceptible_error = 1e-2
+	truth = {'eq':[1.5, 5.], 'kin': [100., 1., 0.005, 1.]}
+
+
+	# denaturant concentrations
+	den = np.linspace(0.,10.,100)
+
+	# generate a two-state equilibrium curve, with Gaussian noise
+	# alpha_f, beta_f, alpha_u, beta_u, m, d50
+	eq_model = models.TwoStateEquilibrium()
+	eq_raw = eq_model.fit_func(den, *truth['eq'])
+	eq_sim = eq_raw + np.random.randn(100,)*0.01
+
+	equilibrium.labels = ['[Denaturant] (M)', 'e1']
+	equilibrium.data = {'x':{'e1':den}, 'y':{'e1':eq_sim}}
+	equilibrium.fit_func = models.TwoStateEquilibrium
+
+
+	# generate a two-state chevron curve, with Gaussian noise
+	# kf, mf, ku, mu
+	kin_model = models.TwoStateChevron()
+	kin_raw = kin_model.fit_func(den, *truth['kin'])
+	kin_sim = np.exp( np.log(kin_raw) + np.random.randn(100,)*0.001 )
+
+
+	chevron.labels = ['[Denaturant] (M)', 'k1']
+	chevron.data = {'x':{'k1':den}, 'y':{'k1':kin_sim}}
+	chevron.fit_func = models.TwoStateChevron
+
+	# fit the equilibrium data to a two-state model
+	equilibrium.fit()
+
+	# use the midpoint (D_50) of the equilibrium curve as the kinetic midpoint
+	chevron.midpoint = equilibrium.midpoint
+
+	# now fit the chevron to a two-state model
+	chevron.fit()
+
+	# get the parameters and check that they are the same as the
+	# ground truth set
+
+	for p_truth, p_fit in zip(truth['eq'], equilibrium.fit_params):
+		if (p_truth - p_fit)**2 > acceptible_error:
+			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds \
+				bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
+
+	for p_truth, p_fit in zip(truth['kin'], chevron.fit_params):
+		if (p_truth - p_fit)**2 > acceptible_error:
+			raise ValueError("PyFolding self-test failed. Fitting error ({0:f}) exceeds \
+				bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
+
+
+	print 'SUCCESS - Test completed!'
+
+	# plot the output
+	plot_figure(equilibrium, chevron, display=True)
 
 
 

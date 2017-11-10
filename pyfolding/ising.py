@@ -221,7 +221,11 @@ class DecoupleCapDomain(IsingDomain):
 		self.used_variables = (0, 2)
 
 
-
+class RepeatDomain_mij(IsingDomain):
+	def __init__(self):
+		IsingDomain.__init__(self, k_func=free_energy_m, t_func=free_energy_m)
+		self.name = "RepeatDomain_mij"
+		self.used_variables = (0,1,2,3)
 
 
 
@@ -487,10 +491,12 @@ def calculate_fit_residuals(fit_func):
 
 
 
-def calculate_error_from_jacobian(jac):
+def calculate_error_from_jacobian(jac, res):
 	"""
 	Calculate Hessian from jacobian, and covariance from Hessian:
-	covar = (J^T . J)^{-1}.
+	covar = (J^T . J)^{-1}.MSE
+
+	Where the MSE is the (R^T.R)/(N-p)
 
 	Then calculate the error based on the SE of the variance.
 	This is definitely a bit wonky at the moment!
@@ -503,8 +509,6 @@ def calculate_error_from_jacobian(jac):
 
 	Notes:
 		This is **NOT** tested very well
-
-		http://stats.stackexchange.com/questions/71154/when-an-analytical-jacobian-is-available-is-it-better-to-approximate-the-hessia
 	"""
 
 	num_params = len(np.ravel(jac))
@@ -513,7 +517,9 @@ def calculate_error_from_jacobian(jac):
 		print "\nWarning: Determinant of zero indicates that this is a non-unique, poor solution!\n"
 		return np.zeros((num_params,num_params))+np.inf
 
-	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) )
+	MSE = np.dot(res,res)/(len(res)-num_params)
+	covar = np.linalg.pinv( np.dot(np.matrix(jac).T, np.matrix(jac)) ) * MSE
+
 	return covar
 
 
@@ -586,47 +592,10 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[3.3,.1,-5.], **kwa
 	global_fit.y = [p.y for p in equilibrium_curves]
 	global_fit.ID = [p.ID for p in equilibrium_curves]
 
-	# x = np.concatenate([p.x for p in equilibrium_curves])
-	# y = np.concatenate([p.y for p in equilibrium_curves])
-
-	# # fit the curve
-	# out, covar = curve_fit(global_fit, x, y, p0=p0, bounds=((0,-1.,-10.),(10.,1.,0)) )
-	#
-	# # finalise, following the fitting
-	# global_fit.finalise(out, covar)
-
+	# do the global fit
 	out, covar = global_fit.fit( p0=p0, bounds=((0,-1.,-10.),(10.,1.,0)) )
 
-	# somewhere to store the results
-	# results = []
-	# covar = covar[1:,1:]
 
-	# x = np.linspace(0.,10.,100)
-
-	# cat all of the residuals for the global vars
-	# global_residuals = y - global_fit(x, *out)
-
-	# # calculate errors
-	# for i, protein in enumerate(equilibrium_curves):
-	#
-	# 	# calculate the fit
-	# 	n = topologies[i]
-	# 	fit_args = [n] + out.tolist()
-	# 	y_fit = global_fit.fit_funcs[i](global_fit.x[i], *fit_args)
-	#
-	# 	result = core.FitResult(fit_name="Homopolymer Ising Model", fit_args=global_fit.fit_funcs[0].fit_func_args[1:])
-	# 	result.ID = protein.ID
-	# 	result.fit_params = out.tolist()
-	# 	result.method = "scipy.optimize.curve_fit"
-	# 	#result.y = protein['partition'].theta( result.x )
-	# 	result.y = global_fit.fit_funcs[i](x, *fit_args)
-	# 	result.covar = covar
-	# 	result.residuals = global_residuals #protein.y - y_fit
-	# 	result.r_squared = core.r_squared(y_data=protein.y, y_fit=y_fit)
-	#
-	#
-	#
-	# 	results.append( result )
 
 	# print out the results of the fit
 	for result in global_fit.results:
@@ -634,12 +603,6 @@ def fit_homopolymer(equilibrium_curves=[], topologies=[], p0=[3.3,.1,-5.], **kwa
 
 	results = global_fit.results
 
-	# print '\nFitting results: '
-	# for r_arg, r_val, r_err in results[0].details:
-	#  	print u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} ".format(r_arg, r_val, r_err)
-
-
-	# results[0].display()
 
 
 	# plot some of the results
@@ -769,7 +732,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
 	# calculate the errors
 	r_res, r_squared = calculate_fit_residuals(fit_func)
-	r_cov = calculate_error_from_jacobian(jac)
+	r_cov = calculate_error_from_jacobian(jac, r_res)
 
 	# make the fit parameter objects
 	out = r.x.tolist()
@@ -801,8 +764,8 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 		result.method = "scipy.optimize.differential_evolution"
 		result.y = protein['partition'].theta( protein['curve'].x )
 
-		result.x_fit = np.linspace(0.,10.,100)
-		result.y_fit = protein['partition'].theta( result.x_fit)
+		result.x_fit = constants.XSIM
+		result.y_fit = protein['partition'].theta(result.x_fit)
 
 		result.covar = r_cov
 		result.residuals = protein['curve'].y - result.y
@@ -844,7 +807,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 			fnames.append(p.ID)
 
 		# now put iterators into a dictionary
-		x = np.linspace(0.,10.,100)
+		x = constants.XSIM
 		csv_results = {fnames[0]: iter(x) }
 		for protein in fit_func.proteins:
 			csv_results[protein['curve'].ID] = iter( protein['partition'].theta(x) )
@@ -903,7 +866,7 @@ def plot_Ising(fit_func):
 	ax2 = plt.subplot2grid((2,2), (0,1), rowspan=1)
 	for protein in fit_func.proteins:
 		idx = fit_func.proteins.index(protein)
-		xv = np.linspace(0.,10.,1000)
+		xv = constants.XSIM
 		first_deriv = np.gradient(protein['partition'].theta(xv))
 		pk_max.append( (protein['n'], xv[np.argmax(np.abs(first_deriv))]) )
 		ax2.plot(xv, np.abs(first_deriv), cmap[idx % len(cmap)][0]+'-', lw=2,
@@ -940,7 +903,7 @@ def plot_Ising(fit_func):
 
 def plot_folded(partition):
 	h = np.zeros((100,partition.n))
-	x = np.linspace(0.,10.,100)
+	x = constants.XSIM
 	for i in xrange(partition.n):
 		p = partition.subpopulation(x,i)
 		h[:,i] = p

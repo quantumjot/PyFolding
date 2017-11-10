@@ -286,11 +286,12 @@ class TwoStateDimerEquilibrium(core.FitModel):
 
 
 # NOTE (ergm) added on 1/8/2017
+# NOTE (ergm) updated Folding Scheme - was wrong 7/9/2017
 class ThreeStateMonoIEquilibrium(core.FitModel):
 	""" Three State model for a dimer denaturation Equilibrium - Monomeric intermediate.
 
 	Folding Scheme:
-		N2 <-> I2 <-> 2D
+		N2 <-> 2I <-> 2D
 
 	Params:
 		Y_rel = spectroscopic signal at a given concentration of urea
@@ -348,11 +349,12 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
 				\end{equation}'
 
 # NOTE (ergm) added on 1/8/2017
+# NOTE (ergm) updated Folding Scheme - was wrong 7/9/2017
 class ThreeStateDimericIEquilibrium(core.FitModel):
 	""" Three State model for a dimer denaturation Equilibrium - Dimeric Intermediate.
 
 	Folding Scheme:
-		N2 <-> 2I <-> 2D
+		N2 <-> I2 <-> 2D
 
 	Params:
 		Y_rel = spectroscopic signal at a given concentration of urea
@@ -539,7 +541,7 @@ class TwoStateChevron(core.FitModel):
 		N <-> D
 
 	Params:
-		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		k obs = rate constant of unfolding or refolding at a particular denaturant concentration
 		kf = rate constant of refolding at a particular denaturant concentration
 		mf = the gradient of refolding arm of the chevron
 		ku = rate constant of unfolding at a a particular denaturant concentration
@@ -596,7 +598,7 @@ class ThreeStateChevron(core.FitModel):
 		N <-> I <-> D
 
 	Params:
-		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		k obs = rate constant of unfolding or refolding at a particular denaturant concentration
 		kfi = microscopic rate constant for the conversion of folded to intermediate
 		kif = microscopic rate constant for the conversion of intermediate to folded
 		i.e. k_if = kif(H20) * exp((mi - mif)*x)
@@ -659,7 +661,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 	Folding Scheme: N <-> I <-> D
 
 	Params:
-		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		k obs = rate constant of unfolding or refolding at a particular denaturant concentration
 		kfi = microscopic rate constant for the conversion of folded to intermediate
 		kif = microscopic rate constant for the conversion of intermediate to folded
 		kiu = microscopic rate constant for the conversion of intermediate to unfolded
@@ -729,7 +731,7 @@ class ThreeStateSequentialChevron(core.FitModel):
 	Folding Scheme: N <-> I <-> D
 
 	Params:
-		k obs = rate of unfolding or refolding at a particular denaturant concentration
+		k obs = rate constant of unfolding or refolding at a particular denaturant concentration
 		kfi = microscopic rate constant for the conversion of folded to intermediate
 		kif = microscopic rate constant for the conversion of intermediate to folded
 		kiu = microscopic rate constant for the conversion of intermediate to unfolded
@@ -804,10 +806,18 @@ class ParallelTwoStateChevron(core.FitModel):
 		|_____|
 
 	Params:
-
+		k obs = rate constant of unfolding or refolding at a particular denaturant concentration
+		k_obs_A = rate constant of unfolding or refolding of pathway A at a particular denaturant concentration
+		k_obs_B = rate constant of unfolding or refolding  of pathway B at a particular denaturant concentration
+		mf_A = the gradient of refolding arm of pathway A
+		mf_B = the gradient of refolding arm of pathway B
+		mu_A = the gradient of unfolding arm of pathway A
+		mu_B = the gradient of unfolding arm of pathway B
+		x = denaturant concentration (M)
 
 	Reference:
-		[Alan PNAS 2007]
+		Lowe & Itzhaki. Rational redesign of the folding pathway of a modular protein.
+		PNAS (2007) vol. 104 (8) pp. 2679-2684
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
@@ -868,13 +878,20 @@ class ParallelTwoStateUnfoldingChevron(core.FitModel):
 
 	Folding Scheme:
 		N -> D
+		|    ^
 		|____|
 
 	Params:
-
+		k obs = rate constant of unfolding at a particular denaturant concentration
+		k_obs_A = rate constant of unfolding of pathway A at a particular denaturant concentration
+		k_obs_B = rate constant of unfolding of pathway B at a particular denaturant concentration
+		mu_A = the gradient of unfolding arm of pathway A
+		mu_B = the gradient of unfolding arm of pathway B
+		x = denaturant concentration (M)
 
 	Reference:
-		[HUTTON, JACS, 2015]
+		Hutton et al. Mapping the Topography of a Protein Energy Landscape.
+		JACS (2015) vol. 137 (46) pp. 14610-14625
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
@@ -932,7 +949,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		m' = coefficient for the second-order [D] term (both unfolding and refolding).
 		x = denaturant concentration (M)
 
-		Reference:
+	Reference:
 		Ternstrom et al. From snapshot to movie: phi analysis
 		of protein folding transition states taken one step
 		further. PNAS (1999) vol. 96 (26) pp. 14854-9
@@ -970,8 +987,8 @@ class TwoStateChevronMovingTransition(core.FitModel):
 
 
 
-# NOTE (ergm) added on 24/8/2017
-class CurvedChevronPolynomialFit(core.FitModel):
+# NOTE (ergm) added on 24/8/2017 & modified on 7/11/2017
+class ChevronPolynomialFit(core.FitModel):
 	""" Chevron fit with 2 different second order polynomials for kf & ku.
 
 	Folding Scheme:
@@ -986,8 +1003,9 @@ class CurvedChevronPolynomialFit(core.FitModel):
 		x = denaturant concentration (M)
 
 	Reference:
-
-
+		Ternstrom et al. From snapshot to movie: phi analysis
+		of protein folding transition states taken one step
+		further. PNAS (1999) vol. 96 (26) pp. 14854-9
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)

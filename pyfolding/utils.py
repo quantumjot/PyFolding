@@ -26,8 +26,48 @@ import sys
 import os
 import csv
 
+import core
 import numpy as np
 import constants
+
+
+class __Temperature(object):
+	""" Maintain temperature information across all functions. Meant to be a
+	wrapper for a global variable, temperature which is used across different
+	models.
+
+	Args:
+		temperature: set the temperature in celsius
+
+	Properties:
+		temperature: return the temperature in celsius
+		RT:	return the product of the ideal gas constant and the temperature
+
+	Notes:
+		This changes the temperature globally, so be careful when using it,
+		since all subsequent calculations will use this temperature.
+
+		This is also not to be used by USERS!
+	"""
+	def __init__(self):
+		self.__temperature = constants.TEMPERATURE_CELSIUS
+
+	@property
+	def temperature(self): return self.__temperature
+	@temperature.setter
+	def temperature(self, value=constants.TEMPERATURE_CELSIUS):
+		import numbers
+		if not isinstance(value, numbers.Real):
+			return TypeError("Temperature must be specified as a number")
+		if value < 0 or value > 100:
+			raise ValueError("Temperature ({0:2.2f}) is not in valid range "
+				"(0-100 degrees C)".format(value))
+		self.__temperature = value
+
+	@property
+	def RT(self):
+		return constants.IDEAL_GAS_CONSTANT_KCAL * (constants.ZERO_KELVIN + self.temperature)
+
 
 
 
@@ -58,6 +98,21 @@ def disable_autoscroll(verbose=True):
 
 
 
+def check_filename(directory, filename):
+	""" Check the filename for consistency.
+	"""
+
+	if not isinstance(directory, basestring) or not isinstance(filename, basestring):
+		raise TypeError('Pyfolding expects a filename as a string')
+
+	if not filename.lower().endswith(('.csv', '.CSV')):
+		raise IOError('PyFolding expects a .CSV file as input: {0:s}'.format(filename))
+
+	if not os.path.exists(os.path.join(directory, filename)):
+		raise IOError('PyFolding could not find the file: {0:s}'.format(os.path.join(directory, filename)))
+
+
+
 
 def write_CSV(filename, data, verbose=True):
 	"""
@@ -78,9 +133,6 @@ def write_CSV(filename, data, verbose=True):
 	if not isinstance(filename, basestring):
 		raise IOError("Filename must be a string")
 
-	# if not filename.endswith('.csv', '.CSV'):
-	# 	filename+='.csv'
-
 	# data should be a dictionary
 	csv_results = {k:iter(data[k]) for k in data.keys()}
 	n_entries = len(data.values()[0])
@@ -95,6 +147,91 @@ def write_CSV(filename, data, verbose=True):
 			h = {k: csv_results[k].next() for k in csv_results.keys()}
 			r.writerow(h)
 
+
+
+class DataImporter(object):
+	"""
+	Generic data importer class.
+
+	This class will read in .CSV files containing data of the format:
+
+	x	y_0 	y_1 ...
+	0	1.0		5.6 ...
+	1	2.0		7.4 ...
+	...
+
+	And output a data class of the type specified. This can be one of
+		- EquilibriumDenaturationCurve
+		- Chevron
+		- Generic (this is meant to be a catch all for other, future types)
+
+	Properties:
+		type
+
+	Members:
+		load
+
+	Notes:
+		None
+
+	"""
+
+	def __init__(self, datatype='GenericData'):
+		self.type=datatype
+
+	@property
+	def type(self): return self.__type
+	@type.setter
+	def type(self, datatype):
+		if not isinstance(datatype, basestring):
+			raise TypeError('Data type must be specified as a string')
+		if datatype not in ('EquilibriumDenaturationCurve','Chevron','GenericData'):
+			raise ValueError('Data type {s} is not recognised'.format(datatype))
+
+		self.__type = datatype
+
+	def load(self, fullfilename):
+		""" Load the data and instantiate the correct data model """
+
+		directory, filename = os.path.split(fullfilename)
+
+		# check the filename
+		check_filename(directory, filename)
+
+		protein_ID, ext = os.path.splitext(filename)
+
+		# make a new data object of the specified type
+		DataObject = getattr(core, self.type)
+		data = DataObject(ID=protein_ID)
+
+		# open the data and set up a new object
+		with open(fullfilename, 'rU') as data_file:
+			data_reader = csv.reader(data_file, delimiter=',', quotechar='|')
+			header = data_reader.next()
+
+			data.labels = header
+			x_label = header[0]
+			y_labels = header[1:]
+			data.data = {'x':{y_lbl:[] for y_lbl in y_labels},
+						'y':{y_lbl:[] for y_lbl in y_labels}}
+
+			# now group all of the data and insert into object
+			for row in data_reader:
+				x_val = float( row.pop(0) )
+				for phase, y_val in zip(y_labels, row):
+					if y_val:
+						data.data['x'][phase].append(x_val)
+						data.data['y'][phase].append(float(y_val))
+
+		return data
+
+
+
+
+class FitExporter(object):
+	""" A class to export Fit data from FitResult objects """
+	def __init__(self, filename):
+		pass
 
 
 if __name__ == "__main__":

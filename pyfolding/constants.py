@@ -1,5 +1,7 @@
+from numpy import linspace
+
 # version
-VERSION = '0.2.1'
+VERSION = '0.2.3'
 
 # constants
 IDEAL_GAS_CONSTANT_KCAL = 1.987204118E-3
@@ -21,6 +23,9 @@ LINE_WIDTH = 3
 
 # error options
 CONFIDENCE_INTERVAL = 95
+
+# default range to simulate fit function
+XSIM = linspace(0.,10.,100)
 
 if __name__ == "__main__":
 	pass
