@@ -248,21 +248,21 @@ class FitExporter(object):
 			raise TypeError('FitExporter requires a FitResult object as input')
 
 		# save out the data
-		filepath, filename = os.path.split(filename)
-		filename, ext = os.path.splitext(filename)
+		filepath, fn = os.path.split(filename)
+		fn, ext = os.path.splitext(fn)
 
 		# first save out the curves
-		save_filename = os.path.join(filepath, filename+'_'+results.ID+'_FITCURVE'+ext)
+		save_file = os.path.join(filepath, fn+'_'+results.ID+'_FITCURVE'+ext)
 		data = OrderedDict([('x', results.x_fit), ('y',results.y_fit)])
-		write_CSV(save_filename, data, verbose=self.verbose)
+		write_CSV(save_file, data, verbose=self.verbose)
 
 		# now save out the fit parameters
-		save_filename = os.path.join(filepath, filename+'_'+results.ID+'_FITRESULT'+ext)
+		save_file = os.path.join(filepath, fn+'_'+results.ID+'_FITRESULT'+ext)
 		data = OrderedDict([('Parameter', [f.name for f in results.fit_params]),
 							('Type', [f.type for f in results.fit_params]),
 							('Value',[f.value for f in results.fit_params]),
 							('Error',[f.SE for f in results.fit_params])])
-		write_CSV(save_filename, data, verbose=self.verbose)
+		write_CSV(save_file, data, verbose=self.verbose)
 
 
 

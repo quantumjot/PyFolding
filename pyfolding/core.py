@@ -280,10 +280,7 @@ class DataTemplate(object):
 
 
 	def save_fit(self, filename):
-		# d = [('x',self.results.x), ('y',self.results.y)]
-		# # order this dictionary so that we have x first
-		# data = OrderedDict( d )
-		# utils.write_CSV(filename, data)
+		""" Export the fit. """
 		exporter = utils.FitExporter()
 		exporter.export(filename, self.results)
 
