@@ -275,8 +275,10 @@ class DataTemplate(object):
 		# call these functions
 		if isinstance(self, Chevron):
 			plot_chevron(self, **kwargs)
-		else:
+		elif isinstance(self, EquilibriumDenaturationCurve):
 			plot_equilibrium(self, **kwargs)
+		else:
+			plot_generic(self, **kwargs)
 
 
 	def save_fit(self, filename):
@@ -731,11 +733,13 @@ class GlobalFit(object):
 		x = np.concatenate([x for x in self.x])
 		y = np.concatenate([y for y in self.y])
 
+
 		# fit the data
 		if bounds:
 			out, covar = optimize.curve_fit(self, x, y, p0=p0, bounds=bounds, max_nfev=20000)
 		else:
 			out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000)
+
 
 
 		# now finalise and set up the results
@@ -764,8 +768,8 @@ class GlobalFit(object):
 			result.ID = self.ID[i]
 			result.method = "pyfolding.GlobalFit and scipy.optimize.curve_fit"
 			result.y = self.eval_func(i)
-			result.x_fit = constants.XSIM
-			result.y_fit = f(constants.XSIM, *[a.value for a in f.rick_and_morty])
+			result.x_fit = np.linspace(np.min([0.]+self.x[i].tolist()), np.max(self.x[i]),100)
+			result.y_fit = f(result.x_fit, *[a.value for a in f.rick_and_morty])
 			result.covar = covar
 			result.residuals = residuals(y_data=self.y[i], y_fit=result.y)
 			result.r_squared = r_squared(y_data=self.y[i], y_fit=result.y)

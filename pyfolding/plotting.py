@@ -220,6 +220,26 @@ def plot_equilibrium(protein, **kwargs):
 
 
 
+def plot_generic(data, **kwargs):
+	""" plot_generic
+
+	Plot a generic data set.
+	"""
+	plt.figure(figsize=(8,5))
+	for lbl in data.labels[1:]:
+		x,y = data[lbl]
+		plt.plot(x, y, '.', label=lbl)
+
+	if data.results:
+		plt.plot(data.results.x_fit, data.results.y_fit, 'r-', linewidth=constants.LINE_WIDTH)
+
+	plt.legend()
+	plt.xlabel(data.labels[0], fontsize=constants.FONT_SIZE)
+	plt.ylabel('y', fontsize=constants.FONT_SIZE)
+	plt.show()
+
+
+
 
 if __name__ == '__main__':
 	pass

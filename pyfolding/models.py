@@ -45,7 +45,9 @@ def list_models():
 	return fit_models
 
 
-
+def KINETIC_ERROR_FUNC(y):
+	y[y<=0] = 1e-99
+	return np.log(y)
 
 
 
@@ -567,7 +569,7 @@ class TwoStateChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
 
 	# NOTE (ergm) added on 24/8/2017
 	# def components(self, x, kf, mf, ku, mu):
@@ -630,7 +632,7 @@ class ThreeStateChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
 
 	def components(self, x, kfi, mif, kif, mi, Kiu, mu):
 		k_fi = kfi*np.exp(-mif*x)
@@ -697,7 +699,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
 
 	def components(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_iu = kiu*np.exp(miu*x)
@@ -768,7 +770,8 @@ class ThreeStateSequentialChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
+
 
 	def components(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_ui = kui*np.exp(-mui*x)
@@ -843,7 +846,7 @@ class ParallelTwoStateChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
 
 	def components(self, x, kf_A, mf_A, ku_A, mu_A, kf_B, mf_B):
 		deltaG_A = kf_A / ku_A
@@ -911,7 +914,7 @@ class ParallelTwoStateUnfoldingChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
 
 	def components(self, x, ku_A, mu_A, ku_B, mu_B):
 		k_obs_A = ku_A*np.exp(mu_A*x)
@@ -970,7 +973,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
 
 	# NOTE (ergm) added on 23/8/2017
 	@property
@@ -1020,7 +1023,7 @@ class ChevronPolynomialFit(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return np.log(y)
+		return KINETIC_ERROR_FUNC(y)
 
 	@property
 	def equation(self):
