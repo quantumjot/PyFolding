@@ -195,6 +195,8 @@ def plot_chevron(protein, components=False,  **kwargs):
 	plt.grid(False)
 	plt.xlabel(protein.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel(r'$\ k_{obs}$ $(s^{-1})$', fontsize=constants.FONT_SIZE)
+	if 'save' in kwargs:
+		plt.savefig(kwargs['save'], dpi=144)
 	plt.show()
 
 
@@ -216,6 +218,8 @@ def plot_equilibrium(protein, **kwargs):
 	plt.grid(False)
 	plt.xlabel(protein.denaturant_label, fontsize=constants.FONT_SIZE)
 	plt.ylabel('Signal', fontsize=constants.FONT_SIZE)
+	if 'save' in kwargs:
+		plt.savefig(kwargs['save'], dpi=144)
 	plt.show()
 
 
@@ -236,6 +240,8 @@ def plot_generic(data, **kwargs):
 	plt.legend()
 	plt.xlabel(data.labels[0], fontsize=constants.FONT_SIZE)
 	plt.ylabel('y', fontsize=constants.FONT_SIZE)
+	if 'save' in kwargs:
+		plt.savefig(kwargs['save'], dpi=144)
 	plt.show()
 
 
