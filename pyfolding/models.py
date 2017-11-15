@@ -45,9 +45,7 @@ def list_models():
 	return fit_models
 
 
-def KINETIC_ERROR_FUNC(y):
-	y[y<=0] = 1e-99
-	return np.log(y)
+
 
 
 
@@ -494,7 +492,7 @@ class HeteropolymerIsingEquilibrium(core.FitModel):
 		R = Universal Gas Constant (kcal.mol-1.K-1)
 		T = Temperature (Kelvin)
 
-	Notes:
+	Reference:
 		Aksel and Barrick. Analysis of repeat-protein folding using
 		nearest-neighbor statistical mechanical models.
 		Methods in enzymology (2009) vol. 455 pp. 95-125
@@ -550,7 +548,7 @@ class TwoStateChevron(core.FitModel):
 		mu = the gradient of unfolding arm of the chevron
 		x = denaturant concentration (M)
 
-	Notes:
+	Reference:
 		Jackson SE and Fersht AR.  Folding of chymotrypsin inhibitor 2.
 		1. Evidence for a two-state transition.
 		Biochemistry (1991) 30(43):10428-10435.
@@ -569,7 +567,7 @@ class TwoStateChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
+		return np.log(y)
 
 	# NOTE (ergm) added on 24/8/2017
 	# def components(self, x, kf, mf, ku, mu):
@@ -632,7 +630,7 @@ class ThreeStateChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
+		return np.log(y)
 
 	def components(self, x, kfi, mif, kif, mi, Kiu, mu):
 		k_fi = kfi*np.exp(-mif*x)
@@ -699,7 +697,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
+		return np.log(y)
 
 	def components(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_iu = kiu*np.exp(miu*x)
@@ -770,8 +768,7 @@ class ThreeStateSequentialChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
-
+		return np.log(y)
 
 	def components(self, x, kui, mui, kiu, miu, kif, mif, kfi, mfi):
 		k_ui = kui*np.exp(-mui*x)
@@ -846,7 +843,7 @@ class ParallelTwoStateChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
+		return np.log(y)
 
 	def components(self, x, kf_A, mf_A, ku_A, mu_A, kf_B, mf_B):
 		deltaG_A = kf_A / ku_A
@@ -914,7 +911,7 @@ class ParallelTwoStateUnfoldingChevron(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
+		return np.log(y)
 
 	def components(self, x, ku_A, mu_A, ku_B, mu_B):
 		k_obs_A = ku_A*np.exp(mu_A*x)
@@ -952,7 +949,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		m' = coefficient for the second-order [D] term (both unfolding and refolding).
 		x = denaturant concentration (M)
 
-	Reference:
+		Reference:
 		Ternstrom et al. From snapshot to movie: phi analysis
 		of protein folding transition states taken one step
 		further. PNAS (1999) vol. 96 (26) pp. 14854-9
@@ -973,7 +970,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
+		return np.log(y)
 
 	# NOTE (ergm) added on 23/8/2017
 	@property
@@ -1006,9 +1003,11 @@ class ChevronPolynomialFit(core.FitModel):
 		x = denaturant concentration (M)
 
 	Reference:
-		Ternstrom et al. From snapshot to movie: phi analysis
-		of protein folding transition states taken one step
-		further. PNAS (1999) vol. 96 (26) pp. 14854-9
+	Modified version of equation found in:
+	Ternstrom et al. From snapshot to movie: phi analysis
+	of protein folding transition states taken one step
+	further. PNAS (1999) vol. 96 (26) pp. 14854-9
+
 	"""
 	def __init__(self):
 		core.FitModel.__init__(self)
@@ -1023,7 +1022,7 @@ class ChevronPolynomialFit(core.FitModel):
 		return k_obs
 
 	def error_func(self, y):
-		return KINETIC_ERROR_FUNC(y)
+		return np.log(y)
 
 	@property
 	def equation(self):
