@@ -1,6 +1,7 @@
 build/*
 docs/*
 test/*
+conflicts/*
 notebooks/.ipynb_checkpoints/*
 *.pyc
 *.pyd
@@ -8,6 +9,5 @@ notebooks/.ipynb_checkpoints/*
 *.dll
 *.dylib
 *.o
-*.csv
 *.pdf
 *.zip
