@@ -4,14 +4,12 @@ TODO
 
 Optimisation
 ------------
-- Export fit parameters as a CSV file
 - Supress warnings from optimiser
 
 General
 -------
-- Make a generic save/load system
-- Video to show installation
 - Mode stdout to logging?
+- Change saving method in plotting.plot_figure
 
 Updates
 =======
@@ -20,6 +18,9 @@ Updates
 -----
 - Added generic data model
 - Added generic result saving methods
+- Export fit parameters as a CSV file
+- Make a generic save/load system
+- Video to show installation
 
 0.2.2
 -----
