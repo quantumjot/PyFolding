@@ -9,7 +9,6 @@ Optimisation
 General
 -------
 - Mode stdout to logging?
-- Change saving method in plotting.plot_figure
 
 Updates
 =======
@@ -21,6 +20,7 @@ Updates
 - Export fit parameters as a CSV file
 - Make a generic save/load system
 - Video to show installation
+- Change saving method in plotting.plot_figure
 
 0.2.2
 -----

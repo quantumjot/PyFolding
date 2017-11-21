@@ -153,8 +153,9 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
 	ax = plt.gcf()
 	ax.text(0.65, 0.95, t, horizontalalignment='left', verticalalignment='top', fontsize=constants.FONT_SIZE)
 	plt.tight_layout()
-	if save:
-		plt.savefig(os.path.join(pth,"Fitting"+equilibrium.ID+"_{0:s}.pdf".format(chevron.fit_func)))
+	if save and isinstance(save, basestring):
+		# plt.savefig(os.path.join(pth,"Fitting"+equilibrium.ID+"_{0:s}.pdf".format(chevron.fit_func)))
+		plt.savefig(save, dpi=144.)
 	if display:
 		plt.show()
 	plt.close()
