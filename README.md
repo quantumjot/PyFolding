@@ -40,10 +40,12 @@ A 'TemplateModel' is provided for adding additional models. We encourage users
 to generate their own models and contribute.
 
 ---
-### Example scripts and Jupyter notebooks
+### Example scripts, data and Jupyter notebooks
 PyFolding can be used within IPython Notebooks (Jupyter). Several example
 notebooks are provided in the notebooks folder. To install Jupyter notebooks
 please read the accompanying file "SETUP.md".
+
+Example data can be found in the /examples folder.
 
 ---
 
