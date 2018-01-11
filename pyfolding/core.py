@@ -736,9 +736,9 @@ class GlobalFit(object):
 
 		# fit the data
 		if bounds:
-			out, covar = optimize.curve_fit(self, x, y, p0=p0, bounds=bounds, max_nfev=20000)
+			out, covar = optimize.curve_fit(self, x, y, p0=p0, bounds=bounds, max_nfev=20000, absolute_sigma=True)
 		else:
-			out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000)
+			out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000, absolute_sigma=True)
 
 
 
@@ -862,6 +862,8 @@ class FitResult(object):
 
 		print u"-"*table_width
 		print u"R^2: {0:2.5f}".format(self.r_squared)
+		print u"DOF: {0:d}".format(self.DoF)
+		print u"Abs. Sum of Squares: {0:2.2e}".format(self.SS)
 		print u"="*table_width
 		print "\n"
 
@@ -874,8 +876,8 @@ class FitResult(object):
 			print u"({0:s}) {1:s} {2:>10.5f}".format(p.type[0], p_name, p.value)
 			return
 
-		print u"({0:s}) {1:s} {2:>10.5f} \u00B1 {3:<10.5f}" \
-			u" \t 95\u0025 CI[{4:>10.5f}, {5:>10.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high)
+		print u"({0:s}) {1:s} {2:>12.5f} \u00B1 {3:<12.5f}" \
+			u" \t 95\u0025 CI[{4:>12.5f}, {5:>12.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high)
 
 
 	def confidence(self, i):
@@ -895,8 +897,9 @@ class FitResult(object):
 		""" Return the SE for parameter i
 		SE(Pi) = sqrt[ (SS/DF) * Cov(i,i) ]
 		"""
-		SE = np.sqrt( (np.sum(self.all_residuals**2) / self.DoF) * self.fit_params[i].covar )
-		# print 'SS: {0:2.5f}, DoF: {1:2.5f}, covar: {2:2.5f}, SE: {3:2.5f}'.format(np.sum(self.all_residuals**2), self.DoF, self.fit_params[i].covar, SE)
+
+		SE = np.sqrt( (self.SS / self.DoF) * self.fit_params[i].covar )
+		# 	print 'SS: {0:2.5f}, DoF: {1:2.5f}, covar: {2:2.5f}, SE: {3:2.5f}'.format(self.SS, self.DoF, self.fit_params[i].covar, SE)
 		return SE
 
 	@property
@@ -905,6 +908,13 @@ class FitResult(object):
 		between the number of data points and the number of fit parameters
 		"""
 		return len(self.all_residuals) - len(self.fit_params)
+
+	@property
+	def SS(self):
+		""" Sum of squared residuals """
+		# SS = np.matrix(self.all_residuals) * np.matrix(self.all_residuals).T
+		SS = np.sum(self.all_residuals**2)
+		return SS
 
 	@property
 	def details(self):
