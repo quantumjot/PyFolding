@@ -4,7 +4,7 @@ TODO
 
 Optimisation
 ------------
-- Supress warnings from optimiser
+- Suppress warnings from optimiser
 
 General
 -------
