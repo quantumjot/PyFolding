@@ -861,9 +861,9 @@ class FitResult(object):
 
 
 		print u"-"*table_width
-		print u"R^2: {0:2.5f}".format(self.r_squared)
-		print u"DOF: {0:d}".format(self.DoF)
-		print u"Abs. Sum of Squares: {0:2.2e}".format(self.SS)
+		print u"R^2: \t{0:2.5f}".format(self.r_squared)
+		print u"DOF: \t{0:d}".format(self.DoF)
+		print u"SS: \t{0:2.2e}".format(self.SS)
 		print u"="*table_width
 		print "\n"
 
