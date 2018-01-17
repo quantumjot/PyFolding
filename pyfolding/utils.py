@@ -13,9 +13,9 @@ enable more interesting calculations, such as Ising models
 and such.
 
 Requirements (recommended python 2.7+):
-	- numpy
-	- scipy
-	- matplotlib
+    - numpy
+    - scipy
+    - matplotlib
 
 Lowe, A.R. 2015
 
@@ -35,234 +35,234 @@ from collections import OrderedDict
 
 
 class __Temperature(object):
-	""" Maintain temperature information across all functions. Meant to be a
-	wrapper for a global variable, temperature which is used across different
-	models.
+    """ Maintain temperature information across all functions. Meant to be a
+    wrapper for a global variable, temperature which is used across different
+    models.
 
-	Args:
-		temperature: set the temperature in celsius
+    Args:
+        temperature: set the temperature in celsius
 
-	Properties:
-		temperature: return the temperature in celsius
-		RT:	return the product of the ideal gas constant and the temperature
+    Properties:
+        temperature: return the temperature in celsius
+        RT:    return the product of the ideal gas constant and the temperature
 
-	Notes:
-		This changes the temperature globally, so be careful when using it,
-		since all subsequent calculations will use this temperature.
+    Notes:
+        This changes the temperature globally, so be careful when using it,
+        since all subsequent calculations will use this temperature.
 
-		This is also not to be used by USERS!
-	"""
-	def __init__(self):
-		self.__temperature = constants.TEMPERATURE_CELSIUS
+        This is also not to be used by USERS!
+    """
+    def __init__(self):
+        self.__temperature = constants.TEMPERATURE_CELSIUS
 
-	@property
-	def temperature(self): return self.__temperature
-	@temperature.setter
-	def temperature(self, value=constants.TEMPERATURE_CELSIUS):
-		import numbers
-		if not isinstance(value, numbers.Real):
-			return TypeError("Temperature must be specified as a number")
-		if value < 0 or value > 100:
-			raise ValueError("Temperature ({0:2.2f}) is not in valid range "
-				"(0-100 degrees C)".format(value))
-		self.__temperature = value
+    @property
+    def temperature(self): return self.__temperature
+    @temperature.setter
+    def temperature(self, value=constants.TEMPERATURE_CELSIUS):
+        import numbers
+        if not isinstance(value, numbers.Real):
+            return TypeError("Temperature must be specified as a number")
+        if value < 0 or value > 100:
+            raise ValueError("Temperature ({0:2.2f}) is not in valid range "
+                "(0-100 degrees C)".format(value))
+        self.__temperature = value
 
-	@property
-	def RT(self):
-		return constants.IDEAL_GAS_CONSTANT_KCAL * (constants.ZERO_KELVIN + self.temperature)
+    @property
+    def RT(self):
+        return constants.IDEAL_GAS_CONSTANT_KCAL * (constants.ZERO_KELVIN + self.temperature)
 
 
 
 
 def disable_autoscroll(verbose=True):
-	""" Disable autoscrolling in Ipython notebooks """
+    """ Disable autoscrolling in Ipython notebooks """
 
-	# now test to see whether we're in an Ipython environment
-	if not 'ipykernel' in sys.modules:
-		return
+    # now test to see whether we're in an Ipython environment
+    if not 'ipykernel' in sys.modules:
+        return
 
-	try:
-		from IPython.display import display, Javascript
-	except ImportError:
-		return
+    try:
+        from IPython.display import display, Javascript
+    except ImportError:
+        return
 
-	disable_js = """
-	IPython.OutputArea.prototype._should_scroll = function(lines) {
-	    return false;
-	}
-	"""
+    disable_js = """
+    IPython.OutputArea.prototype._should_scroll = function(lines) {
+        return false;
+    }
+    """
 
-	# turn off the autoscrolling
-	display(Javascript(disable_js))
+    # turn off the autoscrolling
+    display(Javascript(disable_js))
 
-	# give the user some feedback
-	if verbose:
-		print "PyFolding: Jupyter autoscrolling has been disabled"
+    # give the user some feedback
+    if verbose:
+        print "PyFolding: Jupyter autoscrolling has been disabled"
 
 
 
 def check_filename(directory, filename):
-	""" Check the filename for consistency.
-	"""
+    """ Check the filename for consistency.
+    """
 
-	if not isinstance(directory, basestring) or not isinstance(filename, basestring):
-		raise TypeError('Pyfolding expects a filename as a string')
+    if not isinstance(directory, basestring) or not isinstance(filename, basestring):
+        raise TypeError('Pyfolding expects a filename as a string')
 
-	if not filename.lower().endswith(('.csv', '.CSV')):
-		raise IOError('PyFolding expects a .CSV file as input: {0:s}'.format(filename))
+    if not filename.lower().endswith(('.csv', '.CSV')):
+        raise IOError('PyFolding expects a .CSV file as input: {0:s}'.format(filename))
 
-	if not os.path.exists(os.path.join(directory, filename)):
-		raise IOError('PyFolding could not find the file: {0:s}'.format(os.path.join(directory, filename)))
+    if not os.path.exists(os.path.join(directory, filename)):
+        raise IOError('PyFolding could not find the file: {0:s}'.format(os.path.join(directory, filename)))
 
 
 
 
 def write_CSV(filename, data, verbose=True):
-	"""
-	Write out data in a convenient CSV format for import into other
-	plotting and analysis packages.
+    """
+    Write out data in a convenient CSV format for import into other
+    plotting and analysis packages.
 
-	Args:
-		filename
-		data
-		verbose
+    Args:
+        filename
+        data
+        verbose
 
-	Notes:
+    Notes:
 
-		WORK IN PROGRESS
+        WORK IN PROGRESS
 
-	"""
+    """
 
-	if not isinstance(filename, basestring):
-		raise IOError("Filename must be a string")
+    if not isinstance(filename, basestring):
+        raise IOError("Filename must be a string")
 
-	# data should be a dictionary
-	csv_results = {k:iter(data[k]) for k in data.keys()}
-	n_entries = len(data.values()[0])
+    # data should be a dictionary
+    csv_results = {k:iter(data[k]) for k in data.keys()}
+    n_entries = len(data.values()[0])
 
-	with open(filename, 'wb') as csvfile:
-		if verbose:
-			print "Writing .csv file ({0:s})...".format(filename)
-		r = csv.DictWriter(csvfile, fieldnames=data.keys(), dialect=csv.excel_tab,
-				delimiter=',')
-		r.writeheader()
+    with open(filename, 'wb') as csvfile:
+        if verbose:
+            print "Writing .csv file ({0:s})...".format(filename)
+        r = csv.DictWriter(csvfile, fieldnames=data.keys(), dialect=csv.excel_tab,
+                delimiter=',')
+        r.writeheader()
 
-		for i in xrange(n_entries):
-			h = {k: csv_results[k].next() for k in csv_results.keys()}
-			r.writerow(h)
+        for i in xrange(n_entries):
+            h = {k: csv_results[k].next() for k in csv_results.keys()}
+            r.writerow(h)
 
 
 
 class DataImporter(object):
-	"""
-	Generic data importer class.
+    """
+    Generic data importer class.
 
-	This class will read in .CSV files containing data of the format:
+    This class will read in .CSV files containing data of the format:
 
-	x	y_0 	y_1 ...
-	0	1.0		5.6 ...
-	1	2.0		7.4 ...
-	...
+    x    y_0     y_1 ...
+    0    1.0        5.6 ...
+    1    2.0        7.4 ...
+    ...
 
-	And output a data class of the type specified. This can be one of
-		- EquilibriumDenaturationCurve
-		- Chevron
-		- Generic (this is meant to be a catch all for other, future types)
+    And output a data class of the type specified. This can be one of
+        - EquilibriumDenaturationCurve
+        - Chevron
+        - Generic (this is meant to be a catch all for other, future types)
 
-	Properties:
-		type
+    Properties:
+        type
 
-	Members:
-		load
+    Members:
+        load
 
-	Notes:
-		None
+    Notes:
+        None
 
-	"""
+    """
 
-	def __init__(self, datatype='GenericData'):
-		self.type=datatype
+    def __init__(self, datatype='GenericData'):
+        self.type=datatype
 
-	@property
-	def type(self): return self.__type
-	@type.setter
-	def type(self, datatype):
-		if not isinstance(datatype, basestring):
-			raise TypeError('Data type must be specified as a string')
-		if datatype not in ('EquilibriumDenaturationCurve','Chevron','GenericData'):
-			raise ValueError('Data type {s} is not recognised'.format(datatype))
+    @property
+    def type(self): return self.__type
+    @type.setter
+    def type(self, datatype):
+        if not isinstance(datatype, basestring):
+            raise TypeError('Data type must be specified as a string')
+        if datatype not in ('EquilibriumDenaturationCurve','Chevron','GenericData'):
+            raise ValueError('Data type {s} is not recognised'.format(datatype))
 
-		self.__type = datatype
+        self.__type = datatype
 
-	def load(self, fullfilename):
-		""" Load the data and instantiate the correct data model """
+    def load(self, fullfilename):
+        """ Load the data and instantiate the correct data model """
 
-		directory, filename = os.path.split(fullfilename)
+        directory, filename = os.path.split(fullfilename)
 
-		# check the filename
-		check_filename(directory, filename)
+        # check the filename
+        check_filename(directory, filename)
 
-		protein_ID, ext = os.path.splitext(filename)
+        protein_ID, ext = os.path.splitext(filename)
 
-		# make a new data object of the specified type
-		DataObject = getattr(core, self.type)
-		data = DataObject(ID=protein_ID)
+        # make a new data object of the specified type
+        DataObject = getattr(core, self.type)
+        data = DataObject(ID=protein_ID)
 
-		# open the data and set up a new object
-		with open(fullfilename, 'rU') as data_file:
-			data_reader = csv.reader(data_file, delimiter=',', quotechar='|')
-			header = data_reader.next()
+        # open the data and set up a new object
+        with open(fullfilename, 'rU') as data_file:
+            data_reader = csv.reader(data_file, delimiter=',', quotechar='|')
+            header = data_reader.next()
 
-			data.labels = header
-			x_label = header[0]
-			y_labels = header[1:]
-			data.data = {'x':{y_lbl:[] for y_lbl in y_labels},
-						'y':{y_lbl:[] for y_lbl in y_labels}}
+            data.labels = header
+            x_label = header[0]
+            y_labels = header[1:]
+            data.data = {'x':{y_lbl:[] for y_lbl in y_labels},
+                        'y':{y_lbl:[] for y_lbl in y_labels}}
 
-			# now group all of the data and insert into object
-			for row in data_reader:
-				x_val = float( row.pop(0) )
-				for phase, y_val in zip(y_labels, row):
-					if y_val:
-						data.data['x'][phase].append(x_val)
-						data.data['y'][phase].append(float(y_val))
+            # now group all of the data and insert into object
+            for row in data_reader:
+                x_val = float( row.pop(0) )
+                for phase, y_val in zip(y_labels, row):
+                    if y_val:
+                        data.data['x'][phase].append(x_val)
+                        data.data['y'][phase].append(float(y_val))
 
-		return data
+        return data
 
 
 
 
 class FitExporter(object):
-	""" A class to export Fit data from FitResult objects """
-	def __init__(self):
-		self.verbose = False
+    """ A class to export Fit data from FitResult objects """
+    def __init__(self):
+        self.verbose = False
 
-	def export(self, filename, results):
-		""" Take a list of results or a single result and ouput files """
-		if isinstance(results, list):
-			for r in results:
-				self.export(filename, r)
-			return
+    def export(self, filename, results):
+        """ Take a list of results or a single result and ouput files """
+        if isinstance(results, list):
+            for r in results:
+                self.export(filename, r)
+            return
 
-		if not isinstance(results, core.FitResult):
-			raise TypeError('FitExporter requires a FitResult object as input')
+        if not isinstance(results, core.FitResult):
+            raise TypeError('FitExporter requires a FitResult object as input')
 
-		# save out the data
-		filepath, fn = os.path.split(filename)
-		fn, ext = os.path.splitext(fn)
+        # save out the data
+        filepath, fn = os.path.split(filename)
+        fn, ext = os.path.splitext(fn)
 
-		# first save out the curves
-		save_file = os.path.join(filepath, fn+'_'+results.ID+'_FITCURVE'+ext)
-		data = OrderedDict([('x', results.x_fit), ('y',results.y_fit)])
-		write_CSV(save_file, data, verbose=self.verbose)
+        # first save out the curves
+        save_file = os.path.join(filepath, fn+'_'+results.ID+'_FITCURVE'+ext)
+        data = OrderedDict([('x', results.x_fit), ('y',results.y_fit)])
+        write_CSV(save_file, data, verbose=self.verbose)
 
-		# now save out the fit parameters
-		save_file = os.path.join(filepath, fn+'_'+results.ID+'_FITRESULT'+ext)
-		data = OrderedDict([('Parameter', [f.name for f in results.fit_params]),
-							('Type', [f.type for f in results.fit_params]),
-							('Value',[f.value for f in results.fit_params]),
-							('Error',[f.SE for f in results.fit_params])])
-		write_CSV(save_file, data, verbose=self.verbose)
+        # now save out the fit parameters
+        save_file = os.path.join(filepath, fn+'_'+results.ID+'_FITRESULT'+ext)
+        data = OrderedDict([('Parameter', [f.name for f in results.fit_params]),
+                            ('Type', [f.type for f in results.fit_params]),
+                            ('Value',[f.value for f in results.fit_params]),
+                            ('Error',[f.SE for f in results.fit_params])])
+        write_CSV(save_file, data, verbose=self.verbose)
 
 
 

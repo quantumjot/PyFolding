@@ -2,8 +2,8 @@
 
 """
 Python implementation of common model fitting operations to
-analyse protein folding data. Simply automates some fitting 
-and value calculation. Will be extended to include phi-value 
+analyse protein folding data. Simply automates some fitting
+and value calculation. Will be extended to include phi-value
 analysis and other common calculations.
 
 Allows for quick model evaluation and plotting.
@@ -13,9 +13,9 @@ enable more interesting calculations, such as Ising models
 and such.
 
 Requirements (recommended python 2.7+):
-	- numpy
-	- scipy
-	- matplotlib
+    - numpy
+    - scipy
+    - matplotlib
 
 Lowe, A.R. 2015
 
@@ -41,47 +41,47 @@ __email__ = "a.lowe@ucl.ac.uk"
 
 
 def phi(ref_protein, mut_protein):
-	""" Calculate the Phi value corresponding to a particular mutation
-	of the wild-type protein.
+    """ Calculate the Phi value corresponding to a particular mutation
+    of the wild-type protein.
 
 
-	Phi-values are calculated according to:
-	Serrano L, Matouschek A, Fersht AR (1992) J Mol Biol 224:805–818.
+    Phi-values are calculated according to:
+    Serrano L, Matouschek A, Fersht AR (1992) J Mol Biol 224:805–818.
 
-	\Phi = \frac{RT\ln\biggl( \frac{k_f^{ref}}{k_f^{mut}} \biggr)} {\Delta\Delta G_{eq}}
+    \Phi = \frac{RT\ln\biggl( \frac{k_f^{ref}}{k_f^{mut}} \biggr)} {\Delta\Delta G_{eq}}
 
-	Args:
-		ref_protein: A protein class of type pyfolding.Protein
-		mut_protein: A protein class of type pyfolding.Protein
+    Args:
+        ref_protein: A protein class of type pyfolding.Protein
+        mut_protein: A protein class of type pyfolding.Protein
 
-	Notes:
-
-
+    Notes:
 
 
-		TODO: Test this thoroughly!
 
-	"""
 
-	if not isinstance(ref_protein, core.Protein):
-		raise TypeError("Reference protein must be of type pyfolding.Protein")
+        TODO: Test this thoroughly!
 
-	if not isinstance(mut_protein, core.Protein):
-		raise TypeError("Mutant protein must be of type pyfolding.Protein")
+    """
 
-	
-	# Start by calculating the DDG value
-	DDG = ref_protein.deltaG - mut_protein.deltaG
+    if not isinstance(ref_protein, core.Protein):
+        raise TypeError("Reference protein must be of type pyfolding.Protein")
 
-	# now calculate the differences in folding rate constants
-	DTS = constants.RT * np.log( ref_protein.kf_H20 / mut_protein.kf_H20 )
+    if not isinstance(mut_protein, core.Protein):
+        raise TypeError("Mutant protein must be of type pyfolding.Protein")
 
-	# now the phi value itself
-	phi = DTS / DDG
 
-	return phi
+    # Start by calculating the DDG value
+    DDG = ref_protein.deltaG - mut_protein.deltaG
+
+    # now calculate the differences in folding rate constants
+    DTS = constants.RT * np.log( ref_protein.kf_H20 / mut_protein.kf_H20 )
+
+    # now the phi value itself
+    phi = DTS / DDG
+
+    return phi
 
 
 
 if __name__ == "__main__":
-	pass
+    pass
