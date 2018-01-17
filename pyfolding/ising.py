@@ -946,24 +946,24 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
             name = domain().name
             c = plt.Circle((x*1.5, y), 0.45, edgecolor=d_color(name),
                         facecolor='w', label=name)
-             ax.add_artist(c)
+            ax.add_artist(c)
 
 
             x_lim = max(x_lim, x*1.5+1.)
 
 
-             # if we're folding, then plot braces to show that
-             if d_cnt > 1:
-                 lb_x, lb_y = brace(x*1.5,y, rev=-1)
-                 rb_x, rb_y = brace(x*1.5,y, rev=1)
-                 b = plt.Line2D(lb_x, lb_y, color='k')
-                 ax.add_artist(b)
-                 b = plt.Line2D(rb_x, rb_y, color='k')
-                 ax.add_artist(b)
-                 ax.text(x*1.5+.55, y-.4, str(d_cnt), color='k')
+            # if we're folding, then plot braces to show that
+            if d_cnt > 1:
+                lb_x, lb_y = brace(x*1.5,y, rev=-1)
+                rb_x, rb_y = brace(x*1.5,y, rev=1)
+                b = plt.Line2D(lb_x, lb_y, color='k')
+                ax.add_artist(b)
+                b = plt.Line2D(rb_x, rb_y, color='k')
+                ax.add_artist(b)
+                ax.text(x*1.5+.55, y-.4, str(d_cnt), color='k')
 
 
-              i_str = str(x)
+            i_str = str(x)
             ij_str = str(x)
 
             # add on any labels:
