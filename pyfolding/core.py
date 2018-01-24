@@ -849,21 +849,21 @@ class FitResult(object):
 
 
         print u"="*table_width
-        print u"Fitting results"
+        print u" Fitting results"
         print u"="*table_width
-        if self.ID: print u"ID: {0:s}".format(self.ID)
-        print u"Model: {0:s}".format(self.name)
-        print u"Optimiser: {0:s}".format(self.__method)
-        print u"Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature)
+        if self.ID: print u" ID: {0:s}".format(self.ID)
+        print u" Model: {0:s}".format(self.name)
+        print u" Optimiser: {0:s}".format(self.__method)
+        print u" Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature)
 
         for p in self.details:
             self.display_row(p, nl)
 
 
         print u"-"*table_width
-        print u"R^2: \t{0:2.5f}".format(self.r_squared)
-        print u"DOF: \t{0:d}".format(self.DoF)
-        print u"SS: \t{0:2.2e}".format(self.SS)
+        print u" R^2: \t{0:2.5f}".format(self.r_squared)
+        print u" DOF: \t{0:d}".format(self.DoF)
+        print u"|SS|: \t{0:2.2e}".format(self.SS)
         print u"="*table_width
         print "\n"
 
@@ -873,11 +873,11 @@ class FitResult(object):
         p_name = p.name.ljust(max_name_len)
 
         if p.type is 'constant':
-            print u"({0:s}) {1:s} {2:>10.5f}".format(p.type[0], p_name, p.value)
+            print u" ({0:s}) {1:s} {2:>12.5f}".format(p.type[0], p_name, p.value)
             return
 
-        print u"({0:s}) {1:s} {2:>12.5f} \u00B1 {3:<12.5f}" \
-            u" \t 95\u0025 CI[{4:>12.5f}, {5:>12.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high)
+        print u" ({0:s}) {1:s} {2:>12.5f} \u00B1 {3:<12.5f}" \
+            u" \t {6:d}\u0025 CI[{4:>12.5f}, {5:>12.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high, int(constants.CONFIDENCE_INTERVAL))
 
 
     def confidence(self, i):
@@ -889,7 +889,7 @@ class FitResult(object):
             TODO(arl): make this a user defined interval
         """
         ci = constants.CONFIDENCE_INTERVAL / 100.0
-        conf = t_distrb.pdf(0.95, self.DoF) * self.SE(i)
+        conf = t_distrb.pdf(ci, self.DoF) * self.SE(i)
         return (self.fit_params[i].value-conf, self.fit_params[i].value+conf)
 
 
