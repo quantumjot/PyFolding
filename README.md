@@ -10,12 +10,28 @@ and usage of PyFolding**:
 https://github.com/quantumjot/PyFolding/wiki
 
 ---
-### Reference
+### Citation
 
 **PyFolding: An open-source software package for graphing, analysis and simulation  
 of thermodynamic and kinetic models of protein folding**  
-Lowe AR, Perez-Riba A, Itzhaki L, Main E (2017) BioRXiv  
-http://dx.doi.org/10.1101/191593
+Lowe AR, Perez-Riba A, Itzhaki L, Main E (2018) Biophys J.  
+http://dx.doi.org/10.1016/j.bpj.2017.11.3779
+
+```
+@article{Lowe27112017,
+  author = {Lowe, Alan R. and Perez-Riba, Albert and Itzhaki, Laura S. and Main, Ewan R.G.},
+  title = {PyFolding: Open-Source Graphing, Simulation, and Analysis of the
+    Biophysical Properties of Proteins},
+  volume = {114},
+  number = {3},
+  pages = {511-521},
+  year = {2018},
+  doi = {10.1016/j.bpj.2017.11.3779},
+  URL = {http://dx.doi.org/10.1016/j.bpj.2017.11.3779},
+  eprint = {http://www.cell.com/biophysj/fulltext/S0006-3495(17)35041-5},
+  journal = {Biophysical Journal}
+}
+```
 
 ---
 
