@@ -581,7 +581,7 @@ class FitProgress(object):
 def fit_homopolymer(equilibrium_curves=[],
                     topologies=[],
                     p0=[3.3,.1,-5.],
-                    bounds=((-10.,-.1,-10.),(10.,3.,10.)),
+                    bounds=((0,-1.,0.),(10.,1.,-10.)),
                     **kwargs):
     """
     Fit a homopolymer model to a dataset.
