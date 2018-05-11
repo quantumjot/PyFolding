@@ -11,3 +11,4 @@ notebooks/.ipynb_checkpoints/*
 *.o
 *.pdf
 *.zip
+.DS_Store

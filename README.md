@@ -9,6 +9,10 @@ and is extensible to enable fitting of more interesting models.
 and usage of PyFolding**:
 https://github.com/quantumjot/PyFolding/wiki
 
+**Please note, we have moved the examples and Jupyter notebooks to a separate
+repository**:
+https://github.com/quantumjot/PyFolding-Notebooks
+
 ---
 ### Citation
 
