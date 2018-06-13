@@ -606,6 +606,12 @@ def fit_homopolymer(equilibrium_curves=[],
             the same number of paramters in lower_bounds and upper_bounds
             (e.g. 3 for DG_i, m_i and DG_ij)
 
+            So the bounds tuple would look like this:
+            ((DG_i_low, m_i_low, DJ_ij_low), (DG_i_hi, m_i_hi, DJ_ij_hi))
+
+            The default is:
+            bounds = ((0,-1.,0.),(10.,1.,-10.))
+
 
     Notes:
         TODO(arl): add the ability to define different shared values (e.g.
