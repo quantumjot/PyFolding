@@ -1,7 +1,7 @@
 from numpy import linspace
 
 # version
-VERSION = '0.2.3'
+VERSION = '0.2.4'
 
 # constants
 IDEAL_GAS_CONSTANT_KCAL = 1.987204118E-3

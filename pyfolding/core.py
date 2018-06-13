@@ -1072,6 +1072,13 @@ class FitModel(object):
 
     # @staticmethod
     def print_equation(self):
+        # FIXED(arl): no longer requires IPython
+        if not 'ipykernel' in sys.modules:
+            print self.equation
+            return
+
+        # if we are in an IPython shell or Jupyter notebook, use the LaTeX
+        # display for the equation
         from IPython.display import display, Math, Latex
         display(Math(self.equation))
         return None

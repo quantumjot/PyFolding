@@ -62,7 +62,7 @@ to generate their own models and contribute.
 ---
 ### Example scripts, data and Jupyter notebooks
 PyFolding can be used within IPython Notebooks (Jupyter). Several example
-notebooks are provided in the notebooks folder. To install Jupyter notebooks
+notebooks are provided in the notebooks folder of the PyFolding-Notebooks repo. To install Jupyter notebooks
 please read the accompanying file "SETUP.md".
 
 Example data can be found in the /examples folder.

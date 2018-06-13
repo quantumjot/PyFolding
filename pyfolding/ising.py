@@ -584,10 +584,30 @@ def fit_homopolymer(equilibrium_curves=[],
                     bounds=((0,-1.,0.),(10.,1.,-10.)),
                     **kwargs):
     """
-    Fit a homopolymer model to a dataset.
+    fit_homopolymer
 
-    TODO: Improve this.
+    Fit a homopolymer model to a multi-protein dataset. Note that the default
+    homopolymer model only shares the following parameters:
+        'DG_intrinsic'
+        'm_intrinsic'
+        'DG_interface'
 
+    since DG_interface is explicitly defined as being denaturant independent.
+
+    Args:
+        equilibrium_curves: a list of EquilibriumDenaturationCurve objects
+        topologies: a list of the number of domains of each protein in
+            equilibrium curves, e.g. [2,4,6,8]
+        p0: starting values for the fit, for 'DG_intrinsic', 'm_intrinsic',
+            'DG_interface'
+        bounds: a tuple containing lower, and upper bounds for the shared
+            parameters in p0, e.g. ((lower_bounds),(upper_bounds)) where lower_bounds is explicitly lower than upper_bounds and there are the same number of paramters in lower_bounds and upper_bounds
+            (e.g. 3 for DG_i, m_i and DG_ij)
+
+
+    Notes:
+        TODO(arl): add the ability to define different shared values (e.g.
+        addition of m_ij)
     """
 
     global_fit = core.GlobalFit()
@@ -657,6 +677,19 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
         tol
         save
 
+    Fit a heteropolymer model to a multi-protein dataset.
+
+    Args:
+        equilibrium_curves: a list of EquilibriumDenaturationCurve objects
+        topologies: a list of topologies for the proteins in equilibrium_curves
+            e.g. [[IsingDoman, IsingDoman, CapDomain],]
+        popsize: an integer population size for the differential evolution
+            algorithm
+        tol: a float tolerance of the differential evolution algorithm. See the
+            scipy documentation for more details
+        maxiter: an integer for the maximum number of iterations of the
+            optimization algorithm
+        save: a string describing the file path to save the data
 
     Notes:
         Optimisation is performed using differential evolution (a GA)
@@ -749,7 +782,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
     # save out the results if we desire
     if "save" in kwargs:
-        filename=kwargs['save']
+        filename = kwargs['save']
         exporter = utils.FitExporter()
         exporter.export(filename, results)
 
