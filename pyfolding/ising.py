@@ -601,7 +601,9 @@ def fit_homopolymer(equilibrium_curves=[],
         p0: starting values for the fit, for 'DG_intrinsic', 'm_intrinsic',
             'DG_interface'
         bounds: a tuple containing lower, and upper bounds for the shared
-            parameters in p0, e.g. ((lower_bounds),(upper_bounds)) where lower_bounds is explicitly lower than upper_bounds and there are the same number of paramters in lower_bounds and upper_bounds
+            parameters in p0, e.g. ((lower_bounds),(upper_bounds)) where
+            lower_bounds is explicitly lower than upper_bounds and there are
+            the same number of paramters in lower_bounds and upper_bounds
             (e.g. 3 for DG_i, m_i and DG_ij)
 
 
