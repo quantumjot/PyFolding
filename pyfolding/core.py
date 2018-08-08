@@ -590,9 +590,14 @@ class GlobalFit(object):
     where there are no shared values and only one dataset. This wrapped can be
     used for that purpose too...
 
+    Now added weighting to fits, specified using the weights property. These are
+    inputs to the sigma function for curve_fit, and specified as the number
+    of standard deviations of error (assuming Gaussian distrb.)
+
     Args:
         x: concatenated x data
         y: concatenated y data
+        weights: (optional)
 
     Properties:
         fit_funcs: the fit functions
@@ -614,6 +619,8 @@ class GlobalFit(object):
         self.__params = None
         self.__results = None
 
+        self.__weights = None
+
         self.covar = None
 
     @property
@@ -634,7 +641,8 @@ class GlobalFit(object):
     @constants.setter
     def constants(self, const=None):
         if len(const) != len(self.__fit_funcs):
-            raise ValueError("Number of constants should be the same as number of fit functions")
+            raise ValueError("Number of constants should be the same as number"
+                " of fit functions")
 
         for constant, fit_func in zip(const, self.__fit_funcs):
             fit_func.constants = constant
@@ -655,6 +663,24 @@ class GlobalFit(object):
         # and report an error if incorrect...
 
         self.__shared = list(set(shared_args))
+
+
+    @property
+    def weights(self):
+        return self.__weights
+    @weights.setter
+    def weights(self, weights):
+        """ Set weights for the global fit. These should be defined as
+        standard deviations of errors in ydata. """
+
+        if weights is None: self.__weights = None
+
+        if not isinstance(weights, (list,tuple)):
+            raise TypeError('Weights must be of type list or tuple')
+        if not all(isinstance(w, (np.ndarray, list)) for w in weights):
+            raise TypeError('Weights must be a list of numpy arrays or lists')
+
+        self.__weights = weights
 
 
     @property
@@ -730,15 +756,34 @@ class GlobalFit(object):
 
     def fit(self, p0=[], bounds=None):
         """ Run the fit. """
+
+        # check a few things for consistency
+        assert(len(self.x) == len(self.y))
+
+        # check weights
+        if self.weights is not None:
+            assert(len(self.weights) == len(self.x) == len(self.y))
+            weights = np.concatenate([w for w in self.weights])
+        else:
+            # set weights to None
+            weights = None
+
+        # print weights
+
+        # concatenate the xy data
         x = np.concatenate([x for x in self.x])
         y = np.concatenate([y for y in self.y])
 
 
         # fit the data
         if bounds:
-            out, covar = optimize.curve_fit(self, x, y, p0=p0, bounds=bounds, max_nfev=20000, absolute_sigma=True)
+            out, covar = optimize.curve_fit(self, x, y, p0=p0, bounds=bounds,
+                            max_nfev=20000, absolute_sigma=True,
+                            sigma=weights)
         else:
-            out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000, absolute_sigma=True)
+            out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000,
+                            absolute_sigma=True,
+                            sigma=weights)
 
 
 

@@ -15,7 +15,9 @@ Updates
 
 0.2.4
 -----
-- Removed IPython dependency, and updated docs to contain info on bounds in Ising model optimization (Thanks Marie S!)
+- Removed IPython dependency, and updated docs to contain info on bounds in
+Ising model optimization (Thanks Marie S!)
+- Added option to weight data points in optimization (Thanks Yuxin H!)
 
 0.2.3
 -----
