@@ -682,6 +682,16 @@ class GlobalFit(object):
 
         self.__weights = weights
 
+    @property
+    def fit_weights(self):
+        """ Check and return the weights for fitting """
+        # check weights
+        if self.weights is not None:
+            assert(len(self.weights) == len(self.x) == len(self.y))
+            return np.concatenate([w for w in self.weights])
+
+        return None
+
 
     @property
     def params(self): return self.__params
@@ -760,13 +770,7 @@ class GlobalFit(object):
         # check a few things for consistency
         assert(len(self.x) == len(self.y))
 
-        # check weights
-        if self.weights is not None:
-            assert(len(self.weights) == len(self.x) == len(self.y))
-            weights = np.concatenate([w for w in self.weights])
-        else:
-            # set weights to None
-            weights = None
+
 
         # print weights
 
@@ -779,11 +783,11 @@ class GlobalFit(object):
         if bounds:
             out, covar = optimize.curve_fit(self, x, y, p0=p0, bounds=bounds,
                             max_nfev=20000, absolute_sigma=True,
-                            sigma=weights)
+                            sigma=self.fit_weights)
         else:
             out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000,
                             absolute_sigma=True,
-                            sigma=weights)
+                            sigma=self.fit_weights)
 
 
 
@@ -917,12 +921,21 @@ class FitResult(object):
 
         p_name = p.name.ljust(max_name_len)
 
+        # if p.type is 'constant':
+        #     print u" ({0:s}) {1:s} {2:>12.5f}".format(p.type[0], p_name, p.value)
+        #     return
+        #
+        # print u" ({0:s}) {1:s} {2:>12.5f} \u00B1 {3:<12.5f}" \
+        #     u" \t {6:d}\u0025 CI[{4:>12.5f}, {5:>12.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high, int(constants.CONFIDENCE_INTERVAL))
+
         if p.type is 'constant':
-            print u" ({0:s}) {1:s} {2:>12.5f}".format(p.type[0], p_name, p.value)
+            print u" ({0:s}) {1:s} {2:>2.5e}".format(p.type[0], p_name, p.value)
             return
 
-        print u" ({0:s}) {1:s} {2:>12.5f} \u00B1 {3:<12.5f}" \
-            u" \t {6:d}\u0025 CI[{4:>12.5f}, {5:>12.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high, int(constants.CONFIDENCE_INTERVAL))
+        print u" ({0:s}) {1:s} {2:>2.5e} \u00B1 {3:<2.5e}" \
+            u" \t {6:d}\u0025 CI[{4:>2.5e}, {5:>2.5e}]".format(p.type[0],
+                p_name, p.value, p.SE, p.CI_low, p.CI_high,
+                int(constants.CONFIDENCE_INTERVAL))
 
 
     def confidence(self, i):
@@ -944,7 +957,6 @@ class FitResult(object):
         """
 
         SE = np.sqrt( (self.SS / self.DoF) * self.fit_params[i].covar )
-        #     print 'SS: {0:2.5f}, DoF: {1:2.5f}, covar: {2:2.5f}, SE: {3:2.5f}'.format(self.SS, self.DoF, self.fit_params[i].covar, SE)
         return SE
 
     @property

@@ -17,6 +17,7 @@ Updates
 -----
 - Removed IPython dependency, and updated docs to contain info on bounds in Ising model optimization (Thanks Marie S!)
 - Added option to weight data points in optimization (Thanks Yuxin H!)
+- Updated text output to scientific notation
 
 0.2.3
 -----
