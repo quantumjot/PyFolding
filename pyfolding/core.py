@@ -661,7 +661,6 @@ class GlobalFit(object):
 
         # TODO(arl): check that these shared params exist in the fit functions
         # and report an error if incorrect...
-
         self.__shared = list(set(shared_args))
 
 
@@ -770,14 +769,9 @@ class GlobalFit(object):
         # check a few things for consistency
         assert(len(self.x) == len(self.y))
 
-
-
-        # print weights
-
         # concatenate the xy data
         x = np.concatenate([x for x in self.x])
         y = np.concatenate([y for y in self.y])
-
 
         # fit the data
         if bounds:
@@ -788,8 +782,6 @@ class GlobalFit(object):
             out, covar = optimize.curve_fit(self, x, y, p0=p0, maxfev=20000,
                             absolute_sigma=True,
                             sigma=self.fit_weights)
-
-
 
         # now finalise and set up the results
         self.all_residuals = residuals(y_data=y, y_fit=self(x, *out))
@@ -920,13 +912,6 @@ class FitResult(object):
         """ Take a parameter and display a row of the table """
 
         p_name = p.name.ljust(max_name_len)
-
-        # if p.type is 'constant':
-        #     print u" ({0:s}) {1:s} {2:>12.5f}".format(p.type[0], p_name, p.value)
-        #     return
-        #
-        # print u" ({0:s}) {1:s} {2:>12.5f} \u00B1 {3:<12.5f}" \
-        #     u" \t {6:d}\u0025 CI[{4:>12.5f}, {5:>12.5f}]".format(p.type[0], p_name, p.value, p.SE, p.CI_low, p.CI_high, int(constants.CONFIDENCE_INTERVAL))
 
         if p.type is 'constant':
             print u" ({0:s}) {1:s} {2:>2.5e}".format(p.type[0], p_name, p.value)
