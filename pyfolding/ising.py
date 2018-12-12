@@ -228,6 +228,31 @@ class RepeatDomain_mij(IsingDomain):
         self.used_variables = (0,1,2,3)
 
 
+class FracturedNDomain(ising.IsingDomain):
+    def __init__(self):
+        ising.IsingDomain.__init__(self)
+        self.name = "FracturedNCap"
+        self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x)*self.tau(x)+self.kappa(x), folded],
+                                                        [self.kappa(x)*self.tau(x)+self.kappa(x), folded]])
+        self.used_variables = (0, 1, 2)
+
+
+class FracturedInternalDomain(ising.IsingDomain):
+    def __init__(self):
+        ising.IsingDomain.__init__(self)
+        self.name = "FracturedInternal"
+        self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x)*self.tau(x)+self.kappa(x), folded],
+                                                        [self.kappa(x)*self.tau(x)+self.kappa(x), folded]])
+        self.used_variables = (0, 1, 2)
+
+        
+class FracturedCDomain(ising.IsingDomain):
+    def __init__(self):
+        ising.IsingDomain.__init__(self)
+        self.name = "FracturedCCap"
+        self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x)*self.tau(x)+self.kappa(x), folded],
+                                                        [self.kappa(x)*self.tau(x)+self.kappa(x), folded]])
+        self.used_variables = (0, 1, 2)
 
 
 
@@ -499,7 +524,6 @@ def calculate_error_from_jacobian(jac, res):
     Where the MSE is the (R^T.R)/(N-p)
 
     Then calculate the error based on the SE of the variance.
-    This is definitely a bit wonky at the moment!
 
     Args:
         jac - the jacobian matrix from the minimisation.
@@ -508,13 +532,18 @@ def calculate_error_from_jacobian(jac, res):
         covar - the covariance matrix for the parameters of the fit.
 
     Notes:
-        This is **NOT** tested very well
+
+        If this returns a Determinant of zero, it means that the problem is
+        most likely poorly specified.
+
+        This is **NOT** tested very well.
     """
 
     num_params = len(np.ravel(jac))
 
     if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
-        print "\nWarning: Determinant of zero indicates that this is a non-unique, poor solution!\n"
+        print "\nWarning: Determinant of zero indicates that this"
+            " is a non-unique, poor solution!\n"
         return np.zeros((num_params,num_params))+np.inf
 
     MSE = np.dot(res,res)/(len(res)-num_params)
@@ -673,7 +702,12 @@ def fit_homopolymer(equilibrium_curves=[],
 
 
 
-def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8, maxiter=None, **kwargs):
+def fit_heteropolymer(equilibrium_curves=[],
+                      topologies=[],
+                      popsize=10,
+                      tol=1e-8,
+                      maxiter=None,
+                      **kwargs):
     """
 
     An example script to fit a series of data sets to a heteropolymer ising model.
@@ -709,7 +743,7 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
 
     # do some parsing of the input
     if not isinstance(equilibrium_curves, list):
-        raise TypeError('equilibrium_curves must be a list of EquilibriumDenaturationCurve type')
+        raise TypeError('equilibrium_curves must be a list of curves')
 
     if not isinstance(topologies, list):
         raise TypeError('topologies must be a list of IsingDomain type')
@@ -733,7 +767,13 @@ def fit_heteropolymer(equilibrium_curves=[], topologies=[], popsize=10, tol=1e-8
         callback = None
 
     # perform the actual fitting operation
-    r = differential_evolution(fit_func, fit_func.bounds, disp=False, popsize=popsize, tol=tol, callback=callback, maxiter=maxiter)
+    r = differential_evolution(fit_func,
+                               fit_func.bounds,
+                               disp=False,
+                               popsize=popsize,
+                               tol=tol,
+                               callback=callback,
+                               maxiter=maxiter)
 
     if not r.success:
         print "Could not find a solution..."
