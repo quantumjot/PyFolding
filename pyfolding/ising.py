@@ -228,27 +228,27 @@ class RepeatDomain_mij(IsingDomain):
         self.used_variables = (0,1,2,3)
 
 
-class FracturedNDomain(ising.IsingDomain):
+class FracturedNDomain(IsingDomain):
     def __init__(self):
-        ising.IsingDomain.__init__(self)
+        IsingDomain.__init__(self)
         self.name = "FracturedNCap"
         self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x)*self.tau(x)+self.kappa(x), folded],
                                                         [self.kappa(x)*self.tau(x)+self.kappa(x), folded]])
         self.used_variables = (0, 1, 2)
 
 
-class FracturedInternalDomain(ising.IsingDomain):
+class FracturedInternalDomain(IsingDomain):
     def __init__(self):
-        ising.IsingDomain.__init__(self)
+        IsingDomain.__init__(self)
         self.name = "FracturedInternal"
         self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x)*self.tau(x)+self.kappa(x), folded],
                                                         [self.kappa(x)*self.tau(x)+self.kappa(x), folded]])
         self.used_variables = (0, 1, 2)
 
-        
-class FracturedCDomain(ising.IsingDomain):
+
+class FracturedCDomain(IsingDomain):
     def __init__(self):
-        ising.IsingDomain.__init__(self)
+        IsingDomain.__init__(self)
         self.name = "FracturedCCap"
         self.q_func = lambda x, tau, folded: np.matrix([[self.kappa(x)*self.tau(x)+self.kappa(x), folded],
                                                         [self.kappa(x)*self.tau(x)+self.kappa(x), folded]])
@@ -542,7 +542,7 @@ def calculate_error_from_jacobian(jac, res):
     num_params = len(np.ravel(jac))
 
     if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
-        print "\nWarning: Determinant of zero indicates that this"
+        print "\nWarning: Determinant of zero indicates that this",
             " is a non-unique, poor solution!\n"
         return np.zeros((num_params,num_params))+np.inf
 
