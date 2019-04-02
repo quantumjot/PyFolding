@@ -542,8 +542,7 @@ def calculate_error_from_jacobian(jac, res):
     num_params = len(np.ravel(jac))
 
     if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
-        print "\nWarning: Determinant of zero indicates that this",
-            " is a non-unique, poor solution!\n"
+        print "\nWarning: Determinant of zero indicates that this is a non-unique, poor solution!\n"
         return np.zeros((num_params,num_params))+np.inf
 
     MSE = np.dot(res,res)/(len(res)-num_params)
