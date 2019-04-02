@@ -445,9 +445,9 @@ class HomozipperIsingEquilibrium(core.FitModel):
 
     def fit_func(self, x, n, DG_intrinsic, m_intrinsic, DG_interface):
 
-        # clamp to prevent instability
-        if DG_intrinsic<0. or DG_interface>0.:
-            return core.FIT_ERROR(x)
+        # # clamp to prevent instability
+        # if DG_intrinsic<0. or DG_interface>0.:
+        #     return core.FIT_ERROR(x)
 
         k = np.exp(-(DG_intrinsic - m_intrinsic*x) / core.temperature.RT )
         #t = np.exp(-(DG_interface - m_interface*x) / core.temperature.RT )
