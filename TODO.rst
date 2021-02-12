@@ -13,6 +13,10 @@ General
 Updates
 =======
 
+0.3.0
+-----
+- Updated for Python 3
+
 0.2.4
 -----
 - Removed IPython dependency, and updated docs to contain info on bounds in Ising model optimization (Thanks Marie S!)

@@ -34,9 +34,9 @@ import matplotlib.pyplot as plt
 # from scipy.optimize import differential_evolution, minimize, leastsq, curve_fit
 
 # import PyFolding specific libraries
-import constants
+from . import constants
 # import models
-import core
+from . import core
 # from ising import IsingDomain
 
 __author__ = "Alan R. Lowe"
@@ -129,31 +129,31 @@ def plot_figure(equilibrium, chevron, pth=None, display=False, save=False):
     # plt.ylim((-0.5,0.5))
 
     # now plot some output
-    t = u"Data-set: {0:s} \n".format(equilibrium.ID)
-    t+= u"\n"
-    t+= u"Equilibrium Model: {0:s} \n".format(equilibrium.fit_func)
+    t = "Data-set: {0:s} \n".format(equilibrium.ID)
+    t+= "\n"
+    t+= "Equilibrium Model: {0:s} \n".format(equilibrium.fit_func)
     for e in equilibrium.results.details:
         fit_arg, fit_val, fit_err = e.name, e.value, e.SE
-        t+= u"{0:s}: {1:2.5f} \u00B1 {2:2.5f} \n".format(fit_arg, fit_val, fit_err)
+        t+= "{0:s}: {1:2.5f} \u00B1 {2:2.5f} \n".format(fit_arg, fit_val, fit_err)
     if equilibrium.two_state:
-        t+= u"Folding midpoint: {0:2.2f} M\n".format(equilibrium.midpoint)
-    t+= u"$R^2$: {0:2.2f} \n".format(equilibrium.results.r_squared)
-    t+= u"\n"
+        t+= "Folding midpoint: {0:2.2f} M\n".format(equilibrium.midpoint)
+    t+= "$R^2$: {0:2.2f} \n".format(equilibrium.results.r_squared)
+    t+= "\n"
     try:
-        t+= u"Kinetic Model: {0:s} \n".format(chevron.fit_func)
+        t+= "Kinetic Model: {0:s} \n".format(chevron.fit_func)
     except:
         pass
-    t+= u"Fit Standard Error: {0:2.2f} \n".format(chevron.results.standard_error)
+    t+= "Fit Standard Error: {0:2.2f} \n".format(chevron.results.standard_error)
     for e in chevron.results.details:
         fit_arg, fit_val, fit_err = e.name, e.value, e.SE
-        t+= u"{0:s}: {1:.2e} \u00B1 {2:.2e} \n".format(fit_arg, fit_val, fit_err)
-    t+= u"$R^2$: {0:2.2f} \n".format(chevron.results.r_squared)
+        t+= "{0:s}: {1:.2e} \u00B1 {2:.2e} \n".format(fit_arg, fit_val, fit_err)
+    t+= "$R^2$: {0:2.2f} \n".format(chevron.results.r_squared)
 
 
     ax = plt.gcf()
     ax.text(0.65, 0.95, t, horizontalalignment='left', verticalalignment='top', fontsize=constants.FONT_SIZE)
     plt.tight_layout()
-    if save and isinstance(save, basestring):
+    if save and isinstance(save, str):
         # plt.savefig(os.path.join(pth,"Fitting"+equilibrium.ID+"_{0:s}.pdf".format(chevron.fit_func)))
         plt.savefig(save, dpi=144.)
     if display:
