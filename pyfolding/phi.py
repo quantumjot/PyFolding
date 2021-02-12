@@ -31,8 +31,8 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from scipy import optimize
 
-import core
-import constants
+from . import core
+from . import constants
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"

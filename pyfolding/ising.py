@@ -33,11 +33,11 @@ import matplotlib.pyplot as plt
 from scipy.optimize import differential_evolution, minimize, leastsq, curve_fit
 
 # import PyFolding specific libraries
-import core
-import constants
-import models
-from plotting import *
-import utils
+from . import core
+from . import constants
+from . import models
+from .plotting import *
+from . import utils
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
@@ -302,7 +302,7 @@ class GlobalFitWrapper(object):
 
             # set the shared parameters for this fit
             for p in domain.labels:
-                setattr(domain, p, p_val.next())
+                setattr(domain, p, next(p_val))
 
 
         # calculate the sum deviation of the fits from the raw data
@@ -453,7 +453,7 @@ class IsingPartitionFunction(object):
         """ Return the tau functions
         This is the sequence of tau functions, as a list of pointers to functions
         """
-        return [dummy_free_energy] + [self.topology[i].tau for i in xrange(self.n-1)]
+        return [dummy_free_energy] + [self.topology[i].tau for i in range(self.n-1)]
 
     def partition(self, x, folded=np.array([])):
         """ Populate the partition function given the weights.
@@ -468,7 +468,7 @@ class IsingPartitionFunction(object):
 
         # calculate the full partition function for the fully folded protein
         q_i = np.matrix([0,1])
-        for i in xrange(self.n):
+        for i in range(self.n):
             domain = self.topology[i]
             q_i = q_i * domain.q_i(x, tau_func[i], folded=folded[i])
         q_i = q_i * np.matrix([1,1]).T
@@ -484,7 +484,7 @@ class IsingPartitionFunction(object):
     def theta(self, x):
         """ Return the fraction folded for some x value """
         q_n = self.partition(x)
-        sum_q_i = np.sum( [ self.subpartition(x, i) for i in xrange(self.n)], axis=0 )
+        sum_q_i = np.sum( [ self.subpartition(x, i) for i in range(self.n)], axis=0 )
         theta = sum_q_i / (self.n * q_n)
         return 1.-theta
 
@@ -542,7 +542,7 @@ def calculate_error_from_jacobian(jac, res):
     num_params = len(np.ravel(jac))
 
     if np.linalg.det( np.dot(np.matrix(jac).T, np.matrix(jac)) ) == 0.:
-        print "\nWarning: Determinant of zero indicates that this is a non-unique, poor solution!\n"
+        print("\nWarning: Determinant of zero indicates that this is a non-unique, poor solution!\n")
         return np.zeros((num_params,num_params))+np.inf
 
     MSE = np.dot(res,res)/(len(res)-num_params)
@@ -597,9 +597,9 @@ class FitProgress(object):
 
             # average time per iteration
             avg_time = sum_time / loop_iter
-            print " - Fitting in progress (Iteration: {0:d}, Convergence: " \
+            print(" - Fitting in progress (Iteration: {0:d}, Convergence: " \
                 "{1:.5E}, Timing: {2:2.2f}s per iteration) ".format(self.__iter,
-                convergence, avg_time)
+                convergence, avg_time))
 
 
 
@@ -647,7 +647,7 @@ def fit_homopolymer(equilibrium_curves=[],
     """
 
     global_fit = core.GlobalFit()
-    global_fit.fit_funcs = [models.HomozipperIsingEquilibrium for i in xrange(len(equilibrium_curves))]
+    global_fit.fit_funcs = [models.HomozipperIsingEquilibrium for i in range(len(equilibrium_curves))]
     global_fit.constants = [(('n',n),) for n in topologies]
     global_fit.shared = ['DG_intrinsic','m_intrinsic','DG_interface'] #
     global_fit.x = [p.x for p in equilibrium_curves]
@@ -751,13 +751,13 @@ def fit_heteropolymer(equilibrium_curves=[],
     fit_func = GlobalFitWrapper()
 
     # set up the global fit
-    print 'Appending {0:d} curves to GlobalFitIsing...'.format(len(equilibrium_curves))
+    print('Appending {0:d} curves to GlobalFitIsing...'.format(len(equilibrium_curves)))
     for protein, topology in zip(equilibrium_curves, topologies):
         fit_func.append(protein, topology)
-        print ' + added {0:s} with topology {1:s}'.format(protein.ID, [d().name for d in topology])
+        print(' + added {0:s} with topology {1:s}'.format(protein.ID, [d().name for d in topology]))
 
     # do the fitting
-    print '\nPerforming global optimisation of Ising model ({0:d} curves, Population size: {1:d}, Tolerance: {2:.2E})...'.format(len(equilibrium_curves), popsize, tol)
+    print('\nPerforming global optimisation of Ising model ({0:d} curves, Population size: {1:d}, Tolerance: {2:.2E})...'.format(len(equilibrium_curves), popsize, tol))
 
     # give the user some feedback if this is going to take some time
     if popsize > 10 or len(equilibrium_curves)>1:
@@ -775,7 +775,7 @@ def fit_heteropolymer(equilibrium_curves=[],
                                maxiter=maxiter)
 
     if not r.success:
-        print "Could not find a solution..."
+        print("Could not find a solution...")
         return None
 
     # calculate the errors on each of the parameters
@@ -818,7 +818,7 @@ def fit_heteropolymer(equilibrium_curves=[],
 
         results.append( result )
 
-    print '\nFitting results (NOTE: Careful with the errors here): \n'
+    print('\nFitting results (NOTE: Careful with the errors here): \n')
     for result in results:
         result.display()
 
@@ -889,9 +889,9 @@ def plot_Ising(fit_func):
     ax3 = plt.subplot2grid((2,2), (1,1), rowspan=1)
     h,x = plot_folded(fit_func.proteins[-1]['partition'])
     dn = iter(['{0:s}_{1:d}'.format(d.name,i) for i,d in enumerate(fit_func.proteins[-1]['partition'].topology)])
-    for i in xrange(h.shape[1]):
+    for i in range(h.shape[1]):
         plt.plot(x, h[:,i], cmap[i % len(cmap)]+'-', lw=2, markersize=4,
-            label=dn.next())
+            label=next(dn))
     ax3.set_xlabel(fit_func.proteins[0]['curve'].denaturant_label)
     ax3.set_ylabel('Fraction unfolded (subpopulation)')
 
@@ -914,7 +914,7 @@ def plot_Ising(fit_func):
 def plot_folded(partition):
     h = np.zeros((100,partition.n))
     x = constants.XSIM
-    for i in xrange(partition.n):
+    for i in range(partition.n):
         p = partition.subpopulation(x,i)
         h[:,i] = p
     return h,x
@@ -989,7 +989,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
     from matplotlib.patches import Patch
 
     if not labels:
-        labels = ['Protein {0:d}'.format(i) for i in xrange(len(tmp_topologies))]
+        labels = ['Protein {0:d}'.format(i) for i in range(len(tmp_topologies))]
 
     if 'fold' in kwargs:
         raise DeprecationWarning('Fold keyword is being replaced with collapse.')
@@ -1083,7 +1083,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
 
     if 'save' in kwargs:
         save_filename = kwargs['save']
-        if not isinstance(save_filename, basestring):
+        if not isinstance(save_filename, str):
             raise TypeError("Save path must be a string")
         if not save_filename.endswith(('.pdf', '.PDF')):
             save_filename = save_filename+".pdf"

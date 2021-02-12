@@ -26,9 +26,9 @@ import sys
 import os
 import csv
 
-import core
+from . import core
 import numpy as np
-import constants
+from . import constants
 
 from collections import OrderedDict
 
@@ -97,7 +97,7 @@ def disable_autoscroll(verbose=True):
 
     # give the user some feedback
     if verbose:
-        print "PyFolding: Jupyter autoscrolling has been disabled"
+        print("PyFolding: Jupyter autoscrolling has been disabled")
 
 
 
@@ -105,7 +105,7 @@ def check_filename(directory, filename):
     """ Check the filename for consistency.
     """
 
-    if not isinstance(directory, basestring) or not isinstance(filename, basestring):
+    if not isinstance(directory, str) or not isinstance(filename, str):
         raise TypeError('Pyfolding expects a filename as a string')
 
     if not filename.lower().endswith(('.csv', '.CSV')):
@@ -133,22 +133,22 @@ def write_CSV(filename, data, verbose=True):
 
     """
 
-    if not isinstance(filename, basestring):
+    if not isinstance(filename, str):
         raise IOError("Filename must be a string")
 
     # data should be a dictionary
-    csv_results = {k:iter(data[k]) for k in data.keys()}
-    n_entries = len(data.values()[0])
+    csv_results = {k:iter(data[k]) for k in list(data.keys())}
+    n_entries = len(list(data.values())[0])
 
     with open(filename, 'wb') as csvfile:
         if verbose:
-            print "Writing .csv file ({0:s})...".format(filename)
-        r = csv.DictWriter(csvfile, fieldnames=data.keys(), dialect=csv.excel_tab,
+            print("Writing .csv file ({0:s})...".format(filename))
+        r = csv.DictWriter(csvfile, fieldnames=list(data.keys()), dialect=csv.excel_tab,
                 delimiter=',')
         r.writeheader()
 
-        for i in xrange(n_entries):
-            h = {k: csv_results[k].next() for k in csv_results.keys()}
+        for i in range(n_entries):
+            h = {k: next(csv_results[k]) for k in list(csv_results.keys())}
             r.writerow(h)
 
 
@@ -187,7 +187,7 @@ class DataImporter(object):
     def type(self): return self.__type
     @type.setter
     def type(self, datatype):
-        if not isinstance(datatype, basestring):
+        if not isinstance(datatype, str):
             raise TypeError('Data type must be specified as a string')
         if datatype not in ('EquilibriumDenaturationCurve','Chevron','GenericData'):
             raise ValueError('Data type {s} is not recognised'.format(datatype))
@@ -211,7 +211,7 @@ class DataImporter(object):
         # open the data and set up a new object
         with open(fullfilename, 'rU') as data_file:
             data_reader = csv.reader(data_file, delimiter=',', quotechar='|')
-            header = data_reader.next()
+            header = next(data_reader)
 
             data.labels = header
             x_label = header[0]

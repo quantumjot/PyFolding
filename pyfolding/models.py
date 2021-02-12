@@ -26,8 +26,8 @@ import inspect
 import numpy as np
 import scipy as sp
 
-import core
-import constants
+from . import core
+from . import constants
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
@@ -57,7 +57,7 @@ class TemplateModel(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([])
 
 
@@ -102,7 +102,7 @@ class TwoStateEquilibrium(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([1.5, 5.])
         self.verified = True
 
@@ -145,7 +145,7 @@ class TwoStateEquilibriumSloping(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5.])
         self.verified = True
 
@@ -192,7 +192,7 @@ class ThreeStateEquilibrium (core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([1., 0.5, 0.0, 5., 1.5, 5., 1])
         # NOTE (ergm) added on 3/11/2017
         self.verified = True
@@ -256,7 +256,7 @@ class TwoStateDimerEquilibrium(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 1e-6])
         self.constants = (('Pt',1e-6),)
         # NOTE (ergm) added on 3/11/2017
@@ -319,7 +319,7 @@ class ThreeStateMonoIEquilibrium(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([1., 0.1, 1.0, 0.1, 1.5, 5., 3., 1e-6])
         self.constants = (('Pt',1e-6),)
         # NOTE (ergm) added on 3/11/2017
@@ -383,7 +383,7 @@ class ThreeStateDimericIEquilibrium(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([1., 0.1, 0.0, 0.1, 1.5, 5., 2., 1e-6])
         self.constants = (('Pt',1e-6),)
         # NOTE (ergm) added on 3/11/2017
@@ -438,7 +438,7 @@ class HomozipperIsingEquilibrium(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([7, 0.1, -.53, -4.6])
         self.constants = (('n',7),)
         self.verified = True
@@ -556,7 +556,7 @@ class TwoStateChevron(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([100., 1.3480, 5e-4, 1.])
         #self.constants = (('mf',1.76408),('mu',1.13725))
         self.verified = True
@@ -617,7 +617,7 @@ class ThreeStateChevron(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([4.5e-4, -9.5e-1, 1.3e9, -6.9,  1.4e-8, -1.6])
         #self.constants = (('mif',-0.97996),('mi',-6.00355),('mu',-1.66154))
         self.verified = True
@@ -682,7 +682,7 @@ class ThreeStateFastPhaseChevron(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([172., 1.42, .445, .641, 1e4, 2.71313, 1.83e-3, 1.06])
         #self.constants = (('kui',172.), ('mui',1.42), ('kiu',.445), ('miu',.641), ('mif',-2.71313),('mfi',1.06534))
         self.verified = True
@@ -751,7 +751,7 @@ class ThreeStateSequentialChevron(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([2e4, 0.3480, 1e4, 0, 20.163, 1.327, 0.3033, 0.2431])
         # NOTE (ergm) changed constants on 3/10/2017
         self.constants = (('kiu', 1.e4),('miu',0.))
@@ -822,7 +822,7 @@ class ParallelTwoStateChevron(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([50., 1.3480, 5e-4, 1., 150., 3.5])
 
 
@@ -896,7 +896,7 @@ class ParallelTwoStateUnfoldingChevron(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([5e-4, 1., 1e-5, 1.5])
 
 
@@ -958,7 +958,7 @@ class TwoStateChevronMovingTransition(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         # NOTE (ergm) changed on 23/8/2017
         self.default_params = np.array([5e-5, 0.2, 10., 0.2, -1.])
         # NOTE (ergm) added on 3/11/2017
@@ -1012,7 +1012,7 @@ class ChevronPolynomialFit(core.FitModel):
     def __init__(self):
         core.FitModel.__init__(self)
         fit_args = self.fit_func_args
-        self.params = tuple( [(fit_args[i],i) for i in xrange(len(fit_args))] )
+        self.params = tuple( [(fit_args[i],i) for i in range(len(fit_args))] )
         self.default_params = np.array([5e-5, 1., -0.5, 100., 1., -0.5])
         # NOTE (ergm) changed on 3/11/2017
         self.verified = True

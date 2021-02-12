@@ -32,9 +32,9 @@ from scipy import optimize
 from scipy.stats import t as t_distrb
 
 # pyfolding imports
-import utils
-import constants
-from plotting import *
+from . import utils
+from . import constants
+from .plotting import *
 
 __author__ = "Alan R. Lowe"
 __email__ = "a.lowe@ucl.ac.uk"
@@ -116,8 +116,8 @@ def set_temperature(value=constants.TEMPERATURE_CELSIUS):
         >> pyfolding.set_temperature( 10.2 )
     """
     temperature.temperature = value
-    print u"Set temperature to {0:2.2f}\u00B0C".format(value)
-    print "(NOTE: Careful, this sets the temperature for all subsequent calculations)"
+    print("Set temperature to {0:2.2f}\u00B0C".format(value))
+    print("(NOTE: Careful, this sets the temperature for all subsequent calculations)")
 
 
 
@@ -180,7 +180,7 @@ class DataTemplate(object):
 
     def __getitem__(self, dataset):
         """ Return an XY pair from the dataset, based on the label """
-        if not isinstance(dataset, basestring):
+        if not isinstance(dataset, str):
             raise TypeError('Dataset must be specified as as string')
         if dataset not in self.datasets:
             raise ValueError('Dataset {0:s} not found'.format(dataset))
@@ -217,7 +217,7 @@ class DataTemplate(object):
         if not isinstance(result, FitResult):
             raise TypeError("Results must be of type FitResult")
 
-        print "Warning: overwriting fit result for {0:s}".format(self)
+        print("Warning: overwriting fit result for {0:s}".format(self))
         self.__fit = result
 
     def fit(self, p0=None, const=None):
@@ -265,7 +265,7 @@ class DataTemplate(object):
     def print_fit_params(self):
         raise DeprecationWarning("This feature will be deprecated soon.")
         if isinstance(self.fit_params, np.ndarray):
-            print self.fit_params
+            print(self.fit_params)
 
     def plot(self, **kwargs):
         """ Plot a simple figure of the data, this is context dependent
@@ -555,7 +555,7 @@ class FitParameter(object):
     def name(self): return self.__name
     @name.setter
     def name(self, arg_name):
-        if not isinstance(arg_name, basestring):
+        if not isinstance(arg_name, str):
             raise TypeError('Arg name must be of type string')
         self.__name = arg_name
 
@@ -563,7 +563,7 @@ class FitParameter(object):
     def type(self): return self.__type
     @type.setter
     def type(self, arg_type):
-        if not isinstance(arg_type, basestring):
+        if not isinstance(arg_type, str):
             raise TypeError('Arg type must be of type string')
         if arg_type not in ['free', 'shared', 'constant']:
             raise ValueError('Arg type must be either free, shared or constant')
@@ -656,7 +656,7 @@ class GlobalFit(object):
         """ Set the shared arguments for the global fit """
         if not isinstance(shared_args, (list, tuple)):
             raise TypeError('Shared args must be of type list or tuple')
-        if not all([isinstance(a, basestring) for a in shared_args]):
+        if not all([isinstance(a, str) for a in shared_args]):
             raise TypeError('Shared args must be a list of strings.')
 
         # TODO(arl): check that these shared params exist in the fit functions
@@ -716,7 +716,7 @@ class GlobalFit(object):
         """ Set up all of the shared, constant and free parameters """
 
         if len(self.ID) != len(self.x):
-            self.ID = ['protein_{0:d}'.format(i) for i in xrange(len(self.x))]
+            self.ID = ['protein_{0:d}'.format(i) for i in range(len(self.x))]
 
         shared = {s:FitParameter(s, 0.0, param_type='shared') for s in self.shared}
 
@@ -875,7 +875,7 @@ class FitResult(object):
     def method(self): return self.__method
     @method.setter
     def method(self, method=None):
-        if not isinstance(method, basestring):
+        if not isinstance(method, str):
             raise TypeError("FitResult: Method must be a string")
         self.__method = method
 
@@ -889,24 +889,24 @@ class FitResult(object):
             nl = max(nl, len(p.name))
 
 
-        print u"="*table_width
-        print u" Fitting results"
-        print u"="*table_width
-        if self.ID: print u" ID: {0:s}".format(self.ID)
-        print u" Model: {0:s}".format(self.name)
-        print u" Optimiser: {0:s}".format(self.__method)
-        print u" Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature)
+        print("="*table_width)
+        print(" Fitting results")
+        print("="*table_width)
+        if self.ID: print(" ID: {0:s}".format(self.ID))
+        print(" Model: {0:s}".format(self.name))
+        print(" Optimiser: {0:s}".format(self.__method))
+        print(" Temperature: {0:2.2f}\u00B0C\n".format(temperature.temperature))
 
         for p in self.details:
             self.display_row(p, nl)
 
 
-        print u"-"*table_width
-        print u" R^2: \t{0:2.5f}".format(self.r_squared)
-        print u" DOF: \t{0:d}".format(self.DoF)
-        print u"|SS|: \t{0:2.2e}".format(self.SS)
-        print u"="*table_width
-        print "\n"
+        print("-"*table_width)
+        print(" R^2: \t{0:2.5f}".format(self.r_squared))
+        print(" DOF: \t{0:d}".format(self.DoF))
+        print("|SS|: \t{0:2.2e}".format(self.SS))
+        print("="*table_width)
+        print("\n")
 
     def display_row(self, p, max_name_len):
         """ Take a parameter and display a row of the table """
@@ -914,13 +914,13 @@ class FitResult(object):
         p_name = p.name.ljust(max_name_len)
 
         if p.type is 'constant':
-            print u" ({0:s}) {1:s} {2:>2.5e}".format(p.type[0], p_name, p.value)
+            print(" ({0:s}) {1:s} {2:>2.5e}".format(p.type[0], p_name, p.value))
             return
 
-        print u" ({0:s}) {1:s} {2:>2.5e} \u00B1 {3:<2.5e}" \
-            u" \t {6:d}\u0025 CI[{4:>2.5e}, {5:>2.5e}]".format(p.type[0],
+        print(" ({0:s}) {1:s} {2:>2.5e} \u00B1 {3:<2.5e}" \
+            " \t {6:d}\u0025 CI[{4:>2.5e}, {5:>2.5e}]".format(p.type[0],
                 p_name, p.value, p.SE, p.CI_low, p.CI_high,
-                int(constants.CONFIDENCE_INTERVAL))
+                int(constants.CONFIDENCE_INTERVAL)))
 
 
     def confidence(self, i):
@@ -1116,7 +1116,7 @@ class FitModel(object):
     def print_equation(self):
         # FIXED(arl): no longer requires IPython
         if not 'ipykernel' in sys.modules:
-            print self.equation
+            print(self.equation)
             return
 
         # if we are in an IPython shell or Jupyter notebook, use the LaTeX
@@ -1127,7 +1127,7 @@ class FitModel(object):
 
     def info(self):
         self.print_equation()
-        print self.__doc__
+        print(self.__doc__)
 
 
 
@@ -1148,7 +1148,7 @@ def residuals(y_data=None, y_fit=None):
 
 def phi(ref_protein, mut_protein):
     """ Makes this easier to use! """
-    from phi import phi
+    from .phi import phi
     return phi(ref_protein, cmp_protein)
 
 
@@ -1167,7 +1167,7 @@ def test(protein_ID='Simulated protein'):
     data comparing these to the ground truth.
     """
 
-    import models
+    from . import models
 
     # initialise the data structures
     chevron = Chevron(ID=protein_ID)
@@ -1225,7 +1225,7 @@ def test(protein_ID='Simulated protein'):
                 bounds ({1:f}) \n".format((p_truth - p_fit)**2, acceptible_error))
 
 
-    print 'SUCCESS - Test completed!'
+    print('SUCCESS - Test completed!')
 
     # plot the output
     plot_figure(equilibrium, chevron, display=True)
