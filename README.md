@@ -14,6 +14,11 @@ repository**:
 https://github.com/quantumjot/PyFolding-Notebooks
 
 ---
+### Update for Python 3
+
+PyFolding is not currently maintained. We have provided an updated version for Python 3, but it has not been thoroughly tested, so we cannot guarantee the results obtained. The original legacy version (for Python 2) can be found in the `py2-legacy` branch.
+
+---
 ### Citation
 
 **PyFolding: An open-source software package for graphing, analysis and simulation  
@@ -71,7 +76,7 @@ Example data can be found in the /examples folder.
 
 ### Requirements
 
-Pyfolding has been tested on Python 2.7, and requires the following additional packages:
+Pyfolding requires the following additional packages:
 + Numpy
 + Scipy
 + Matplotlib
