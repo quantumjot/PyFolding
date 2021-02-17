@@ -3,6 +3,7 @@ docs/*
 test/*
 conflicts/*
 notebooks/.ipynb_checkpoints/*
+PyFolding.egg-info/
 *.pyc
 *.pyd
 *.so

@@ -754,13 +754,14 @@ def fit_heteropolymer(equilibrium_curves=[],
     print('Appending {0:d} curves to GlobalFitIsing...'.format(len(equilibrium_curves)))
     for protein, topology in zip(equilibrium_curves, topologies):
         fit_func.append(protein, topology)
-        print(' + added {0:s} with topology {1:s}'.format(protein.ID, [d().name for d in topology]))
+        domain_names = [d().name for d in topology]
+        print(f' + added {protein.ID} with topology {domain_names}')
 
     # do the fitting
     print('\nPerforming global optimisation of Ising model ({0:d} curves, Population size: {1:d}, Tolerance: {2:.2E})...'.format(len(equilibrium_curves), popsize, tol))
 
     # give the user some feedback if this is going to take some time
-    if popsize > 10 or len(equilibrium_curves)>1:
+    if popsize > 10 or len(equilibrium_curves) > 1:
         callback = FitProgress()
     else:
         callback = None
