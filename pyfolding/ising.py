@@ -990,7 +990,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
     from matplotlib.patches import Patch
 
     if not labels:
-        labels = ['Protein {0:d}'.format(i) for i in range(len(tmp_topologies))]
+        labels = [f'Protein {i}' for i in range(len(tmp_topologies))]
 
     if 'fold' in kwargs:
         raise DeprecationWarning('Fold keyword is being replaced with collapse.')
