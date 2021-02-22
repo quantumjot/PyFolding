@@ -754,12 +754,8 @@ def fit_heteropolymer(equilibrium_curves=[],
     print('Appending {0:d} curves to GlobalFitIsing...'.format(len(equilibrium_curves)))
     for protein, topology in zip(equilibrium_curves, topologies):
         fit_func.append(protein, topology)
-<<<<<<< HEAD
         domain_names = [d().name for d in topology]
         print(f' + added {protein.ID} with topology {domain_names}')
-=======
-        print(' + added {0:s} with topology {1:s}'.format(protein.ID, [d().name for d in topology]))
->>>>>>> master
 
     # do the fitting
     print('\nPerforming global optimisation of Ising model ({0:d} curves, Population size: {1:d}, Tolerance: {2:.2E})...'.format(len(equilibrium_curves), popsize, tol))
@@ -994,11 +990,7 @@ def plot_domains(topologies, labels=None, collapse=False, **kwargs):
     from matplotlib.patches import Patch
 
     if not labels:
-<<<<<<< HEAD
         labels = [f'Protein {i}' for i in range(len(tmp_topologies))]
-=======
-        labels = ['Protein {0:d}'.format(i) for i in range(len(tmp_topologies))]
->>>>>>> master
 
     if 'fold' in kwargs:
         raise DeprecationWarning('Fold keyword is being replaced with collapse.')
