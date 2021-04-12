@@ -7,7 +7,7 @@ First fork the repo on github.  When you have created your fork, clone it so tha
 
 ```sh
 git clone https://github.com/your-github-username/pyfolding.git
-cd cellx
+cd pyfolding
 ```
 
 Next, you need to link it to the main repo:
