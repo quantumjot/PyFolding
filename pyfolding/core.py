@@ -913,7 +913,7 @@ class FitResult(object):
 
         p_name = p.name.ljust(max_name_len)
 
-        if p.type is 'constant':
+        if p.type == 'constant':
             print(" ({0:s}) {1:s} {2:>2.5e}".format(p.type[0], p_name, p.value))
             return
 
@@ -963,7 +963,7 @@ class FitResult(object):
         """ Return a zipped list of the fit arguments, values and errors """
         details = []
         for i, f in enumerate(self.fit_params):
-            if f.type is 'constant':
+            if f.type == 'constant':
                 details.append(f)
                 continue
             f.DoF = self.DoF
@@ -1106,7 +1106,8 @@ class FitModel(object):
 
     @property
     def fit_func_args(self):
-        return inspect.getargspec(self.fit_func).args[2:]
+        # return inspect.getargspec(self.fit_func).args[2:]
+        return inspect.getfullargspec(self.fit_func).args[2:]
 
     @property
     def equation(self):
@@ -1227,8 +1228,9 @@ def test(protein_ID='Simulated protein'):
 
     print('SUCCESS - Test completed!')
 
-    # plot the output
-    plot_figure(equilibrium, chevron, display=True)
+    # # plot the output
+    # if plot_output:
+    #     plot_figure(equilibrium, chevron, display=True)
 
 
 
